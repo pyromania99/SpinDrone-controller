@@ -40,6 +40,10 @@ class MultirotorConfig:
         self.thrust_curve = QuadraticThrustCurve()
         self.drag = LinearDrag([0.50, 0.30, 0.0])
 
+        # Body-rate damping torque coefficients [roll, pitch, yaw] in N*m/(rad/s).
+        # Keep yaw slightly higher to damp residual yaw oscillations faster.
+        self.rotational_damping = [0.02, 0.02, 0.035]
+
         # The default sensors for a quadrotor
         self.sensors = [Barometer(), IMU(), Magnetometer(), GPS()]
 
@@ -86,6 +90,7 @@ class Multirotor(Vehicle):
         # 2. Setup the dynamics of the system - get the thrust curve of the vehicle from the configuration
         self._thrusters = config.thrust_curve
         self._drag = config.drag
+        self._rotational_damping = np.array(getattr(config, "rotational_damping", [0.02, 0.02, 0.035]), dtype=float)
 
     def start(self):
         """In this case we do not need to do anything extra when the simulation starts"""
@@ -135,6 +140,10 @@ class Multirotor(Vehicle):
         # Compute the total linear drag force to apply to the vehicle's body frame
         drag = self._drag.update(self._state, dt)
         self.apply_force(drag, body_part="/body")
+
+        # Apply rotational damping in the body frame to reduce angular-rate overshoot.
+        damping_torque = -self._rotational_damping * self._state.angular_velocity
+        self.apply_torque(damping_torque, "/body")
 
         # Call the update methods in all backends
         for backend in self._backends:

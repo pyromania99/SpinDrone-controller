@@ -41,7 +41,11 @@ class NonlinearController(Backend):
         Kd=[8.5, 8.5, 8.5],
         Ki=[1.50, 1.50, 1.50],
         Kr=[3.5, 3.5, 3.5],
-        Kw=[0.5, 0.5, 0.5]):
+        Kw=[0.5, 0.5, 0.5],
+        log_yaw_rate: bool = False,
+        yaw_rate_log_period: float = 0.25):
+
+        super().__init__(config=None)
 
         # The current rotor references [rad/s]
         self.input_ref = [0.0, 0.0, 0.0, 0.0]
@@ -84,6 +88,11 @@ class NonlinearController(Backend):
 
         self.reverse = reverse
 
+        # Optional periodic terminal logging for yaw-rate tracking.
+        self.log_yaw_rate = log_yaw_rate
+        self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
+        self._last_yaw_rate_log_time = -1.0
+
         # Auxiliar variable, so that we only start sending motor commands once we get the state of the vehicle
         self.reveived_first_state = False
 
@@ -96,6 +105,9 @@ class NonlinearController(Backend):
         self.velocity_error_over_time = []
         self.atittude_error_over_time = []
         self.attitude_rate_error_over_time = []
+        self.yaw_rate_over_time = []
+        self.desired_yaw_rate_over_time = []
+        self.desired_body_z_rate_over_time = []
 
     def read_trajectory_from_csv(self, file_name: str):
         """Auxiliar method used to read the desired trajectory from a CSV file
@@ -135,6 +147,9 @@ class NonlinearController(Backend):
         statistics["ev"] = np.vstack(self.velocity_error_over_time)
         statistics["er"] = np.vstack(self.atittude_error_over_time)
         statistics["ew"] = np.vstack(self.attitude_rate_error_over_time)
+        statistics["yaw_rate"] = np.array(self.yaw_rate_over_time)
+        statistics["desired_yaw_rate"] = np.array(self.desired_yaw_rate_over_time)
+        statistics["desired_body_z_rate"] = np.array(self.desired_body_z_rate_over_time)
         np.savez(self.results_files, **statistics)
         carb.log_warn("Statistics saved to: " + self.results_files)
 
@@ -287,6 +302,24 @@ class NonlinearController(Backend):
         self.velocity_error_over_time.append(ev)
         self.atittude_error_over_time.append(e_R)
         self.attitude_rate_error_over_time.append(e_w)
+        self.yaw_rate_over_time.append(self.w[2])
+        self.desired_yaw_rate_over_time.append(yaw_rate_ref)
+        self.desired_body_z_rate_over_time.append(w_des[2])
+
+        if self.log_yaw_rate and self.yaw_rate_log_period >= 0.0:
+            should_log = self._last_yaw_rate_log_time < 0.0
+            if not should_log:
+                should_log = (self.total_time - self._last_yaw_rate_log_time) >= self.yaw_rate_log_period
+
+            if should_log:
+                carb.log_info(
+                    "[YawRate] "
+                    f"t={self.total_time:7.3f}s "
+                    f"w_z={self.w[2]:+7.4f} rad/s "
+                    f"ref={yaw_rate_ref:+7.4f} rad/s "
+                    f"body_ref={w_des[2]:+7.4f} rad/s"
+                )
+                self._last_yaw_rate_log_time = self.total_time
 
     @staticmethod
     def vee(S):
@@ -315,6 +348,10 @@ class NonlinearController(Backend):
         self.velocity_error_over_time = []
         self.atittude_error_over_time = []
         self.attitude_rate_error_over_time = []
+        self.yaw_rate_over_time = []
+        self.desired_yaw_rate_over_time = []
+        self.desired_body_z_rate_over_time = []
+        self._last_yaw_rate_log_time = -1.0
 
     # ---------------------------------------------------
     # Definition of an exponential trajectory for example
