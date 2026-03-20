@@ -37,17 +37,15 @@ from isaacsim.core.api import World
 from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
-from pegasus.simulator.logic.backends import Backend
-from pegasus.simulator.logic.state import State
-import numpy as np
 
 # Import the custom python control backend
 import sys, os
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "utils"))
 from cascaded_pd_controller import CascadedPDController
 from nonlinear_controller import NonlinearController
+from eigen_controller import EigenController
 
-# Auxiliary scipy and numpy modules
+# Auxiliary scipy module
 from scipy.spatial.transform import Rotation
 
 # Use pathlib for parsing the desired trajectory from a CSV file
@@ -89,14 +87,7 @@ class PegasusApp:
         self.curr_dir = str(Path(os.path.dirname(os.path.realpath(__file__))).resolve())
 
         # Build selected backend from the controller registry
-        backend = build_controller(selected_controller, self.curr_dir)
-        telemetry_results = self.curr_dir + f"/results/{selected_controller}_telemetry.npz"
-        self.backend = YawRateTelemetryBackend(
-            backend,
-            results_file=telemetry_results,
-            log_yaw_rate=True,
-            yaw_rate_log_period=0.25,
-        )
+        self.backend = build_controller(selected_controller, self.curr_dir)
         carb.log_warn(f"Using controller: {selected_controller}")
 
         # Create the vehicle 1
@@ -127,7 +118,15 @@ class PegasusApp:
     def _update_yaw_rate_overlay(self):
         if not hasattr(self, "_yaw_label"):
             return
-        self._yaw_label.text = f"w_z: {self.backend.current_yaw_rate:+7.4f} rad/s"
+
+        yaw_rate = None
+        if hasattr(self.backend, "w") and len(self.backend.w) >= 3:
+            yaw_rate = float(self.backend.w[2])
+
+        if yaw_rate is None:
+            self._yaw_label.text = "w_z: -- rad/s"
+        else:
+            self._yaw_label.text = f"w_z: {yaw_rate:+7.4f} rad/s"
 
     def run(self):
         """
@@ -149,94 +148,11 @@ class PegasusApp:
         self.timeline.stop()
         simulation_app.close()
 
-
-class YawRateTelemetryBackend(Backend):
-    """Wrap any backend and add yaw-rate logging + optional telemetry file output."""
-
-    def __init__(
-        self,
-        wrapped_backend: Backend,
-        results_file: str = None,
-        log_yaw_rate: bool = True,
-        yaw_rate_log_period: float = 0.25,
-    ):
-        super().__init__(config=None)
-        self.wrapped_backend = wrapped_backend
-        self.results_file = results_file
-        self.log_yaw_rate = log_yaw_rate
-        self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
-
-        self.total_time = 0.0
-        self.current_yaw_rate = 0.0
-        self._last_log_time = -1.0
-
-        self.time_vector = []
-        self.yaw_rate_over_time = []
-
-    def initialize(self, vehicle):
-        super().initialize(vehicle)
-        self.wrapped_backend.initialize(vehicle)
-
-    def start(self):
-        self.total_time = 0.0
-        self.current_yaw_rate = 0.0
-        self._last_log_time = -1.0
-        self.time_vector = []
-        self.yaw_rate_over_time = []
-        self.wrapped_backend.start()
-
-    def stop(self):
-        self.wrapped_backend.stop()
-
-        if self.results_file is not None and len(self.time_vector) > 0:
-            np.savez(
-                self.results_file,
-                time=np.array(self.time_vector),
-                yaw_rate=np.array(self.yaw_rate_over_time),
-            )
-            carb.log_warn("Yaw telemetry saved to: " + self.results_file)
-
-    def update_sensor(self, sensor_type: str, data):
-        self.wrapped_backend.update_sensor(sensor_type, data)
-
-    def update_graphical_sensor(self, sensor_type: str, data):
-        self.wrapped_backend.update_graphical_sensor(sensor_type, data)
-
-    def reset(self):
-        self.wrapped_backend.reset()
-
-    def update_state(self, state: State):
-        self.current_yaw_rate = float(state.angular_velocity[2])
-        self.wrapped_backend.update_state(state)
-
-    def input_reference(self):
-        return self.wrapped_backend.input_reference()
-
-    def update(self, dt: float):
-        self.total_time += dt
-        self.wrapped_backend.update(dt)
-
-        self.time_vector.append(self.total_time)
-        self.yaw_rate_over_time.append(self.current_yaw_rate)
-
-        if self.log_yaw_rate and self.yaw_rate_log_period >= 0.0:
-            should_log = self._last_log_time < 0.0
-            if not should_log:
-                should_log = (self.total_time - self._last_log_time) >= self.yaw_rate_log_period
-
-            if should_log:
-                carb.log_info(
-                    "[YawRate] "
-                    f"t={self.total_time:7.3f}s "
-                    f"w_z={self.current_yaw_rate:+7.4f} rad/s"
-                )
-                self._last_log_time = self.total_time
-
 def build_controller(controller_key: str, curr_dir: str):
     """Factory/registry for all imported controllers."""
 
     controller_registry = {
-        "cascaded_pd": lambda: CascadedPDController(
+        "pd": lambda: CascadedPDController(
             target_position=(0.0, 0.0, 1.5),
             results_file=curr_dir + "/results/cascaded_pd_statistics.npz",
         ),
@@ -246,6 +162,11 @@ def build_controller(controller_key: str, curr_dir: str):
             Ki=[0.5, 0.5, 0.5],
             Kr=[2.0, 2.0, 2.0],
         ),
+        "eigen": lambda: EigenController(
+            trajectory_file=None,  # Use built-in exponential trajectory
+            results_file=curr_dir + "/results/eigen_statistics.npz",
+
+        )
     }
 
     if controller_key not in controller_registry:
@@ -256,7 +177,7 @@ def build_controller(controller_key: str, curr_dir: str):
 
 
 def main():
-    print("Available controllers:cascaded_pd, nonlinear")
+    print("Available controllers: pd, nonlinear, eigen")
     selected_controller = input("Select controller: ").strip().lower()
 
     # Instantiate the template app

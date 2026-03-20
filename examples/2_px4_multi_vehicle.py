@@ -15,11 +15,34 @@ from isaacsim import SimulationApp
 # as this is the object that will load all the extensions and load the actual simulator.
 simulation_app = SimulationApp({"headless": False})
 
+import sys
+from pathlib import Path
+
+for _parent in Path(__file__).resolve().parents:
+    _candidate = _parent / "extensions" / "pegasus.simulator"
+    if _candidate.exists():
+        if str(_candidate) not in sys.path:
+            sys.path.insert(0, str(_candidate))
+        break
+
+
+def _px4_autolaunch_settings(px4_dir: str):
+    px4_root = Path(px4_dir).expanduser()
+    px4_binary = px4_root / "build" / "px4_sitl_default" / "bin" / "px4"
+    if px4_binary.exists():
+        return True, str(px4_root)
+
+    carb.log_warn(
+        f"PX4 SITL binary not found at '{px4_binary}'. Disabling px4_autolaunch. "
+        "Build PX4 SITL or set px4_dir in extensions/pegasus.simulator/config/configs.yaml."
+    )
+    return False, str(px4_root)
+
 # -----------------------------------
 # The actual script should start here
 # -----------------------------------
 import omni.timeline
-from omni.isaac.core.world import World
+from isaacsim.core.api import World
 
 # Import the Pegasus API for simulating drones
 from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
@@ -76,12 +99,13 @@ class PegasusApp:
         # Create the vehicle
         # Try to spawn the selected robot in the world to the specified namespace
         config_multirotor = MultirotorConfig()
+        px4_autolaunch, px4_dir = _px4_autolaunch_settings(self.pg.px4_path)
         
         # Create the multirotor configuration
         mavlink_config = PX4MavlinkBackendConfig({
             "vehicle_id": vehicle_id,
-            "px4_autolaunch": True,
-            "px4_dir": self.pg.px4_path,
+            "px4_autolaunch": px4_autolaunch,
+            "px4_dir": px4_dir,
             "px4_vehicle_model": self.pg.px4_default_airframe # CHANGE this line to 'iris' if using PX4 version bellow v1.14
         })
         config_multirotor.backends = [PX4MavlinkBackend(mavlink_config)]

@@ -16,11 +16,22 @@ from isaacsim import SimulationApp
 # as this is the object that will load all the extensions and load the actual simulator.
 simulation_app = SimulationApp({"headless": False})
 
+import sys
+from pathlib import Path
+
+for _parent in Path(__file__).resolve().parents:
+    _candidate = _parent / "extensions" / "pegasus.simulator"
+    if _candidate.exists():
+        if str(_candidate) not in sys.path:
+            sys.path.insert(0, str(_candidate))
+        break
+
 # -----------------------------------
 # The actual script should start here
 # -----------------------------------
 import omni.timeline
-from omni.isaac.core.world import World
+import omni.ui as ui
+from isaacsim.core.api import World
 
 # Import the Pegasus API for simulating drones
 from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
@@ -40,6 +51,7 @@ from pathlib import Path
 
 
 class PegasusApp:
+    
     """
     A Template class that serves as an example on how to build a simple Isaac Sim standalone App.
     """
@@ -69,12 +81,15 @@ class PegasusApp:
         # Create the vehicle 1
         # Try to spawn the selected robot in the world to the specified namespace
         config_multirotor1 = MultirotorConfig()
-        config_multirotor1.backends = [NonlinearController(
+        self.controller = NonlinearController(
             trajectory_file=self.curr_dir + "/trajectories/pitch_relay_90_deg_2.csv",
             results_file=self.curr_dir + "/results/single_statistics.npz",
             Ki=[0.5, 0.5, 0.5],
-            Kr=[2.0, 2.0, 2.0]
-        )]
+            Kr=[2.0, 2.0, 2.0],
+            log_yaw_rate=True,
+            yaw_rate_log_period=0.25,
+        )
+        config_multirotor1.backends = [self.controller]
 
         Multirotor(
             "/World/quadrotor1",
@@ -87,6 +102,21 @@ class PegasusApp:
 
         # Reset the simulation environment so that all articulations (aka robots) are initialized
         self.world.reset()
+
+        self._setup_yaw_rate_overlay()
+
+    def _setup_yaw_rate_overlay(self):
+        self._yaw_window = ui.Window("Telemetry", width=260, height=84)
+        with self._yaw_window.frame:
+            with ui.VStack(spacing=6):
+                ui.Label("Yaw Rate", alignment=ui.Alignment.CENTER)
+                self._yaw_label = ui.Label("w_z: -- rad/s", alignment=ui.Alignment.CENTER)
+
+    def _update_yaw_rate_overlay(self):
+        if not hasattr(self, "_yaw_label"):
+            return
+
+        self._yaw_label.text = f"w_z: {self.controller.w[2]:+7.4f} rad/s"
 
     def run(self):
         """
@@ -101,6 +131,7 @@ class PegasusApp:
 
             # Update the UI of the app and perform the physics step
             self.world.step(render=True)
+            self._update_yaw_rate_overlay()
         
         # Cleanup and stop
         carb.log_warn("PegasusApp Simulation App is closing.")

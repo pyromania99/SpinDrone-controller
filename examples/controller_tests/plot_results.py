@@ -8,6 +8,10 @@ Usage examples:
   /usr/bin/python3 examples/controller_tests/plot_results.py \
       --file examples/controller_tests/results/nonlinear_statistics.npz \
       --save-prefix examples/controller_tests/results/nonlinear
+
+    /usr/bin/python3 examples/controller_tests/plot_results.py \
+            --batch-root examples/controller_tests/results \
+            --no-show
 """
 
 from __future__ import annotations
@@ -17,6 +21,10 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+def _default_batch_root() -> Path:
+    return Path(__file__).resolve().parent / "results"
 
 
 def _required_keys(data: np.lib.npyio.NpzFile, keys: list[str]) -> None:
@@ -127,9 +135,31 @@ def _plot(data: np.lib.npyio.NpzFile, title: str, save_prefix: str | None) -> No
             print(f"saved: {fig3_path}")
 
 
+def _iter_batch_result_files(batch_root: Path) -> list[Path]:
+    files: list[Path] = []
+    for mm_dir in sorted(batch_root.glob("mm_*")):
+        if not mm_dir.is_dir():
+            continue
+
+        for f in sorted(mm_dir.glob("*_statistics.npz")):
+            if f.is_file():
+                files.append(f)
+
+    return files
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Read and visualize Pegasus controller .npz results")
-    parser.add_argument("--file", required=True, help="Path to .npz results file")
+    parser.add_argument(
+        "--file",
+        default=None,
+        help="Path to one .npz results file. If omitted, process all files in --batch-root/mm_*/",
+    )
+    parser.add_argument(
+        "--batch-root",
+        default=str(_default_batch_root()),
+        help="Batch results root containing mm_* subfolders (default: examples/controller_tests/results)",
+    )
     parser.add_argument(
         "--last-n",
         type=int,
@@ -151,16 +181,38 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    file_path = Path(args.file)
+    last_n = max(args.last_n, 1)
 
-    if not file_path.exists():
-        raise FileNotFoundError(f"Results file not found: {file_path}")
+    if args.file:
+        file_paths = [Path(args.file)]
+    else:
+        batch_root = Path(args.batch_root)
+        if not batch_root.exists():
+            raise FileNotFoundError(f"Batch root not found: {batch_root}")
 
-    data = np.load(file_path)
-    _required_keys(data, ["time", "p", "desired_p", "ep"])
+        file_paths = _iter_batch_result_files(batch_root)
+        if not file_paths:
+            raise FileNotFoundError(
+                f"No '*_statistics.npz' files found in: {batch_root}/mm_*"
+            )
 
-    _print_summary(data, max(args.last_n, 1))
-    _plot(data, title=file_path.name, save_prefix=args.save_prefix)
+    for idx, file_path in enumerate(file_paths, start=1):
+        if not file_path.exists():
+            raise FileNotFoundError(f"Results file not found: {file_path}")
+
+        print("\n" + "=" * 72)
+        print(f"[{idx}/{len(file_paths)}] {file_path}")
+
+        data = np.load(file_path)
+        _required_keys(data, ["time", "p", "desired_p", "ep"])
+        _print_summary(data, last_n)
+
+        save_prefix = args.save_prefix
+        if save_prefix is None and not args.file:
+            # In batch mode, save plots beside each source npz by default.
+            save_prefix = str(file_path.with_suffix(""))
+
+        _plot(data, title=file_path.name, save_prefix=save_prefix)
 
     if not args.no_show:
         plt.show()

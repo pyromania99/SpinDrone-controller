@@ -5,7 +5,6 @@
 | License: BSD-3-Clause. Copyright (c) 2023, Marcelo Jacinto. All rights reserved.
 | Description: This files serves as a template on how to build a clean and simple Isaac Sim based standalone App.
 """
-
 # Imports to start Isaac Sim from this script
 import carb
 from isaacsim import SimulationApp
@@ -19,7 +18,7 @@ simulation_app = SimulationApp({"headless": False})
 # The actual script should start here
 # -----------------------------------
 import omni.timeline
-from omni.isaac.core import World
+from isaacsim.core.api import World
 
 class Template:
     """

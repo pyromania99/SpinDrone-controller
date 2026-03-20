@@ -16,11 +16,21 @@ from isaacsim import SimulationApp
 # as this is the object that will load all the extensions and load the actual simulator.
 simulation_app = SimulationApp({"headless": False})
 
+import sys
+from pathlib import Path
+
+for _parent in Path(__file__).resolve().parents:
+    _candidate = _parent / "extensions" / "pegasus.simulator"
+    if _candidate.exists():
+        if str(_candidate) not in sys.path:
+            sys.path.insert(0, str(_candidate))
+        break
+
 # -----------------------------------
 # The actual script should start here
 # -----------------------------------
 import omni.timeline
-from omni.isaac.core.world import World
+from isaacsim.core.api import World
 
 # Used for adding extra lights to the environment
 import isaacsim.core.utils.prims as prim_utils
