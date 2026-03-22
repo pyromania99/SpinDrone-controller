@@ -31,7 +31,7 @@ class CascadedPDController(Backend):
         Kd_xy=(1.0, 1.0),
         Kp_z=15.0,
         Kd_z=8.0,
-        Kp_att=(3.5, 3.5),
+        Kp_att=(0.5, 0.5),
         Kd_att=(0.5, 0.5),
         Kd_yaw_rate=0.2,
         mass=1.50,
@@ -76,6 +76,10 @@ class CascadedPDController(Backend):
 
         self.total_time = 0.0
         self.received_first_state = False
+
+        self.prev_error_world_x = 0.0
+        self.prev_error_world_y = 0.0
+        self.prev_error_world_z = 0.0
 
         self.log_yaw_rate = log_yaw_rate
         self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
@@ -138,6 +142,10 @@ class CascadedPDController(Backend):
         self.desired_yaw_rate_over_time = []
         self._last_yaw_rate_log_time = -1.0
 
+        self.prev_error_world_x = 0.0
+        self.prev_error_world_y = 0.0
+        self.prev_error_world_z = 0.0
+
     def update_sensor(self, sensor_type: str, data):
         pass
 
@@ -183,15 +191,30 @@ class CascadedPDController(Backend):
             return
 
         self.total_time += dt
+        dt_safe = max(float(dt), 1e-6)
 
-        p_ref, v_ref, a_ref = self._reference_from_trajectory()
+        p_ref, _, _ = self._reference_from_trajectory()
 
-        # Outer-loop position PD in world frame
+        # Match Eigen outer loop: PD on world-position error and its numerical derivative.
         e_p = p_ref - self.p
-        e_v = v_ref - self.v
 
-        acc_xy_des = self.Kp_xy * e_p[:2] + self.Kd_xy * e_v[:2] + a_ref[:2]
-        a_z_des = self.Kp_z * e_p[2] + self.Kd_z * e_v[2] + a_ref[2]
+        error_rate_world_x = (e_p[0] - self.prev_error_world_x) / dt_safe
+        error_rate_world_y = (e_p[1] - self.prev_error_world_y) / dt_safe
+        self.prev_error_world_x = e_p[0]
+        self.prev_error_world_y = e_p[1]
+
+        error_rate_world_z = (e_p[2] - self.prev_error_world_z) / dt_safe
+        self.prev_error_world_z = e_p[2]
+
+        acc_xy_des = np.array(
+            [
+                self.Kp_xy[0] * e_p[0] + self.Kd_xy[0] * error_rate_world_x,
+                self.Kp_xy[1] * e_p[1] + self.Kd_xy[1] * error_rate_world_y,
+            ]
+        )
+
+        # Keep z-channel consistent with Eigen's altitude damping term.
+        a_z_des = self.Kp_z * e_p[2] - self.Kd_z * self.v[2]
 
         # Enforce max tilt in a rotation-consistent way by clamping lateral acceleration
         # magnitude to g*tan(max_tilt), independent of current yaw.

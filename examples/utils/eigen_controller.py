@@ -39,7 +39,7 @@ class EigenController(Backend):
         Ixx=0.01,
         Iyy=0.01,
         Izz=0.02,
-        Kp_att=0.70,
+        Kp_att=10.0,
         Kd_att=10.0,
         max_total_thrust=80.0,
     ):
