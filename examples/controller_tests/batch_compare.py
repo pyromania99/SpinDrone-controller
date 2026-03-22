@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import math
 from pathlib import Path
 
 import carb
@@ -57,6 +58,31 @@ def parse_args():
         default=[-10.0, 10.0, -10.0, 10.0, 0.0, 15.0],
         metavar=("XMIN", "XMAX", "YMIN", "YMAX", "ZMIN", "ZMAX"),
         help="OOB bounding box [xmin xmax ymin ymax zmin zmax]",
+    )
+    p.add_argument(
+        "--goal-mode",
+        type=str,
+        choices=["spawn_xy", "random_xy_2m"],
+        default="spawn_xy",
+        help="Goal generation mode: spawn_xy (same x,y as spawn) or random_xy_2m (2m random XY offset from spawn)",
+    )
+    p.add_argument(
+        "--goal-altitude",
+        type=float,
+        default=1.5,
+        help="Target altitude used for hover goals [m]",
+    )
+    p.add_argument(
+        "--goal-radius",
+        type=float,
+        default=2.0,
+        help="XY radius [m] for random_xy_2m mode",
+    )
+    p.add_argument(
+        "--goal-seed",
+        type=int,
+        default=7,
+        help="Random seed for goal randomization",
     )
     return p.parse_args()
 
@@ -99,15 +125,28 @@ from eigen_controller import EigenController
 
 
 CONTROLLER_REGISTRY = {
-    "pd": lambda rf: CascadedPDController(
-        target_position=(0.0, 0.0, 1.5),
+    "pd": lambda rf, target_pos: CascadedPDController(
+        target_position=target_pos,
         results_file=rf,
     ),
-    "eigen": lambda rf: EigenController(
-        target_position=(0.0, 0.0, 1.5),
+    "eigen": lambda rf, target_pos: EigenController(
+        target_position=target_pos,
         results_file=rf,
     ),
 }
+
+
+def build_target_position(spawn_position: list[float], rng: np.random.Generator) -> tuple[float, float, float]:
+    if ARGS.goal_mode == "spawn_xy":
+        return (spawn_position[0], spawn_position[1], float(ARGS.goal_altitude))
+
+    theta = float(rng.uniform(0.0, 2.0 * math.pi))
+    r = float(ARGS.goal_radius)
+    return (
+        spawn_position[0] + r * math.cos(theta),
+        spawn_position[1] + r * math.sin(theta),
+        float(ARGS.goal_altitude),
+    )
 
 
 # ---------------- Telemetry backend ---------------- #
@@ -225,6 +264,7 @@ def main():
     timeline = omni.timeline.get_timeline_interface()
     world = None
     render_sim = not ARGS.headless
+    rng = np.random.default_rng(ARGS.goal_seed)
 
     base_dir = Path(__file__).resolve().parent
     results_base = base_dir / "results"
@@ -248,13 +288,16 @@ def main():
 
     # -------- spawn drones once -------- #
 
-    drones: list[tuple[str, Multirotor, BoundedTelemetryBackend]] = []
+    drones: list[tuple[str, Multirotor, BoundedTelemetryBackend, list[float]]] = []
 
     for idx, ctrl in enumerate(controller_keys):
         rf = str(results_base / f"{ctrl}_tmp.npz")
+        spawn_x = 2.3 + idx * ARGS.spacing
+        spawn_position = [spawn_x, -1.5, 0.07]
+        target_position = build_target_position(spawn_position, rng)
 
         backend = BoundedTelemetryBackend(
-            CONTROLLER_REGISTRY[ctrl](rf),
+            CONTROLLER_REGISTRY[ctrl](rf, target_position),
             rf,
         )
 
@@ -262,18 +305,20 @@ def main():
         cfg.backends = [backend]
         cfg.thrust_curve = make_thrust_curve(ARGS.motor_moments[0])
 
-        spawn_x = 2.3 + idx * ARGS.spacing
-
         vehicle = Multirotor(
             f"/World/quadrotor_{ctrl}",
             ROBOTS["Iris"],
             idx,
-            [spawn_x, -1.5, 0.07],
+            spawn_position,
             Rotation.from_euler("XYZ", [0.0, 0.0, 0.0], degrees=True).as_quat(),
             config=cfg,
         )
 
-        drones.append((ctrl, vehicle, backend))
+        carb.log_warn(
+            f"{ctrl}: spawn={spawn_position} target={[round(v, 3) for v in target_position]}"
+        )
+
+        drones.append((ctrl, vehicle, backend, spawn_position))
 
     world.reset()
 
@@ -290,14 +335,14 @@ def main():
         rdir = results_dir(results_base, mm)
 
         # update thrust model and reset state
-        for ctrl, vehicle, backend in drones:
+        for ctrl, vehicle, backend, spawn_position in drones:
             # Multirotor stores the thrust model in its private _thrusters field
             # (initialized from MultirotorConfig.thrust_curve). Swap it here to
             # sweep motor_moment without respawning the articulation.
             vehicle._thrusters = make_thrust_curve(mm)
 
             vehicle.set_world_pose(
-                position=[2.3, -1.5, 0.07],
+                position=spawn_position,
                 orientation=[0.0, 0.0, 0.0, 1.0],
             )
 
@@ -318,7 +363,7 @@ def main():
 
             all_oob = True
 
-            for ctrl, vehicle, backend in drones:
+            for ctrl, vehicle, backend, _ in drones:
                 if backend.is_oob:
                     continue
 
@@ -332,7 +377,7 @@ def main():
 
         timeline.stop()
 
-        for ctrl, vehicle, backend in drones:
+        for ctrl, vehicle, backend, _ in drones:
             if not backend._stopped:
                 backend.stop()
 
