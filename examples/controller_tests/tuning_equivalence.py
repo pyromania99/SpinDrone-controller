@@ -26,10 +26,10 @@ Kp_xy  = 0.10;   Kd_xy  = 1.0
 Kp_z   = 15.0;   Kd_z   = 8.0
 
 # CascadedPD inner-loop attitude PD
-CPD_Kp_att = 0.5;  CPD_Kd_att = 0.5
+CPD_Kp_att = 0.65;  CPD_Kd_att = 10.0
 
 # Eigen inner-loop attitude PD-on-error-rate  (feeds into eigen dynamics law)
-EIG_Kp_att = 10.00;  EIG_Kd_att = 10.0
+EIG_Kp_att = 0.70;  EIG_Kd_att = 10.0
 EIG_alpha  = 0.5
 EIG_Ixx    = 0.01;  EIG_Iyy = 0.01
 

@@ -17,10 +17,11 @@ Usage examples:
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
 
 
 def _default_batch_root() -> Path:
@@ -59,93 +60,107 @@ def _print_summary(data: np.lib.npyio.NpzFile, last_n: int) -> None:
         print(f"mean abs yaw rate over last {n} samples [rad/s]: {float(np.mean(np.abs(yaw_rate[-n:]))) if len(yaw_rate) else 0.0:.4f}")
 
 
-def _plot(data: np.lib.npyio.NpzFile, title: str, save_prefix: str | None) -> None:
+def _plot(
+    data: np.lib.npyio.NpzFile,
+    title: str,
+    save_prefix: str | None,
+    *,
+    close_figures: bool,
+) -> None:
+    import matplotlib.pyplot as plt
+
     t = data["time"]
     p = data["p"]
     p_ref = data["desired_p"]
     e_p = data["ep"]
 
-    fig1, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-
-    axs[0].plot(t, p[:, 0], label="x")
-    axs[0].plot(t, p[:, 1], label="y")
-    axs[0].plot(t, p[:, 2], label="z")
-    axs[0].plot(t, p_ref[:, 0], "--", label="x_ref")
-    axs[0].plot(t, p_ref[:, 1], "--", label="y_ref")
-    axs[0].plot(t, p_ref[:, 2], "--", label="z_ref")
-    axs[0].set_ylabel("Position [m]")
-    axs[0].set_title(title)
-    axs[0].grid(True)
-    axs[0].legend(ncol=3)
-
-    axs[1].plot(t, e_p[:, 0], label="e_x")
-    axs[1].plot(t, e_p[:, 1], label="e_y")
-    axs[1].plot(t, e_p[:, 2], label="e_z")
-    axs[1].set_xlabel("Time [s]")
-    axs[1].set_ylabel("Position Error [m]")
-    axs[1].grid(True)
-    axs[1].legend(ncol=3)
-
-    fig1.tight_layout()
-
-    fig2 = plt.figure(figsize=(7, 6))
-    ax2 = fig2.add_subplot(111)
-    ax2.plot(p[:, 0], p[:, 1], label="actual XY")
-    ax2.plot(p_ref[:, 0], p_ref[:, 1], "--", label="desired XY")
-    ax2.set_xlabel("x [m]")
-    ax2.set_ylabel("y [m]")
-    ax2.set_title(f"Top View XY: {title}")
-    ax2.grid(True)
-    ax2.axis("equal")
-    ax2.legend()
-    fig2.tight_layout()
-
     fig3 = None
-    if "yaw_rate" in data.files:
-        yaw_rate = data["yaw_rate"]
-        yaw_ref = data["desired_yaw_rate"] if "desired_yaw_rate" in data.files else None
-        yaw_body_ref = data["desired_body_z_rate"] if "desired_body_z_rate" in data.files else None
+    try:
+        fig1, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
-        fig3 = plt.figure(figsize=(10, 4.5))
-        ax3 = fig3.add_subplot(111)
-        ax3.plot(t, yaw_rate, label="w_z (actual)")
-        if yaw_ref is not None:
-            ax3.plot(t, yaw_ref, "--", label="yaw_rate_ref")
-        if yaw_body_ref is not None:
-            ax3.plot(t, yaw_body_ref, ":", label="body_z_rate_ref")
-        ax3.set_xlabel("Time [s]")
-        ax3.set_ylabel("Yaw Rate [rad/s]")
-        ax3.set_title(f"Yaw Rate: {title}")
-        ax3.grid(True)
-        ax3.legend()
-        fig3.tight_layout()
+        axs[0].plot(t, p[:, 0], label="x")
+        axs[0].plot(t, p[:, 1], label="y")
+        axs[0].plot(t, p[:, 2], label="z")
+        axs[0].plot(t, p_ref[:, 0], "--", label="x_ref")
+        axs[0].plot(t, p_ref[:, 1], "--", label="y_ref")
+        axs[0].plot(t, p_ref[:, 2], "--", label="z_ref")
+        axs[0].set_ylabel("Position [m]")
+        axs[0].set_title(title)
+        axs[0].grid(True)
+        axs[0].legend(ncol=3)
 
-    if save_prefix:
-        save_base = Path(save_prefix)
-        save_base.parent.mkdir(parents=True, exist_ok=True)
-        fig1_path = str(save_base) + "_time_series.png"
-        fig2_path = str(save_base) + "_xy.png"
-        fig1.savefig(fig1_path, dpi=150)
-        fig2.savefig(fig2_path, dpi=150)
-        print(f"saved: {fig1_path}")
-        print(f"saved: {fig2_path}")
-        if fig3 is not None:
-            fig3_path = str(save_base) + "_yaw_rate.png"
-            fig3.savefig(fig3_path, dpi=150)
-            print(f"saved: {fig3_path}")
+        axs[1].plot(t, e_p[:, 0], label="e_x")
+        axs[1].plot(t, e_p[:, 1], label="e_y")
+        axs[1].plot(t, e_p[:, 2], label="e_z")
+        axs[1].set_xlabel("Time [s]")
+        axs[1].set_ylabel("Position Error [m]")
+        axs[1].grid(True)
+        axs[1].legend(ncol=3)
+
+        fig1.tight_layout()
+
+        fig2 = plt.figure(figsize=(7, 6))
+        ax2 = fig2.add_subplot(111)
+        ax2.plot(p[:, 0], p[:, 1], label="actual XY")
+        ax2.plot(p_ref[:, 0], p_ref[:, 1], "--", label="desired XY")
+        ax2.set_xlabel("x [m]")
+        ax2.set_ylabel("y [m]")
+        ax2.set_title(f"Top View XY: {title}")
+        ax2.grid(True)
+        ax2.axis("equal")
+        ax2.legend()
+        fig2.tight_layout()
+
+        if "yaw_rate" in data.files:
+            yaw_rate = data["yaw_rate"]
+            yaw_ref = data["desired_yaw_rate"] if "desired_yaw_rate" in data.files else None
+            yaw_body_ref = data["desired_body_z_rate"] if "desired_body_z_rate" in data.files else None
+
+            fig3 = plt.figure(figsize=(10, 4.5))
+            ax3 = fig3.add_subplot(111)
+            ax3.plot(t, yaw_rate, label="w_z (actual)")
+            if yaw_ref is not None:
+                ax3.plot(t, yaw_ref, "--", label="yaw_rate_ref")
+            if yaw_body_ref is not None:
+                ax3.plot(t, yaw_body_ref, ":", label="body_z_rate_ref")
+            ax3.set_xlabel("Time [s]")
+            ax3.set_ylabel("Yaw Rate [rad/s]")
+            ax3.set_title(f"Yaw Rate: {title}")
+            ax3.grid(True)
+            ax3.legend()
+            fig3.tight_layout()
+
+        if save_prefix:
+            save_base = Path(save_prefix)
+            save_base.parent.mkdir(parents=True, exist_ok=True)
+            fig1_path = str(save_base) + "_time_series.png"
+            fig2_path = str(save_base) + "_xy.png"
+            fig1.savefig(fig1_path, dpi=150)
+            fig2.savefig(fig2_path, dpi=150)
+            print(f"saved: {fig1_path}")
+            print(f"saved: {fig2_path}")
+            if fig3 is not None:
+                fig3_path = str(save_base) + "_yaw_rate.png"
+                fig3.savefig(fig3_path, dpi=150)
+                print(f"saved: {fig3_path}")
+    finally:
+        if close_figures:
+            plt.close(fig1)
+            plt.close(fig2)
+            if fig3 is not None:
+                plt.close(fig3)
 
 
 def _iter_batch_result_files(batch_root: Path) -> list[Path]:
-    files: list[Path] = []
-    for mm_dir in sorted(batch_root.glob("mm_*")):
-        if not mm_dir.is_dir():
-            continue
+    """Return all '*_statistics.npz' files under batch_root (recursive).
 
-        for f in sorted(mm_dir.glob("*_statistics.npz")):
-            if f.is_file():
-                files.append(f)
-
-    return files
+    This supports multiple result layouts, including:
+      - results/mm_*/... (legacy)
+      - results/eigen_sweep/mm_*/zeta_*/... (eigen stability sweep)
+      - results/*_statistics.npz (single-run outputs)
+    """
+    files = [p for p in batch_root.rglob("*_statistics.npz") if p.is_file()]
+    return sorted(files, key=lambda p: str(p))
 
 
 def parse_args() -> argparse.Namespace:
@@ -153,12 +168,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--file",
         default=None,
-        help="Path to one .npz results file. If omitted, process all files in --batch-root/mm_*/",
+        help=(
+            "Path to one .npz results file. If omitted, process all '*_statistics.npz' files "
+            "found under --batch-root (recursive)."
+        ),
     )
     parser.add_argument(
         "--batch-root",
         default=str(_default_batch_root()),
-        help="Batch results root containing mm_* subfolders (default: examples/controller_tests/results)",
+        help=(
+            "Batch results root (searched recursively) (default: examples/controller_tests/results)"
+        ),
     )
     parser.add_argument(
         "--last-n",
@@ -183,6 +203,13 @@ def main() -> None:
     args = parse_args()
     last_n = max(args.last_n, 1)
 
+    can_show = (not args.no_show) and (os.name == "nt" or os.environ.get("DISPLAY"))
+
+    # Force a non-interactive backend when not showing windows.
+    # Must happen before importing pyplot.
+    if not can_show:
+        matplotlib.use("Agg")
+
     if args.file:
         file_paths = [Path(args.file)]
     else:
@@ -193,7 +220,7 @@ def main() -> None:
         file_paths = _iter_batch_result_files(batch_root)
         if not file_paths:
             raise FileNotFoundError(
-                f"No '*_statistics.npz' files found in: {batch_root}/mm_*"
+                f"No '*_statistics.npz' files found under: {batch_root}"
             )
 
     for idx, file_path in enumerate(file_paths, start=1):
@@ -203,18 +230,24 @@ def main() -> None:
         print("\n" + "=" * 72)
         print(f"[{idx}/{len(file_paths)}] {file_path}")
 
-        data = np.load(file_path)
-        _required_keys(data, ["time", "p", "desired_p", "ep"])
-        _print_summary(data, last_n)
+        with np.load(file_path) as data:
+            _required_keys(data, ["time", "p", "desired_p", "ep"])
+            _print_summary(data, last_n)
 
-        save_prefix = args.save_prefix
-        if save_prefix is None and not args.file:
-            # In batch mode, save plots beside each source npz by default.
-            save_prefix = str(file_path.with_suffix(""))
+            save_prefix = args.save_prefix
+            if save_prefix is None and not args.file:
+                # In batch mode, save plots beside each source npz by default.
+                save_prefix = str(file_path.with_suffix(""))
 
-        _plot(data, title=file_path.name, save_prefix=save_prefix)
+            _plot(
+                data,
+                title=file_path.name,
+                save_prefix=save_prefix,
+                close_figures=not can_show,
+            )
 
-    if not args.no_show:
+    if can_show:
+        import matplotlib.pyplot as plt
         plt.show()
 
 

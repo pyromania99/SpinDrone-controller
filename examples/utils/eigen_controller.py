@@ -30,7 +30,7 @@ class EigenController(Backend):
         km=6.0e-7,
         mass=1.2,
         gravity=9.81,
-        kp_pos=0.10,
+        kp_pos=0.50,
         kd_pos=1.0,
         kp_z=15.0,
         kd_z=8.0,
@@ -39,9 +39,13 @@ class EigenController(Backend):
         Ixx=0.01,
         Iyy=0.01,
         Izz=0.02,
-        Kp_att=10.0,
+         # 10.0 to match the current values of cascaded pd
+         #  0.7 has been best so far for eigen 
+        Kp_att= 0.7,
         Kd_att=10.0,
         max_total_thrust=80.0,
+        wn_mdyn=7.0,
+        b_mdyn=8.0,
     ):
         super().__init__(config=None)
 
@@ -70,6 +74,8 @@ class EigenController(Backend):
 
         self.Kp_att = float(Kp_att)
         self.Kd_att = float(Kd_att)
+        self.wn_mdyn = float(wn_mdyn)
+        self.b_mdyn  = float(b_mdyn)
 
         self.max_total_thrust = float(max_total_thrust)
         self.hover_target = np.array(target_position, dtype=float)
@@ -98,6 +104,9 @@ class EigenController(Backend):
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
         self.desired_yaw_rate_over_time = []
+        self.thrust_over_time = []          # total thrust scalar [N]
+        self.torque_over_time = []          # [roll, pitch, yaw] torque [N·m]
+        self.motor_thrusts_over_time = []   # [u1, u2, u3, u4] per-motor force [N]
 
     def _sync_physical_params_from_vehicle(self):
         """Try to source mass/inertia from the vehicle model; keep defaults on failure."""
@@ -155,6 +164,9 @@ class EigenController(Backend):
             "eR": np.vstack(self.attitude_error_over_time),
             "yaw_rate": np.array(self.yaw_rate_over_time),
             "desired_yaw_rate": np.array(self.desired_yaw_rate_over_time),
+            "thrust": np.array(self.thrust_over_time),
+            "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
+            "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
         }
 
         np.savez(self.results_file, **statistics)
@@ -173,6 +185,9 @@ class EigenController(Backend):
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
         self.desired_yaw_rate_over_time = []
+        self.thrust_over_time = []
+        self.torque_over_time = []
+        self.motor_thrusts_over_time = []
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
@@ -288,8 +303,8 @@ class EigenController(Backend):
 
         M_dyn = np.array(
             [
-                [-7.0, -8.0, 0.0],
-                [ 8.0, -7.0, 0.0],
+                [-self.wn_mdyn, -self.b_mdyn, 0.0],
+                [ self.b_mdyn, -self.wn_mdyn, 0.0],
                 [0.0, 0.0, -self.beta],
             ]
         )
@@ -358,3 +373,6 @@ class EigenController(Backend):
         self.attitude_error_over_time.append(np.array([roll_error, pitch_error, 0.0]))
         self.yaw_rate_over_time.append(self.w[2])
         self.desired_yaw_rate_over_time.append(desired_yaw_rate)
+        self.thrust_over_time.append(total_thrust)
+        self.torque_over_time.append(tau.copy())
+        self.motor_thrusts_over_time.append(motor_thrusts.copy())
