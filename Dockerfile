@@ -10,6 +10,7 @@ USER root
 RUN apt-get update && apt-get install -y \
     git \
     nano \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the essential project files
@@ -23,11 +24,14 @@ RUN cd /workspace/spin-drone-controller/extensions/pegasus.simulator && \
     /isaac-sim/python.sh -m pip install -e .
 
 # Create a non-root user specifically for Devcontainer logic
-RUN groupadd -g 1000 container_user && \
-    useradd -u 1000 -g container_user -m -s /bin/bash container_user && \
+RUN useradd -m -s /bin/bash container_user && \
+    mkdir -p /etc/sudoers.d && \
+    echo "container_user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/container_user && \
+    chmod 0440 /etc/sudoers.d/container_user && \
     chown -R container_user:container_user /workspace
 
-USER container_user
+# DO NOT drop to USER container_user here! 
+# Let the Devcontainer runtime orchestrate the permission switch via "remoteUser"
 
 # Optional: Add any user setup or specific commands to launch the custom controller
 # For headless simulation execution:

@@ -2,7 +2,11 @@
     "name": "Pegasus | WSL Spin Drone Controller",
     "privileged": true,
     "remoteUser": "container_user",
-    "image": "ghcr.io/srindot/spindronecontroller:latest",
+    "updateRemoteUserUID": true,
+    "build": {
+        "dockerfile": "../../Dockerfile",
+        "context": "${localWorkspaceFolder}"
+    },
     "workspaceFolder": "/workspace/spin-drone-controller",
     "workspaceMount": "type=bind,source=${localWorkspaceFolder},target=/workspace/spin-drone-controller",
     "customizations": {
