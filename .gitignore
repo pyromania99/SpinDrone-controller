@@ -1,43 +1,98 @@
-# all folders starting with _ are local
-_build/
+# OS files
 .DS_Store
-**/.vscode/ipch
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*~
+.~*
+.NFS*
 
-# C++
-**/cmake-build*/
-**/build*/
-**/*.so
+# IDE and editor
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.code-workspace
 
 # Python
-**/*.egg-info/
-**/__pycache__/
-**/.pytest_cache/
-**/*.pyc
-**/*.pb
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.pyre/
+.python-version
+.mypy_cache/
+.python_env/
+venv/
+env/
+ENV/
+.venv/
+Pipfile.lock
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
 
-/.vs
-
-/app
-
-# Outputs
-**/output/*
-*.tmp
-**/runs/*
-**/logs/*
-**/*.dmp
-**/.thumbs
-
-# IDE
-**/.idea/
-**/.vscode/.**
-
-# Isaac-Sim packman
-_isaac_sim
-_repo
-_build
-.lastformat
+# Build artifacts
+build/
+cmake-build*/
+**/build*/
+**/cmake-build*/
+**/*.o
+**/*.obj
+**/*.so
+**/*.a
+**/*.lib
+**/*.dll
+**/*.dylib
+**/*.exe
+**/*.out
+**/*.lo
+**/*.la
+**/*.pch
+**/*.gch
+**/*.ipdb
+**/*.pdb
 
 # ROS 2
-build/
 install/
 log/
+
+# Documentation build outputs
+docs/_build/
+**/_build/
+**/htmlcov/
+
+# Project outputs
+output/
+runs/
+logs/
+*.log
+*.tmp
+*.dmp
+*.aux
+
+# Isaac-Sim packman
+_isaac_sim/
+_repo/
+_build/
+.lastformat
+
+# Local config
+/app
+/.vs
+**/.vscode/ipch
+**/.thumbs
