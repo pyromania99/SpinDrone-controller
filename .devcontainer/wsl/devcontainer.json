@@ -31,12 +31,14 @@
         }
     },
     "containerEnv": {
-        "DISPLAY": ":0",
+        "DISPLAY": "${localEnv:DISPLAY}",
         "QT_QPA_PLATFORM": "xcb",
         "NVIDIA_DRIVER_CAPABILITIES": "all",
         "NVIDIA_VISIBLE_DEVICES": "all",
         "LD_LIBRARY_PATH": "/usr/lib/wsl/lib",
-        "MESA_D3D12_DEFAULT_ADAPTER_NAME": "NVIDIA"
+        "MESA_D3D12_DEFAULT_ADAPTER_NAME": "NVIDIA",
+        "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY}",
+        "XDG_RUNTIME_DIR": "${localEnv:XDG_RUNTIME_DIR}"
     },
     "runArgs": [
         "--gpus=all",
@@ -45,13 +47,9 @@
         "--device=/dev/dxg",
         "-v", "/usr/lib/wsl:/usr/lib/wsl",
         "-v", "/mnt/wslg:/mnt/wslg",
-        "-e", "WAYLAND_DISPLAY=$WAYLAND_DISPLAY",
-        "-e", "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR",
-        "-e", "DISPLAY=${localEnv:DISPLAY}",
-        "-e", "QT_QPA_PLATFORM=xcb",
         "--volume=/tmp/.X11-unix:/tmp/.X11-unix"
     ],
-    "initializeCommand": "xhost +local:docker",
+    "initializeCommand": "command -v xhost >/dev/null 2>&1 && xhost +local:docker || true",
     "postCreateCommand": "",
     "features": {},
     "mounts": [

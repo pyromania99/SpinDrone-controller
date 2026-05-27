@@ -44,6 +44,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "utils"))
 from cascaded_pd_controller import CascadedPDController
 from nonlinear_controller import NonlinearController
 from eigen_controller import EigenController
+from lpv_mpc_controller import LPVMPCController
 
 # Auxiliary scipy module
 from scipy.spatial.transform import Rotation
@@ -166,6 +167,13 @@ def build_controller(controller_key: str, curr_dir: str):
             trajectory_file=None,  # Use built-in exponential trajectory
             results_file=curr_dir + "/results/eigen_statistics.npz",
 
+        ),
+        "mpc": lambda: LPVMPCController(
+            trajectory_file=None,
+            results_file=curr_dir + "/results/lpv_mpc_statistics.npz",
+            N=12,            # Horizon Window Length
+            q_weight=15.0,   # Tracking state weight
+            r_weight=0.02,   # Control energy optimization weight
         )
     }
 
@@ -177,7 +185,7 @@ def build_controller(controller_key: str, curr_dir: str):
 
 
 def main():
-    print("Available controllers: pd, nonlinear, eigen")
+    print("Available controllers: pd, nonlinear, eigen, mpc")
     selected_controller = input("Select controller: ").strip().lower()
 
     # Instantiate the template app

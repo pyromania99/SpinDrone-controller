@@ -1,39 +1,61 @@
-# Use NVIDIA Isaac Sim base image corresponding to version 5.1.0 
-# (You may need to verify the exact tag from the NVIDIA NGC registry depending on the host's driver version.)
-FROM nvcr.io/nvidia/isaac-sim:5.1.0
+# ---------------------------------------------------------------------------
+# Spinning Drone Controller — Isaac Sim Dev Image
+# ---------------------------------------------------------------------------
+# Base image: NVIDIA Isaac Sim 4.5 release (Pegasus 5.1.0 targets this tag).
+# Check https://catalog.ngc.nvidia.com/orgs/nvidia/containers/isaac-sim
+# for the latest tag before building.
+# ---------------------------------------------------------------------------
+FROM nvcr.io/nvidia/isaac-sim:4.5.0
 
-# Set the working directory inside the container
-WORKDIR /workspace/spin-drone-controller
+# Use bash explicitly so that shell expansions work correctly in RUN steps.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# It is good practice to install any system-level dependencies you might need here
+# ---------------------------------------------------------------------------
+# System-level dependencies
+# ---------------------------------------------------------------------------
 USER root
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     nano \
     sudo \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the essential project files
-COPY extensions/ /workspace/spin-drone-controller/extensions/
+# ---------------------------------------------------------------------------
+# Project workspace
+# ---------------------------------------------------------------------------
+# Copy the entire project so that examples/, trajectories/, and results/ are
+# available inside the container at build time.
+# The workspace folder is ALSO bind-mounted at runtime by devcontainer.json,
+# so live edits on the host are immediately reflected inside the container.
+WORKDIR /workspace/spin-drone-controller
+COPY . /workspace/spin-drone-controller/
 
-# Install the Python dependencies so they are baked into the Docker image
-# The pip in /isaac-sim/python.sh is configured to work with the omniverse libraries
-# Pegasus Simulator requires ISAACSIM_PATH to be explicitly set
+# ---------------------------------------------------------------------------
+# Python dependencies (baked into the image)
+# ---------------------------------------------------------------------------
+# ISAACSIM_PATH must be set so that Pegasus setup.py can locate the Kit app
+# config file (isaacsim.exp.base.kit) for patching.
 ENV ISAACSIM_PATH=/isaac-sim
 RUN cd /workspace/spin-drone-controller/extensions/pegasus.simulator && \
-    /isaac-sim/python.sh -m pip install -e .
+    /isaac-sim/python.sh -m pip install --no-cache-dir -e .
 
-# Create a non-root user specifically for Devcontainer logic
+# ---------------------------------------------------------------------------
+# Non-root container user (used by the Dev Container "remoteUser" setting)
+# ---------------------------------------------------------------------------
 RUN useradd -m -s /bin/bash container_user && \
     mkdir -p /etc/sudoers.d && \
     echo "container_user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/container_user && \
     chmod 0440 /etc/sudoers.d/container_user && \
     chown -R container_user:container_user /workspace
 
-# DO NOT drop to USER container_user here! 
-# Let the Devcontainer runtime orchestrate the permission switch via "remoteUser"
+# DO NOT switch to container_user here.
+# The Dev Container runtime handles the user switch via the "remoteUser" field
+# in devcontainer.json, which also ensures UID mapping to your host user.
 
-# Optional: Add any user setup or specific commands to launch the custom controller
-# For headless simulation execution:
+# ---------------------------------------------------------------------------
+# Default entrypoint (override at runtime or via devcontainer.json)
+# ---------------------------------------------------------------------------
+# For headless simulation, uncomment and adjust the CMD below:
 # ENTRYPOINT ["/isaac-sim/python.sh"]
-# CMD ["src/my_spinning_drone_controller.py"]
+# CMD ["/workspace/spin-drone-controller/examples/4_python_single_vehicle.py"]

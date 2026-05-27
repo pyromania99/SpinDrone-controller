@@ -1,5 +1,5 @@
 {
-    "name": "Pegasus | Spin Drone Controller",
+    "name": "Pegasus | Spin Drone Controller (Linux)",
     "privileged": true,
     "remoteUser": "container_user",
     "updateRemoteUserUID": true,
@@ -17,27 +17,27 @@
                 "esbenp.prettier-vscode",
                 "eamodio.gitlens",
                 "ms-iot.vscode-ros",
-                "ms-toolsai.jupyter",              
-                "mechatroner.rainbow-csv",         
-                "ms-azuretools.vscode-docker",     
-                "twxs.cmake",                      
-                "ms-vscode.cmake-tools",          
-                "redhat.vscode-yaml",             
-                "smilerobotics.urdf",             
-                "betwo.b2-catkin-tools",          
-                "zachflower.uncrustify",          
-                "ms-python.vscode-pylance" 
+                "ms-toolsai.jupyter",
+                "mechatroner.rainbow-csv",
+                "ms-azuretools.vscode-docker",
+                "twxs.cmake",
+                "ms-vscode.cmake-tools",
+                "redhat.vscode-yaml",
+                "smilerobotics.urdf",
+                "betwo.b2-catkin-tools",
+                "zachflower.uncrustify",
+                "ms-python.vscode-pylance"
             ]
         }
     },
     "containerEnv": {
-        "DISPLAY": ":0",
+        "DISPLAY": "${localEnv:DISPLAY}",
         "QT_QPA_PLATFORM": "xcb",
-        "NVIDIA_DRIVER_CAPABILITIES": "all", // Remove this Lines If you don't have a Nvida Card
-        "NVIDIA_VISIBLE_DEVICES": "all"      // Remove this Lines If you don't have a Nvida Card
+        "NVIDIA_DRIVER_CAPABILITIES": "all",
+        "NVIDIA_VISIBLE_DEVICES": "all"
     },
     "runArgs": [
-        "--gpus=all", // Remove this Lines If you don't have a Nvida Card
+        "--gpus=all",
         "--privileged",
         "-e", "DISPLAY=${localEnv:DISPLAY}",
         "-e", "QT_QPA_PLATFORM=xcb",
