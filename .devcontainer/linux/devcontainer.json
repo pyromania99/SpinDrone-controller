@@ -1,56 +1,92 @@
 {
-    "name": "Pegasus | Spin Drone Controller (Linux)",
+    "name": "Pegasus | Spin Drone Controller",
+
     "privileged": true,
+
     "remoteUser": "container_user",
     "updateRemoteUserUID": true,
+
     "build": {
-        "dockerfile": "../../Dockerfile",
-        "context": "${localWorkspaceFolder}"
+        "dockerfile": "../Dockerfile",
+        "context": ".."
     },
+
     "workspaceFolder": "/workspace/spin-drone-controller",
+
     "workspaceMount": "type=bind,source=${localWorkspaceFolder},target=/workspace/spin-drone-controller",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "ms-vscode.cpptools",
-                "ms-python.python",
-                "esbenp.prettier-vscode",
-                "eamodio.gitlens",
-                "ms-iot.vscode-ros",
-                "ms-toolsai.jupyter",
-                "mechatroner.rainbow-csv",
-                "ms-azuretools.vscode-docker",
-                "twxs.cmake",
-                "ms-vscode.cmake-tools",
-                "redhat.vscode-yaml",
-                "smilerobotics.urdf",
-                "betwo.b2-catkin-tools",
-                "zachflower.uncrustify",
-                "ms-python.vscode-pylance"
-            ]
-        }
-    },
+
     "containerEnv": {
         "DISPLAY": "${localEnv:DISPLAY}",
         "QT_QPA_PLATFORM": "xcb",
         "NVIDIA_DRIVER_CAPABILITIES": "all",
-        "NVIDIA_VISIBLE_DEVICES": "all"
+        "NVIDIA_VISIBLE_DEVICES": "all",
+        "OMNI_USER_CACHE_DIR": "/isaac-cache/kit",
+        "OMNI_DATA_DIR": "/isaac-cache/ov"
     },
+
     "runArgs": [
         "--gpus=all",
+        "--network=host",
+
+        "--ipc=host",
+
         "--privileged",
-        "-e", "DISPLAY=${localEnv:DISPLAY}",
-        "-e", "QT_QPA_PLATFORM=xcb",
-        "--volume=/tmp/.X11-unix:/tmp/.X11-unix"
+
+        "-e",
+        "DISPLAY=${localEnv:DISPLAY}",
+
+        "-e",
+        "QT_QPA_PLATFORM=xcb",
+
+        "-v",
+        "/tmp/.X11-unix:/tmp/.X11-unix"
     ],
-    "initializeCommand": "xhost +local:docker",
-    "postCreateCommand": "",
-    "features": {},
+
     "mounts": [
-        {
-            "type": "bind",
-            "source": "${localWorkspaceFolder}/.vscode",
-            "target": "${containerWorkspaceFolder}/.vscode"
+        "source=isaac-kit-cache,target=/isaac-cache/kit,type=volume",
+        "source=isaac-ov-cache,target=/isaac-cache/ov,type=volume",
+
+        "type=bind,source=${localWorkspaceFolder}/.vscode,target=/workspace/spin-drone-controller/.vscode"
+    ],
+
+    "initializeCommand": "xhost +local:docker",
+
+    "postCreateCommand": "",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter",
+
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "twxs.cmake",
+
+                "ms-iot.vscode-ros",
+                "betwo.b2-catkin-tools",
+                "smilerobotics.urdf",
+
+                "redhat.vscode-yaml",
+                "eamodio.gitlens",
+                "ms-azuretools.vscode-docker",
+                "mechatroner.rainbow-csv",
+                "esbenp.prettier-vscode"
+            ],
+
+            "settings": {
+                "python.defaultInterpreterPath": "/isaac-sim/python.sh",
+
+                "python.analysis.extraPaths": [
+                    "/isaac-sim/exts",
+                    "/workspace/spin-drone-controller"
+                ],
+
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
         }
-    ]
+    },
+
+    "features": {}
 }
