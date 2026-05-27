@@ -19,6 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     sudo \
     wget \
+    python3-pip \
+    python3-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
