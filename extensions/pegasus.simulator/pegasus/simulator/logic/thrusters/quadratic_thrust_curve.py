@@ -34,7 +34,7 @@ class QuadraticThrustCurve(ThrustCurve):
 
         # Scalar motor_moment can be provided via config; default matches
         # the original hard-coded value used in this implementation.
-        self._motor_moment = config.get("motor_moment", 2.7e-7)
+        self._motor_moment = config.get("motor_moment", 6.0e-7)
         # The rotor constant used for computing the total thrust produced by the rotor: T = rotor_constant * omega^2
         self._rotor_constant = config.get("rotor_constant", [8.54858e-6, 8.54858e-6, 8.54858e-6, 8.54858e-6])
         assert len(self._rotor_constant) == self._num_rotors

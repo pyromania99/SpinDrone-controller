@@ -27,7 +27,7 @@ class CascadedPDController(Backend):
         trajectory_file: str = None,
         results_file: str = None,
         target_position=(0.0, 0.0, 1.5),
-        Kp_xy=(0.10, 0.10),
+        Kp_xy=(0.50, 0.50),
         Kd_xy=(1.0, 1.0),
         Kp_z=15.0,
         Kd_z=8.0,

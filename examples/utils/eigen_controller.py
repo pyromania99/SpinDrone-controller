@@ -44,8 +44,8 @@ class EigenController(Backend):
         Kp_att= 0.7,
         Kd_att=10.0,
         max_total_thrust=80.0,
-        wn_mdyn=7.0,
-        b_mdyn=8.0,
+        wn_mdyn=2.0,
+        b_mdyn=2.0,
     ):
         super().__init__(config=None)
 
