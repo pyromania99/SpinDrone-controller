@@ -84,6 +84,7 @@ class EigenController(Backend):
 
         self.total_time = 0.0
         self.received_first_state = False
+        self._first_update = True
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
@@ -162,6 +163,8 @@ class EigenController(Backend):
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
         }
 
+        import os
+        os.makedirs(os.path.dirname(self.results_file), exist_ok=True)
         np.savez(self.results_file, **statistics)
         carb.log_warn("Eigen Controller Statistics saved to: " + self.results_file)
         self.reset_statistics()
@@ -186,6 +189,7 @@ class EigenController(Backend):
         self.prev_error_world_y = 0.0
         self.prev_roll_error = 0.0
         self.prev_pitch_error = 0.0
+        self._first_update = True
 
     def update_sensor(self, sensor_type: str, data): pass
     def update_graphical_sensor(self, sensor_type: str, data): pass
@@ -237,6 +241,14 @@ class EigenController(Backend):
         roll, pitch, yaw = self._euler_from_quat_xyzw(self.q)
 
         pos_error_world = target_pos - self.p
+
+        # On the very first step, seed prev_error from current error so that the
+        # finite-difference derivative is zero rather than (error - 0) / dt,
+        # which would produce an enormous phantom velocity spike at t=0.
+        if self._first_update:
+            self.prev_error_world_x = pos_error_world[0]
+            self.prev_error_world_y = pos_error_world[1]
+
         error_rate_world_x = (pos_error_world[0] - self.prev_error_world_x) / dt_safe
         error_rate_world_y = (pos_error_world[1] - self.prev_error_world_y) / dt_safe
         self.prev_error_world_x = pos_error_world[0]
@@ -261,6 +273,12 @@ class EigenController(Backend):
         pitch_error = desired_pitch - pitch
 
         p, q, r = self.w[0], self.w[1], self.w[2]
+
+        # Seed attitude prev_errors on the first step for the same reason as above.
+        if self._first_update:
+            self.prev_roll_error  = roll_error
+            self.prev_pitch_error = pitch_error
+            self._first_update = False
 
         pitch_error_rate = (pitch_error - self.prev_pitch_error) / dt_safe
         roll_error_rate = (roll_error - self.prev_roll_error) / dt_safe
@@ -313,7 +331,8 @@ class EigenController(Backend):
         u3 = base_thrust + altitude_correction + roll_correction - pitch_correction
         u4 = base_thrust + altitude_correction - roll_correction - pitch_correction
 
-        motor_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
+        # Cap individual motor thrusts to physical reality (they can't exceed max_total_thrust individually)
+        motor_thrusts = np.clip(np.array([u1, u2, u3, u4]), 0.0, self.max_total_thrust)
         total_thrust = float(np.clip(np.sum(motor_thrusts), 0.0, self.max_total_thrust))
         tau = np.array([roll_correction, pitch_correction, 0.0])
 

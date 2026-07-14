@@ -110,6 +110,7 @@ class LPVMPCController(Backend):
 
         self.total_time = 0.0
         self.received_first_state = False
+        self._first_update = True
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
 
@@ -118,6 +119,7 @@ class LPVMPCController(Backend):
         self.position_over_time = []
         self.desired_position_over_time = []
         self.position_error_over_time = []
+        self.yaw_rate_over_time = []
         self.thrust_over_time = []          
         self.torque_over_time = []          
         self.motor_thrusts_over_time = []   
@@ -138,10 +140,13 @@ class LPVMPCController(Backend):
             "p": np.vstack(self.position_over_time),
             "desired_p": np.vstack(self.desired_position_over_time),
             "ep": np.vstack(self.position_error_over_time),
+            "yaw_rate": np.array(self.yaw_rate_over_time),
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
         }
+        import os
+        os.makedirs(os.path.dirname(self.results_file), exist_ok=True)
         np.savez(self.results_file, **statistics)
         carb.log_warn("MPC Statistics saved to: " + self.results_file)
         self.reset_statistics()
@@ -154,11 +159,13 @@ class LPVMPCController(Backend):
         self.position_over_time = []
         self.desired_position_over_time = []
         self.position_error_over_time = []
+        self.yaw_rate_over_time = []
         self.thrust_over_time = []
         self.torque_over_time = []
         self.motor_thrusts_over_time = []
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
+        self._first_update = True
 
     def update_sensor(self, sensor_type: str, data): pass
     def update_graphical_sensor(self, sensor_type: str, data): pass
@@ -210,6 +217,12 @@ class LPVMPCController(Backend):
 
         # ---- Outer Loop Position PID Loop ----
         pos_error_world = target_pos - self.p
+        
+        if self._first_update:
+            self.prev_error_world_x = pos_error_world[0]
+            self.prev_error_world_y = pos_error_world[1]
+            self.prev_error_world_z = pos_error_world[2]
+            self._first_update = False
         
         # 1. Update Integrals using rectangular integration
         self.pos_int_world += pos_error_world * dt_safe
@@ -333,6 +346,7 @@ class LPVMPCController(Backend):
         self.position_over_time.append(self.p.copy())
         self.desired_position_over_time.append(target_pos.copy())
         self.position_error_over_time.append(pos_error_world.copy())
+        self.yaw_rate_over_time.append(self.w[2])
         self.thrust_over_time.append(total_thrust)
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())

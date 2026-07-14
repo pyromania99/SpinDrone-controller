@@ -21,8 +21,8 @@ class CascadedPDController(Backend):
         trajectory_file: str = None,
         results_file: str = None,
         target_position=(0.0, 0.0, 1.5),
-        Kp_xy=(0.50, 0.50),
-        Kd_xy=(1.0, 1.0),
+        Kp_xy=(20.0, 20.0),
+        Kd_xy=(0.0, 0.0),
         Kp_z=15.0,
         Kd_z=8.0,
         Kp_att=(0.65, 0.65),
@@ -74,6 +74,7 @@ class CascadedPDController(Backend):
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
         self.prev_error_world_z = 0.0
+        self._first_update = True
 
         self.log_yaw_rate = log_yaw_rate
         self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
@@ -125,6 +126,8 @@ class CascadedPDController(Backend):
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
         }
 
+        import os
+        os.makedirs(os.path.dirname(self.results_file), exist_ok=True)
         np.savez(self.results_file, **statistics)
         carb.log_warn("Cascaded PD Statistics saved to: " + self.results_file)
         self.reset_statistics()
@@ -151,6 +154,7 @@ class CascadedPDController(Backend):
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
         self.prev_error_world_z = 0.0
+        self._first_update = True
 
     def update_sensor(self, sensor_type: str, data): pass
     def update_graphical_sensor(self, sensor_type: str, data): pass
@@ -191,6 +195,12 @@ class CascadedPDController(Backend):
         p_ref, _, _ = self._reference_from_trajectory()
 
         e_p = p_ref - self.p
+
+        if self._first_update:
+            self.prev_error_world_x = e_p[0]
+            self.prev_error_world_y = e_p[1]
+            self.prev_error_world_z = e_p[2]
+            self._first_update = False
 
         error_rate_world_x = (e_p[0] - self.prev_error_world_x) / dt_safe
         error_rate_world_y = (e_p[1] - self.prev_error_world_y) / dt_safe

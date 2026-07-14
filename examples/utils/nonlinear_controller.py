@@ -150,6 +150,8 @@ class NonlinearController(Backend):
         statistics["yaw_rate"] = np.array(self.yaw_rate_over_time)
         statistics["desired_yaw_rate"] = np.array(self.desired_yaw_rate_over_time)
         statistics["desired_body_z_rate"] = np.array(self.desired_body_z_rate_over_time)
+        import os
+        os.makedirs(os.path.dirname(self.results_files), exist_ok=True)
         np.savez(self.results_files, **statistics)
         carb.log_warn("Statistics saved to: " + self.results_files)
 
