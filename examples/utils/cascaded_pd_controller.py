@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 """
 | File: cascaded_pd_controller.py
-| Description: Cascaded PD controller backend with built-in statistics logging 
-|              for tracking error and motor energy consumption analysis.
+| Description: Simple cascaded PD controller backend for Pegasus multirotors.
+|
+| This controller is inspired by the MuJoCo script-based controller pattern:
+| 1) Outer loop (position PD) computes desired translational acceleration.
+| 2) Middle conversion maps desired translational force to a desired attitude.
+| 3) Inner loop (attitude PD) tracks roll/pitch and outputs body torques.
+|
+| Yaw heading is held from current attitude and damped in yaw-rate.
 """
 
 import carb
@@ -14,20 +20,20 @@ from pegasus.simulator.logic.state import State
 
 
 class CascadedPDController(Backend):
-    """Simple cascaded PD controller with rotation-based attitude mapping and metrics logging."""
+    """Simple cascaded PD controller with rotation-based attitude mapping."""
 
     def __init__(
         self,
         trajectory_file: str = None,
         results_file: str = None,
         target_position=(0.0, 0.0, 1.5),
-        Kp_xy=(20.0, 20.0),
-        Kd_xy=(0.0, 0.0),
+        Kp_xy=(0.50, 0.50),
+        Kd_xy=(1.0, 1.0),
         Kp_z=15.0,
         Kd_z=8.0,
-        Kp_att=(0.65, 0.65),
-        Kd_att=(10.0, 10.0),
-        Kd_yaw_rate=0.2,
+        Kp_att=(20, 20),
+        Kd_att=(0.5, 0.5),
+        Kd_yaw_rate=0.0,
         mass=1.50,
         gravity=9.81,
         max_tilt_deg=30.0,
@@ -74,13 +80,11 @@ class CascadedPDController(Backend):
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
         self.prev_error_world_z = 0.0
-        self._first_update = True
 
         self.log_yaw_rate = log_yaw_rate
         self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
         self._last_yaw_rate_log_time = -1.0
 
-        # ---- Statistics Logging Infrastructure ----
         self.results_file = results_file
         self.time_vector = []
         self.position_over_time = []
@@ -90,12 +94,12 @@ class CascadedPDController(Backend):
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
         self.desired_yaw_rate_over_time = []
-        
-        # New energy tracking variables to support full pipeline comparison
-        self.thrust_over_time = []          # Total lumped thrust scalar [N]
-        self.torque_over_time = []          # [roll, pitch, yaw] allocation [N·m]
-        self.motor_thrusts_over_time = []   # [u1, u2, u3, u4] forces per rotor [N]
 
+        # Reset new energy arrays
+        self.thrust_over_time = []
+        self.torque_over_time = []
+        self.motor_thrusts_over_time = []
+        
     @staticmethod
     def read_trajectory_from_csv(file_name: str):
         return np.genfromtxt(file_name, delimiter=",")
@@ -108,10 +112,12 @@ class CascadedPDController(Backend):
         self.reset_statistics()
 
     def stop(self):
-        if self.results_file is None or len(self.time_vector) == 0:
+        if self.results_file is None:
             return
 
-        # Upgraded to output a complete map matching the evaluation script schema
+        if len(self.time_vector) == 0:
+            return
+
         statistics = {
             "time": np.array(self.time_vector),
             "p": np.vstack(self.position_over_time),
@@ -124,12 +130,11 @@ class CascadedPDController(Backend):
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
+        
         }
 
-        import os
-        os.makedirs(os.path.dirname(self.results_file), exist_ok=True)
         np.savez(self.results_file, **statistics)
-        carb.log_warn("Cascaded PD Statistics saved to: " + self.results_file)
+        carb.log_warn("Statistics saved to: " + self.results_file)
         self.reset_statistics()
 
     def reset_statistics(self):
@@ -144,21 +149,25 @@ class CascadedPDController(Backend):
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
         self.desired_yaw_rate_over_time = []
-        
+        self._last_yaw_rate_log_time = -1.0
+
+        self.prev_error_world_x = 0.0
+        self.prev_error_world_y = 0.0
+        self.prev_error_world_z = 0.0
+
         # Reset new energy arrays
         self.thrust_over_time = []
         self.torque_over_time = []
         self.motor_thrusts_over_time = []
-        
-        self._last_yaw_rate_log_time = -1.0
-        self.prev_error_world_x = 0.0
-        self.prev_error_world_y = 0.0
-        self.prev_error_world_z = 0.0
-        self._first_update = True
 
-    def update_sensor(self, sensor_type: str, data): pass
-    def update_graphical_sensor(self, sensor_type: str, data): pass
-    def reset(self): pass
+    def update_sensor(self, sensor_type: str, data):
+        pass
+
+    def update_graphical_sensor(self, sensor_type: str, data):
+        pass
+
+    def reset(self):
+        pass
 
     def update_state(self, state: State):
         self.p = state.position
@@ -182,7 +191,13 @@ class CascadedPDController(Backend):
             self.index += 1
 
         row = self.trajectory[self.index]
+
         p_ref = np.array([row[1], row[2], row[3]])
+        if row.shape[0] >= 7:
+            v_ref = np.array([row[4], row[5], row[6]])
+        if row.shape[0] >= 10:
+            a_ref = np.array([row[7], row[8], row[9]])
+
         return p_ref, v_ref, a_ref
 
     def update(self, dt: float):
@@ -194,13 +209,8 @@ class CascadedPDController(Backend):
 
         p_ref, _, _ = self._reference_from_trajectory()
 
+        # Match Eigen outer loop: PD on world-position error and its numerical derivative.
         e_p = p_ref - self.p
-
-        if self._first_update:
-            self.prev_error_world_x = e_p[0]
-            self.prev_error_world_y = e_p[1]
-            self.prev_error_world_z = e_p[2]
-            self._first_update = False
 
         error_rate_world_x = (e_p[0] - self.prev_error_world_x) / dt_safe
         error_rate_world_y = (e_p[1] - self.prev_error_world_y) / dt_safe
@@ -217,13 +227,18 @@ class CascadedPDController(Backend):
             ]
         )
 
+        # Keep z-channel consistent with Eigen's altitude damping term.
         a_z_des = self.Kp_z * e_p[2] - self.Kd_z * self.v[2]
 
+        # Enforce max tilt in a rotation-consistent way by clamping lateral acceleration
+        # magnitude to g*tan(max_tilt), independent of current yaw.
         max_lat_acc = self.g * np.tan(self.max_tilt)
         lat_acc_norm = np.linalg.norm(acc_xy_des)
         if lat_acc_norm > max_lat_acc and lat_acc_norm > 1e-6:
             acc_xy_des = acc_xy_des * (max_lat_acc / lat_acc_norm)
 
+        # Build the desired force in world frame. Computing attitude from this vector
+        # is more robust than manual roll/pitch sign mappings across frame conventions.
         F_des = self.m * np.array([acc_xy_des[0], acc_xy_des[1], self.g + a_z_des])
         F_des_norm = np.linalg.norm(F_des)
         if F_des_norm < 1e-6:
@@ -232,6 +247,7 @@ class CascadedPDController(Backend):
 
         Z_b_des = F_des / F_des_norm
 
+        # Keep current yaw as heading reference while controlling only roll/pitch.
         _, _, yaw = self.R.as_euler("xyz", degrees=False)
         X_c_des = np.array([np.cos(yaw), np.sin(yaw), 0.0])
         Y_tmp = np.cross(Z_b_des, X_c_des)
@@ -240,6 +256,9 @@ class CascadedPDController(Backend):
             X_c_des = np.array([1.0, 0.0, 0.0])
             Y_tmp = np.cross(Z_b_des, X_c_des)
             Y_tmp_norm = np.linalg.norm(Y_tmp)
+            if Y_tmp_norm < 1e-6:
+                Y_tmp = np.array([0.0, 1.0, 0.0])
+                Y_tmp_norm = 1.0
 
         Y_b_des = Y_tmp / Y_tmp_norm
         X_b_des = np.cross(Y_b_des, Z_b_des)
@@ -248,7 +267,9 @@ class CascadedPDController(Backend):
         Z_B = self.R.as_matrix()[:, 2]
         u_1 = np.clip(F_des @ Z_B, self.min_total_thrust, self.max_total_thrust)
 
+        # Inner-loop attitude PD: control roll/pitch with yaw-rate damping.
         R_cur = self.R.as_matrix()
+
         e_R = 0.5 * self.vee((R_des.T @ R_cur) - (R_cur.T @ R_des))
 
         tau_x = -self.Kp_att[0] * e_R[0] - self.Kd_att[0] * self.w[0]
@@ -256,40 +277,41 @@ class CascadedPDController(Backend):
         tau_z = -self.Kd_yaw_rate * self.w[2]
         tau = np.array([tau_x, tau_y, tau_z])
 
-        # Convert forces and torques to output signal velocities using mixing configurations
         if self.vehicle:
             self.input_ref = self.vehicle.force_and_torques_to_velocities(u_1, tau)
-
-        # ---- Capture Per-Motor Thrust Vectors via the Vehicle Allocation API ----
-        # Standard configuration maps total vertical force and body-fixed torques back to individual blades.
-        # This replicates the exact logic the simulator utilizes downstream to render rotor states.
         base_thrust = u_1 / 4.0
         u1 = base_thrust - tau_x + tau_y
         u2 = base_thrust + tau_x + tau_y
         u3 = base_thrust + tau_x - tau_y
         u4 = base_thrust - tau_x - tau_y
         motor_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
+        
+        self.thrust_over_time.append(u_1)
+        self.torque_over_time.append(tau.copy())
+        self.motor_thrusts_over_time.append(motor_thrusts.copy())
 
-        # ---- Append Trace Values ----
         self.time_vector.append(self.total_time)
         self.position_over_time.append(self.p.copy())
         self.desired_position_over_time.append(p_ref.copy())
         self.position_error_over_time.append(e_p.copy())
-        
         desired_roll, desired_pitch, desired_yaw = Rotation.from_matrix(R_des).as_euler("xyz", degrees=False)
+        desired_roll = np.clip(desired_roll, -self.max_tilt, self.max_tilt)
+        desired_pitch = np.clip(desired_pitch, -self.max_tilt, self.max_tilt)
         self.desired_angles_over_time.append(np.array([desired_roll, desired_pitch, desired_yaw]))
         self.attitude_error_over_time.append(e_R.copy())
         self.yaw_rate_over_time.append(self.w[2])
         self.desired_yaw_rate_over_time.append(0.0)
-        
-        # Save Newly Logged Statistics Parameters
-        self.thrust_over_time.append(u_1)
-        self.torque_over_time.append(tau.copy())
-        self.motor_thrusts_over_time.append(motor_thrusts.copy())
 
         if self.log_yaw_rate and self.yaw_rate_log_period >= 0.0:
             should_log = self._last_yaw_rate_log_time < 0.0
             if not should_log:
                 should_log = (self.total_time - self._last_yaw_rate_log_time) >= self.yaw_rate_log_period
+
             if should_log:
+                carb.log_info(
+                    "[YawRate] "
+                    f"t={self.total_time:7.3f}s "
+                    f"w_z={self.w[2]:+7.4f} rad/s "
+                    "ref=+0.0000 rad/s"
+                )
                 self._last_yaw_rate_log_time = self.total_time
