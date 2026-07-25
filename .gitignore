@@ -11,6 +11,7 @@ $RECYCLE.BIN/
 .NFS*
 
 # IDE and editor
+.claude/
 .vscode/
 .vscode/browse.vc.db
 .vscode/*.vc.db
@@ -86,6 +87,11 @@ logs/
 *.tmp
 *.dmp
 *.aux
+
+# Generated results (sweep archives, telemetry .npz, plots, dashboards) —
+# any "results" directory anywhere in the repo, not just one path, so new
+# sweep output dirs (e.g. results/eigen_explore/) are covered automatically.
+**/results/
 
 # Isaac-Sim packman
 _isaac_sim/
