@@ -11,12 +11,21 @@
 | Yaw heading is held from current attitude and damped in yaw-rate.
 """
 
+import sys
+from pathlib import Path
+
 import carb
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 from pegasus.simulator.logic.backends import Backend
 from pegasus.simulator.logic.state import State
+
+# Sibling module in examples/utils. The sweeps put this directory on sys.path
+# before importing the controller; the insert keeps a direct import working too.
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from applied_thrust import applied_rotor_forces
 
 
 class CascadedPDController(Backend):
@@ -31,8 +40,8 @@ class CascadedPDController(Backend):
         Kd_xy=(1.0, 1.0),
         Kp_z=15.0,
         Kd_z=8.0,
-        Kp_att=(20, 20),
-        Kd_att=(0.5, 0.5),
+        Kp_att=(32.3, 32.3),
+        Kd_att=(1.9,1.9),
         Kd_yaw_rate=0.0,
         mass=1.50,
         gravity=9.81,
@@ -108,7 +117,32 @@ class CascadedPDController(Backend):
     def vee(S):
         return np.array([-S[1, 2], S[0, 2], -S[0, 1]])
 
+    def _sync_physical_params_from_vehicle(self):
+        """Try to source mass from the vehicle model; keep the constructor
+        default on failure. Mirrors EigenController's sync so both
+        controllers use the same real vehicle mass for their feedforward
+        gravity term instead of two different hardcoded assumptions."""
+        if self.vehicle is None:
+            return
+
+        try:
+            stage_prefix = getattr(self.vehicle, "_stage_prefix", "")
+            body_path = stage_prefix + "/body"
+
+            body_prim = self.vehicle._current_stage.GetPrimAtPath(body_path)
+            if not body_prim or not body_prim.IsValid():
+                return
+
+            mass_attr = body_prim.GetAttribute("physics:mass")
+            if mass_attr and mass_attr.HasAuthoredValueOpinion():
+                mass_value = mass_attr.Get()
+                if mass_value is not None and mass_value > 0.0:
+                    self.m = float(mass_value)
+        except Exception as error:
+            carb.log_warn(f"[CascadedPDController] Could not sync mass from vehicle model: {error}")
+
     def start(self):
+        self._sync_physical_params_from_vehicle()
         self.reset_statistics()
 
     def stop(self):
@@ -277,16 +311,22 @@ class CascadedPDController(Backend):
         tau_z = -self.Kd_yaw_rate * self.w[2]
         tau = np.array([tau_x, tau_y, tau_z])
 
+        # motor_thrusts logs what the vehicle ACTUALLY applies. The previous
+        # reconstruction (base_thrust ∓ tau_x ± tau_y, floored at 0 with no
+        # upper bound) logged values as large as 3.6e5 N — a quantity the
+        # simulator never produced, since the allocator saturates by scaling
+        # all rotors together at a true per-rotor ceiling of 10.34 N. Logging
+        # it unbounded here while EigenController bounded its own at 80 N also
+        # biased every effort comparison between the two controllers.
+        # See examples/utils/applied_thrust.py.
         if self.vehicle:
             self.input_ref = self.vehicle.force_and_torques_to_velocities(u_1, tau)
-        base_thrust = u_1 / 4.0
-        u1 = base_thrust - tau_x + tau_y
-        u2 = base_thrust + tau_x + tau_y
-        u3 = base_thrust + tau_x - tau_y
-        u4 = base_thrust - tau_x - tau_y
-        motor_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
-        
-        self.thrust_over_time.append(u_1)
+            motor_thrusts = applied_rotor_forces(self.vehicle, self.input_ref)
+        else:
+            motor_thrusts = np.zeros(4)
+
+        # Applied total, consistent with motor_thrusts (u_1 is the command).
+        self.thrust_over_time.append(float(np.sum(motor_thrusts)))
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())
 

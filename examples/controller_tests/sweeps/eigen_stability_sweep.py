@@ -27,17 +27,17 @@ Stability score: future-biased mean ‖position error‖
 Lower score = better.  OOB drones score ∞.
 
 Usage:
-isaac_run examples/controller_tests/eigen_stability_sweep.py \\
+isaac_run examples/controller_tests/sweeps/eigen_stability_sweep.py \\
     --motor-moments 1e-7 2.7e-7 4e-7 \\
     --omega-n-values 2 4 6 8 10 12 \\
     --zeta-values 0.7 1.0 1.3 \\
     --duration 15
 
-isaac_run examples/controller_tests/eigen_stability_sweep.py \
+isaac_run examples/controller_tests/sweeps/eigen_stability_sweep.py \
     --a-values 2 4 6 8 10 \
     --b-values 0 2 4 6 8 10 \
     --motor-moments 1e-7 2.7e-7 4e-7 \
-    --duration 15 \
+    --duration 25 \
 
 Outputs (per motor_moment):
     results/eigen_sweep/mm_<km>/score_plot.png                      (single zeta mode)
@@ -74,7 +74,7 @@ def parse_args():
     )
     p.add_argument(
         "--motor-moments", nargs="+", type=float,
-        default=[1e-7, 2.7e-7, 4e-7],
+        default=[1e-7 , 2.0e-7, 2.7e-7, 4e-7],
         help="km (motor moment) values to sweep — outer serial loop",
     )
     p.add_argument(
@@ -103,17 +103,56 @@ def parse_args():
              "inner serial loop over b, parallel over a. "
              "Example: --b-values 0 2 4 6",
     )
+    # ── Direct (Kp_att, Kd_att) sweep at fixed M_dyn ─────────────────────────
+    # Mirror of ab-sweep for the OTHER gene pair: sweeps the outer attitude
+    # gains while wn_mdyn/b_mdyn are pinned (--fixed-wn / --fixed-b), so the
+    # pure Kp_att/Kd_att effect can be read without M_dyn confounding it — the
+    # causal complement to the ab-sweep's "wn,b at fixed Kp,Kd".
+    p.add_argument(
+        "--kp-values", nargs="+", type=float, default=None,
+        help="Kp_att values to sweep — activates kpkd-sweep mode. "
+             "Drones are spawned one-per-Kp (parallel). Example: --kp-values 2 3 4 5",
+    )
+    p.add_argument(
+        "--kd-values", nargs="+", type=float, default=None,
+        help="Kd_att values to sweep in kpkd-sweep mode — inner serial loop. "
+             "Example: --kd-values 1 3 5 7 9 11",
+    )
+    p.add_argument(
+        "--fixed-wn", type=float, default=18.0,
+        help="wn_mdyn held fixed during kpkd-sweep (default: stable-basin optimum)",
+    )
+    p.add_argument(
+        "--fixed-b", type=float, default=10.2,
+        help="b_mdyn held fixed during kpkd-sweep (default: stable-basin optimum)",
+    )
     # ────────────────────────────────────────────────────────────────────────
+    # Pinned attitude gains. These defaults are a known-bad operating point:
+    # mapping the (a, b) plane at Kp_att=0.7 left only 12 % of grid cells
+    # flying, because the Eigen controller's searched optimum is Kp_att ≈ 4.
+    # Prefer --seed-from, which reads the pinned values out of a prior eigen
+    # archive so the operating point tracks what the searches have found.
     p.add_argument(
-        "--kp-att", type=float, default=0.7,
-        help="Fixed Kp_att outer attitude gain (baseline, not swept here)",
+        "--kp-att", type=float, default=None,
+        help="Fixed Kp_att outer attitude gain (used when Kp is not the swept "
+             "axis). Overrides --seed-from. Default 0.7 if neither is given.",
     )
     p.add_argument(
-        "--kd-att", type=float, default=10.0,
-        help="Fixed Kd_att outer attitude gain (baseline, not swept here)",
+        "--kd-att", type=float, default=None,
+        help="Fixed Kd_att outer attitude gain (used when Kd is not the swept "
+             "axis). Overrides --seed-from. Default 10.0 if neither is given.",
     )
-    p.add_argument("--duration",        type=float, default=15.0,
-                   help="Simulation seconds per motor_moment pass")
+    p.add_argument(
+        "--seed-from", type=str, default=None, metavar="PATH",
+        help="Archive CSV, or directory of them, to take the pinned "
+             "Kp_att/Kd_att from — the best-scoring row wins. Must have been "
+             "written by an EIGEN sweep: Kp_att means a different physical "
+             "quantity in the Cascaded PD controller (thrust differential, "
+             "N/rad, optimum 25-55) than here (commanded angular rate, 1/s, "
+             "optimum 3-4), so a PD archive is rejected rather than applied.",
+    )
+    p.add_argument("--duration",        type=float, default=25.0,
+                   help="Simulation seconds per run (default: 25.0 to ensure >20s of stable hover)")
     p.add_argument("--spacing",         type=float, default=4.0,
                    help="Metres between drone spawn points along X")
     p.add_argument(
@@ -128,6 +167,41 @@ def parse_args():
     )
     p.add_argument("--goal-radius",     type=float, default=2.0)
     p.add_argument("--goal-seed",       type=int,   default=7)
+    # ── Step-response validation of the (score, effort) Pareto front ────────
+    # Same methodology/defaults as genetic_sweep.py's --validate-every, so
+    # results are comparable across GA and grid searches: after the ab-sweep
+    # grid is complete for a motor_moment, the points on its (score, effort)
+    # Pareto front get ONE additional pass against a target offset from
+    # hover, proving position control rather than just hover stability.
+    p.add_argument("--validate-pareto", action="store_true", default=True,
+                   help="Run the step-response validation pass on the ab-sweep's Pareto front")
+    p.add_argument("--no-validate-pareto", dest="validate_pareto", action="store_false")
+    p.add_argument("--validation-radius", type=float, default=2.0,
+                   help="Lateral offset (m) of the validation target from the hover point")
+    p.add_argument("--validation-threshold", type=float, default=2.0,
+                   help="Max stability score during the validation step to count as feasible")
+    p.add_argument("--validation-seed", type=int, default=123,
+                   help="Separate RNG seed for validation target directions")
+    # ── Optional early exit along the b axis (ab-sweep mode) ────────────────
+    p.add_argument(
+        "--b-stop-after-fails", type=int, default=0, metavar="N",
+        help="Stop the b loop once N CONSECUTIVE b values have had every "
+             "a-value fail. 0 (default) disables it. Off by default because "
+             "failure is not monotonic in b: measured at km=1e-7 all a fail "
+             "for b=12,16,20,24 then recover at b=28,32,40, and at km=2e-7 "
+             "the dead band is b=12..32 with recovery at 40. Any N below ~7 "
+             "truncates that recovery region — i.e. exactly the b≈spin-rate "
+             "band the sweep is meant to measure. Use only for a quick "
+             "reconnaissance pass, and note that skipped cells are written as "
+             "'inf' in the archive despite never having been run.",
+    )
+    p.add_argument(
+        "--run-tag", type=str, default="", metavar="TAG",
+        help="Suffix for the sweep's output directory (e.g. --run-tag fine "
+             "writes results/eigen_sweep/ab_sweep_fine/). Use it when running "
+             "the same plane twice with different settings so the second run "
+             "lands beside the first instead of overwriting it.",
+    )
     p.add_argument("--headless",        action="store_true", default=False)
     p.add_argument("--no-headless",     dest="headless", action="store_false")
     return p.parse_args()
@@ -176,6 +250,41 @@ def build_target_position(spawn_pos: list, rng) -> tuple:
     )
 
 
+def _validation_target(spawn_pos, altitude, radius, rng):
+    """Random-direction, fixed-radius offset from the hover point, used
+    ONLY for the Pareto-front validation pass — decoupled from --goal-mode
+    so validation is a consistent check regardless of how the main sweep's
+    own hover target is configured. Same convention as genetic_sweep.py's
+    _validation_target, so results are directly comparable across GA/grid."""
+    theta = float(rng.uniform(0.0, 2.0 * math.pi))
+    return (
+        spawn_pos[0] + radius * math.cos(theta),
+        spawn_pos[1] + radius * math.sin(theta),
+        float(altitude),
+    )
+
+
+def _pareto_mask(scores, efforts):
+    """Boolean mask of Pareto-optimal (min score, min effort) points."""
+    scores = np.asarray(scores, dtype=float)
+    efforts = np.asarray(efforts, dtype=float)
+    n = len(scores)
+    mask = np.zeros(n, dtype=bool)
+    for i in range(n):
+        if not (np.isfinite(scores[i]) and np.isfinite(efforts[i])):
+            continue
+        dominated = False
+        for j in range(n):
+            if i == j or not (np.isfinite(scores[j]) and np.isfinite(efforts[j])):
+                continue
+            if scores[j] <= scores[i] and efforts[j] <= efforts[i] and \
+               (scores[j] < scores[i] or efforts[j] < efforts[i]):
+                dominated = True
+                break
+        mask[i] = not dominated
+    return mask
+
+
 # ─────────────────────────── Late imports (after SimulationApp) ──────────────
 
 import numpy as np
@@ -200,6 +309,39 @@ from pegasus.simulator.logic.state import State
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from eigen_controller import EigenController
+import sweep_metrics as sm
+from gain_seed import load_best_gains, SeedError
+
+
+# ── Resolve the pinned attitude gains ────────────────────────────────────────
+# Order of precedence: explicit --kp-att/--kd-att, then --seed-from, then the
+# legacy defaults. Seeding failures are fatal on purpose — silently falling
+# back to Kp_att=0.7 after being asked to seed is how the ab-sweep ended up
+# mapping a region where only 12 % of cells flew.
+_KP_ATT_FALLBACK, _KD_ATT_FALLBACK = 0.7, 10.0
+
+if ARGS.seed_from is not None:
+    try:
+        _seed = load_best_gains(ARGS.seed_from, "eigen", keys=("Kp_att", "Kd_att"))
+    except SeedError as _exc:
+        carb.log_error(f"[eigen-sweep] --seed-from failed: {_exc}")
+        raise SystemExit(2)
+    if ARGS.kp_att is None:
+        ARGS.kp_att = _seed["Kp_att"]
+    if ARGS.kd_att is None:
+        ARGS.kd_att = _seed["Kd_att"]
+    carb.log_warn(
+        f"[eigen-sweep] seeded pinned gains from {_seed['_source']} "
+        f"(score {_seed['_score']:.4f}): Kp_att={_seed['Kp_att']:.4f} "
+        f"Kd_att={_seed['Kd_att']:.4f}"
+    )
+
+if ARGS.kp_att is None:
+    ARGS.kp_att = _KP_ATT_FALLBACK
+if ARGS.kd_att is None:
+    ARGS.kd_att = _KD_ATT_FALLBACK
+carb.log_warn(f"[eigen-sweep] pinned attitude gains: "
+              f"Kp_att={ARGS.kp_att:.4f}  Kd_att={ARGS.kd_att:.4f}")
 
 
 # ─────────────────────────── Telemetry / OOB backend ─────────────────────────
@@ -216,6 +358,16 @@ class BoundedTelemetryBackend(Backend):
         self.is_oob       = False
         self._stopped     = False
         self.position     = np.zeros(3)
+        # Labeling fields — same role as genetic_sweep.py's reliable oob_time
+        # write: these must live on the backend itself (not backend.inner) so
+        # stop() can always read them, even before the first update. Callers
+        # set these directly (backend.omega_n = ..., etc.) alongside
+        # backend.inner.<attr> whenever a pass's parameters change.
+        self.omega_n  = float("nan")
+        self.zeta     = float("nan")
+        self.wn_mdyn  = float("nan")
+        self.b_mdyn   = float("nan")
+        self.mm       = float("nan")
 
     def initialize(self, vehicle):
         super().initialize(vehicle)
@@ -233,14 +385,25 @@ class BoundedTelemetryBackend(Backend):
             return
         self._stopped = True
         self.inner.stop()
-        # Append oob_time to saved npz
+        # Append oob_time + run labels to the saved npz. Matches
+        # genetic_sweep.py's BoundedBackend.stop() pattern: read the existing
+        # npz, add fields, rewrite. Each label is read from self (set by the
+        # caller each pass — see run_ab_sweep / main) rather than
+        # backend.inner, so it's always defined and this write can't fail
+        # partway through.
         if os.path.isfile(self.results_file):
             try:
                 data = dict(np.load(self.results_file))
-                data["oob_time"] = np.array(self.oob_time)
+                data["oob_time"]      = np.array(self.oob_time)
+                data["omega_n"]       = np.array(self.omega_n)
+                data["zeta"]          = np.array(self.zeta)
+                data["a"]             = np.array(self.wn_mdyn)
+                data["b"]             = np.array(self.b_mdyn)
+                data["motor_moment"]  = np.array(self.mm)
+
                 np.savez(self.results_file, **data)
             except Exception as exc:
-                carb.log_warn(f"[sweep] oob_time append failed: {exc}")
+                carb.log_warn(f"[sweep] oob_time/label append failed: {exc}")
 
     def reset(self):
         self.inner.reset()
@@ -278,6 +441,12 @@ class BoundedTelemetryBackend(Backend):
             self.oob_time = self.total_time
             carb.log_warn(f"[sweep] OOB at {self.position} t={self.total_time:.2f}s")
             return True
+        # Check for crashing on the floor after initial takeoff
+        if self.total_time > 2.0 and z < 0.15:
+            self.is_oob   = True
+            self.oob_time = self.total_time
+            carb.log_warn(f"[sweep] CRASH DETECTED at z={z:.3f} t={self.total_time:.2f}s")
+            return True
         return False
 
 
@@ -285,141 +454,35 @@ class BoundedTelemetryBackend(Backend):
 
 # Worst-case position error sentinel: bounding-box diagonal.
 # Used to penalise the missing tail when a drone goes OOB early.
-_BOUNDS_DIAGONAL = float(
-    np.linalg.norm(np.array([
-        ARGS.bounds[1] - ARGS.bounds[0],
-        ARGS.bounds[3] - ARGS.bounds[2],
-        ARGS.bounds[5] - ARGS.bounds[4],
-    ]))
-)
+_BOUNDS_DIAGONAL = sm.bounds_diagonal(ARGS.bounds)
+
+
+def run_metrics(npz_path: str, T_total: float | None = None) -> dict:
+    """Every metric for one run — score, effort DC/AC split, spin rate.
+
+    Implementation lives in examples/utils/sweep_metrics.py, shared with
+    pd_sweep.py, genetic_sweep.py and eigen_ab_explore.py so the four cannot
+    drift apart.
+    """
+    return sm.compute_metrics(npz_path, float(T_total or 0.0), _BOUNDS_DIAGONAL)
 
 
 def stability_score(npz_path: str, T_total: float | None = None) -> float:
-    """
-    Future-biased mean ‖position error‖ over the full simulation window.
-
-    OOB penalty
-    -----------
-    If the drone went out-of-bounds before T_total, the missing tail
-    [t_oob, T_total] is padded with the bounding-box diagonal (worst-case
-    reachable error) before computing the weighted mean.  This guarantees
-    that an early crash always scores *worse* than a drone that hovered
-    imperfectly for the full duration.
-
-    w(t) = t / T_total  (later timesteps weighted more).
-    Returns inf on missing file, < 2 samples, or non-finite values.
-    """
-    try:
-        data = np.load(npz_path)
-        ep   = data["ep"]       # (N, 3)
-        t    = data["time"]     # (N,)
-        if len(t) < 2:
-            return np.inf
-
-        oob_time       = float(data["oob_time"]) if "oob_time" in data else float("nan")
-        drone_went_oob = np.isfinite(oob_time)
-
-        # Scoring window: prefer the caller-supplied duration; fall back to
-        # the last recorded timestep when not available.
-        if T_total is None or T_total < 1e-6:
-            T_total = float(t[-1])
-        if T_total < 1e-6:
-            return np.inf
-
-        errors  = np.linalg.norm(ep, axis=1)
-        if not np.all(np.isfinite(errors)):
-            return np.inf
-
-        t_arr   = t.copy()
-        err_arr = errors.copy()
-
-        # Pad the tail with worst-case error if the drone exited early.
-        if drone_went_oob and oob_time < T_total - 1e-6:
-            dt_approx = float(t[1] - t[0]) if len(t) > 1 else (1.0 / 60.0)
-            pad_t     = np.arange(oob_time + dt_approx, T_total, dt_approx)
-            if len(pad_t) > 0:
-                t_arr   = np.concatenate([t_arr,   pad_t])
-                err_arr = np.concatenate([err_arr,
-                                          np.full(len(pad_t), _BOUNDS_DIAGONAL)])
-
-        w     = t_arr / T_total
-        w_sum = float(np.sum(w))
-        if w_sum < 1e-12:
-            return np.inf
-        score = float(np.dot(w, err_arr) / w_sum)
-        return score if np.isfinite(score) else np.inf
-    except Exception as exc:
-        carb.log_warn(f"[sweep] score read failed ({npz_path}): {exc}")
-        return np.inf
+    """Future-biased mean ‖position error‖, with the post-OOB tail charged at
+    the arena diagonal. See examples/utils/sweep_metrics.py."""
+    return run_metrics(npz_path, T_total)["score"]
 
 
 def control_effort_score(npz_path: str, T_total: float | None = None) -> float:
+    """Legacy total-thrust Saturated Effort Score.
+
+    Kept so existing archives stay comparable, but it is ~95 % constant hover
+    bias (the Iris hover floor alone is ~73.7 N²) and barely resolves control
+    activity. Prefer ``effort_ac_ses`` from run_metrics() for new work.
+    See examples/utils/sweep_metrics.py.
     """
-    Future-biased mean control effort based on per-motor thrusts.
-    effort(t) = sum_i u_i(t)^2, where u_i are motor thrusts [N].
+    return run_metrics(npz_path, T_total)["effort"]
 
-    OOB penalty
-    -----------
-    The tail after t_oob is padded with the *maximum* finite effort seen
-    during the run so that an early crash never looks artificially cheap.
-
-    Returns inf on missing file, < 2 samples, or non-finite values.
-    """
-    try:
-        data = np.load(npz_path)
-        t    = data["time"]
-        if len(t) < 2:
-            return np.inf
-
-        oob_time       = float(data["oob_time"]) if "oob_time" in data else float("nan")
-        drone_went_oob = np.isfinite(oob_time)
-
-        if T_total is None or T_total < 1e-6:
-            T_total = float(t[-1])
-        if T_total < 1e-6:
-            return np.inf
-
-        if "motor_thrusts" in data:
-            u = np.asarray(data["motor_thrusts"], dtype=float)
-            if u.ndim != 2 or u.shape[0] != len(t):
-                return np.inf
-            effort = np.sum(np.square(u), axis=1)
-        elif "thrust" in data:
-            thrust = np.asarray(data["thrust"], dtype=float)
-            if thrust.shape[0] != len(t):
-                return np.inf
-            effort = np.square(thrust)
-        else:
-            return np.inf
-
-        if not np.all(np.isfinite(effort)):
-            return np.inf
-
-        t_arr   = t.copy()
-        eff_arr = effort.copy()
-
-        # Pad the tail with peak observed effort if the drone exited early.
-        if drone_went_oob and oob_time < T_total - 1e-6:
-            dt_approx = float(t[1] - t[0]) if len(t) > 1 else (1.0 / 60.0)
-            pad_t     = np.arange(oob_time + dt_approx, T_total, dt_approx)
-            if len(pad_t) > 0:
-                worst_eff = float(np.max(eff_arr)) if eff_arr.size else 0.0
-                t_arr     = np.concatenate([t_arr,  pad_t])
-                eff_arr   = np.concatenate([eff_arr,
-                                            np.full(len(pad_t), worst_eff)])
-
-        w     = t_arr / T_total
-        w_sum = float(np.sum(w))
-        if w_sum < 1e-12:
-            return np.inf
-        score = float(np.dot(w, eff_arr) / w_sum)
-        return score if np.isfinite(score) else np.inf
-    except Exception as exc:
-        carb.log_warn(f"[sweep] effort score read failed ({npz_path}): {exc}")
-        return np.inf
-
-
-# ─────────────────────────── Score line plot ─────────────────────────────────
 
 def save_score_plot(on_vals, scores, zeta, mm, out_dir: Path):
     """Bar/line chart of stability score vs ωn for one motor_moment."""
@@ -701,8 +764,15 @@ def zeta_results_dir(base: Path, mm: float, zeta: float, use_subdir: bool) -> Pa
 
 
 def ab_sweep_dir(base: Path, mm: float) -> Path:
-    """Root output dir for an (a, b) direct-sweep run."""
-    d = base / "eigen_sweep" / "ab_sweep" / f"mm_{mm:.1e}"
+    """Root output dir for an (a, b) direct-sweep run.
+
+    --run-tag suffixes the directory so a second ab-sweep (a refined b axis, a
+    different pinned operating point) lands beside the first instead of
+    overwriting it. Two sweeps of the same plane answer different questions and
+    both are worth keeping.
+    """
+    name = "ab_sweep" + (f"_{ARGS.run_tag}" if ARGS.run_tag else "")
+    d = base / "eigen_sweep" / name / f"mm_{mm:.1e}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -710,6 +780,21 @@ def ab_sweep_dir(base: Path, mm: float) -> Path:
 def ab_b_dir(base: Path, mm: float, b: float) -> Path:
     """Per-b sub-directory that holds one npz file per a value."""
     d = ab_sweep_dir(base, mm) / f"b_{b:.3f}"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def kpkd_sweep_dir(base: Path, mm: float) -> Path:
+    """Root output dir for a (Kp_att, Kd_att) sweep at fixed M_dyn."""
+    name = "kpkd_sweep" + (f"_{ARGS.run_tag}" if ARGS.run_tag else "")
+    d = base / "eigen_sweep" / name / f"mm_{mm:.1e}"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def kpkd_kd_dir(base: Path, mm: float, kd: float) -> Path:
+    """Per-Kd sub-directory that holds one npz file per Kp value."""
+    d = kpkd_sweep_dir(base, mm) / f"kd_{kd:.3f}"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
@@ -834,6 +919,71 @@ def save_ab_heatmap(a_vals, b_vals, scores_2d, mm, out_dir: Path, label="score")
         carb.log_warn(f"[ab-sweep] heatmap failed ({label}): {exc}")
 
 
+# ──────────────────── Pareto-front step-response validation ──────────────────
+
+def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm, val_targets):
+    """Re-run exactly the (a, b) pairs in `pairs` (the ab-sweep's current
+    Pareto-front points for this mm) against `val_targets` instead of their
+    normal hover target, batching them through the existing n_a drone slots.
+    Returns {(a, b): (score, effort)}. Mirrors genetic_sweep.py's
+    validate_subset, and uses the same SES stability/effort scoring so
+    results are directly comparable to the GA's step_score/step_effort."""
+    render_sim = not ARGS.headless
+    n_slots = len(drones)
+    results = {}
+    pairs = list(pairs)
+
+    for start in range(0, len(pairs), n_slots):
+        chunk = pairs[start:start + n_slots]
+
+        for slot in range(n_slots):
+            vehicle, backend, spawn_pos, _ = drones[slot]
+            a, b = chunk[slot] if slot < len(chunk) else chunk[0]  # harmless filler past chunk end
+
+            vehicle._thrusters   = make_thrust_curve(mm)
+            backend.inner.wn_mdyn = a
+            backend.inner.b_mdyn  = b
+            backend.inner.Kp_att  = ARGS.kp_att
+            backend.inner.Kd_att  = ARGS.kd_att
+            backend.inner.km      = mm
+            backend.inner.hover_target = np.asarray(val_targets[slot], dtype=float)
+
+            vehicle.set_world_pose(position=spawn_pos, orientation=[0., 0., 0., 1.])
+            vehicle.set_linear_velocity([0., 0., 0.])
+            vehicle.set_angular_velocity([0., 0., 0.])
+            backend.reset()
+            backend.start()
+
+        for _ in range(5):
+            world.step(render=render_sim)
+
+        timeline.play()
+        sim_time = 0.0
+        dt = 1.0 / 60.0
+        while simulation_app.is_running() and sim_time < ARGS.duration:
+            world.step(render=render_sim)
+            sim_time += dt
+            all_oob = True
+            for _, backend, _, drone_bounds in drones:
+                if backend.is_oob:
+                    continue
+                all_oob = False
+                backend.check_oob(drone_bounds)
+            if all_oob:
+                break
+        timeline.stop()
+
+        for slot in range(len(chunk)):
+            _, backend, _, _ = drones[slot]
+            if not backend._stopped:
+                backend.stop()
+            _m = run_metrics(tmp_files[slot], T_total=ARGS.duration)
+            score, effort = _m["score"], _m["effort"]
+            results[chunk[slot]] = (score, effort)
+
+    return results
+
+
 # ─────────────────────────── ab-sweep runner ─────────────────────────────────
 
 def run_ab_sweep(
@@ -898,6 +1048,7 @@ def run_ab_sweep(
     spawn_z = 0.07
     half    = spacing / 2.0
     rng     = np.random.default_rng(ARGS.goal_seed)
+    val_rng = np.random.default_rng(ARGS.validation_seed)
 
     # Temp npz paths (one per drone slot; overwritten each pass)
     tmp_files = [
@@ -951,8 +1102,32 @@ def run_ab_sweep(
         # 2-D accumulators: rows = a, cols = b
         all_scores  = np.full((n_a, len(b_vals)), np.inf)
         all_efforts = np.full((n_a, len(b_vals)), np.inf)
+        # Full metric dict per grid point — carries the effort DC/AC split and
+        # the spin rate through to grid_archive.csv alongside score/effort.
+        all_metrics = {}
+        consecutive_dead_b = 0
 
         for j_b, b in enumerate(b_vals):
+            # Optional early exit from the b axis (see --b-stop-after-fails).
+            # OFF by default, and deliberately so: failure is NOT monotonic in
+            # b. Measured at km=1e-7, every a fails for b = 12, 16, 20, 24 and
+            # then recovers at b = 28, 32, 40; at km=2e-7 the dead band runs
+            # b = 12…32 and recovers at 40. Stopping at the first all-fail b
+            # would discard exactly the high-b region where b approaches the
+            # spin rate — the region these sweeps exist to measure. Enable this
+            # only for a coarse reconnaissance pass, never for a run whose
+            # grid_archive.csv is going to be analysed.
+            if (ARGS.b_stop_after_fails > 0
+                    and consecutive_dead_b >= ARGS.b_stop_after_fails):
+                skipped = [f"{v:g}" for v in b_vals[j_b:]]
+                carb.log_warn(
+                    f"[ab-sweep] mm={mm:.2e}: {consecutive_dead_b} consecutive "
+                    f"all-fail b values — skipping remaining b = {', '.join(skipped)} "
+                    f"(--b-stop-after-fails={ARGS.b_stop_after_fails}). "
+                    f"These cells stay 'inf' in the archive; they were NOT measured."
+                )
+                break
+
             carb.log_warn(f"\n{'='*60}")
             carb.log_warn(
                 f"[ab-sweep] motor_moment = {mm:.2e}  |  b = {b:.3f}  "
@@ -972,6 +1147,13 @@ def run_ab_sweep(
                 backend.inner.Kp_att      = ARGS.kp_att
                 backend.inner.Kd_att      = ARGS.kd_att
                 backend.inner.km          = mm
+
+                # Labels for the npz (ab-sweep has no ωn/ζ axis; a/b are direct)
+                backend.wn_mdyn = a
+                backend.b_mdyn  = b
+                backend.mm      = mm
+                backend.omega_n = float("nan")
+                backend.zeta    = float("nan")
 
                 vehicle.set_world_pose(
                     position=spawn_pos,
@@ -1021,15 +1203,20 @@ def run_ab_sweep(
                 src = tmp_files[i_a]
                 dst = b_dir / f"a{a:.3f}_statistics.npz"
 
-                score  = stability_score(src,          T_total=ARGS.duration)
-                effort = control_effort_score(src,      T_total=ARGS.duration)
+                # One npz load for every metric.
+                m = run_metrics(src, T_total=ARGS.duration)
+                score, effort = m["score"], m["effort"]
                 all_scores [i_a, j_b] = score
                 all_efforts[i_a, j_b] = effort
+                all_metrics[(a, b)] = m
 
+                ac_str = "∞" if not np.isfinite(m["effort_ac"]) else f"{m['effort_ac']:.4f}"
+                r_str  = "n/a" if not np.isfinite(m["r_ss"]) else f"{m['r_ss']:.2f}"
                 carb.log_warn(
                     f"  [a={a:.2f}  b={b:.2f}]  "
                     f"score={'∞' if not np.isfinite(score)  else f'{score:.4f}'}  "
-                    f"effort={'∞' if not np.isfinite(effort) else f'{effort:.4f}'}"
+                    f"effort={'∞' if not np.isfinite(effort) else f'{effort:.4f}'}  "
+                    f"effort_ac={ac_str}  r_ss={r_str}"
                 )
 
                 if os.path.isfile(src):
@@ -1038,12 +1225,71 @@ def run_ab_sweep(
                     except Exception as exc:
                         carb.log_warn(f"  move failed: {exc}")
 
+            # Track the all-fail streak along b for --b-stop-after-fails. A
+            # column counts as dead only if every a in it failed; a single
+            # surviving a resets the streak, since that is enough to show the
+            # region is not uniformly hopeless.
+            col = all_scores[:, j_b]
+            if np.all(~np.isfinite(col) | (col > sm.STABLE_SCORE_MAX)):
+                consecutive_dead_b += 1
+                carb.log_warn(
+                    f"  [ab-sweep] all {n_a} a-values failed at b={b:g} "
+                    f"(consecutive dead b columns: {consecutive_dead_b})"
+                )
+            else:
+                consecutive_dead_b = 0
+
         # ── Per-mm outputs ───────────────────────────────────────────────────
         save_ab_csv(a_vals, b_vals, all_scores,  root_dir)
         save_ab_effort_csv(a_vals, b_vals, all_efforts, root_dir)
         save_ab_heatmap(a_vals, b_vals, all_scores,  mm, root_dir, label="score")
         save_ab_heatmap(a_vals, b_vals, all_efforts, mm, root_dir, label="effort")
 
+        # ── Pareto-front step-response validation (one pass, front only) ────
+        step_scores, step_efforts = None, None
+        if ARGS.validate_pareto:
+            pareto = _pareto_mask(all_scores.ravel(), all_efforts.ravel()).reshape(all_scores.shape)
+            pareto_pairs = [
+                (a_vals[i], b_vals[j])
+                for i in range(n_a) for j in range(len(b_vals))
+                if pareto[i, j]
+            ]
+            carb.log_warn(
+                f"[ab-sweep] mm={mm:.1e}: step-response validation of "
+                f"{len(pareto_pairs)} Pareto-front points "
+                f"(radius={ARGS.validation_radius}m, threshold={ARGS.validation_threshold})..."
+            )
+            val_targets = [
+                _validation_target(drones[i][2], ARGS.target_altitude,
+                                    ARGS.validation_radius, val_rng)
+                for i in range(n_a)
+            ]
+            val_results = run_ab_validation_pass(
+                world, timeline, drones, tmp_files, pareto_pairs, mm, val_targets
+            )
+            step_scores  = {k: v[0] for k, v in val_results.items()}
+            step_efforts = {k: v[1] for k, v in val_results.items()}
+            n_feasible = sum(
+                1 for s in step_scores.values()
+                if np.isfinite(s) and s <= ARGS.validation_threshold
+            )
+            carb.log_warn(
+                f"[ab-sweep] mm={mm:.1e}: {n_feasible}/{len(pareto_pairs)} "
+                f"Pareto-front points passed step-response validation"
+            )
+
+        save_grid_archive(
+            a_vals,
+            b_vals,
+            all_scores,
+            all_efforts,
+            mm,
+            root_dir,
+            step_scores=step_scores,
+            step_efforts=step_efforts,
+            metrics=all_metrics,
+        )
+        carb.log_warn("WRITING GRID ARCHIVE")
         # Summary
         fin_mask = np.isfinite(all_scores)
         if fin_mask.any():
@@ -1065,6 +1311,318 @@ def run_ab_sweep(
             pass
 
 
+def save_kpkd_grid_archive(kp_vals, kd_vals, scores_2d, efforts_2d,
+                           fixed_wn, fixed_b, mm, out_dir, metrics=None):
+    """Write the Kp×Kd slice in grid_archive.csv form so interactive_dashboard.py
+    picks it up automatically. wn_mdyn/b_mdyn are written as constant columns
+    (the pinned operating point) — the dashboard's gene-space panel drops
+    zero-variance genes, so only the Kp_att×Kd_att plane is shown.
+
+    Metric columns come from sweep_metrics.METRIC_KEYS, matching every other
+    sweep's archive. metrics: optional {(kp, kd): dict} from run_metrics()."""
+    import csv
+    path = out_dir / "grid_archive.csv"
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["gen", "wn_mdyn", "b_mdyn", "Kp_att", "Kd_att",
+                    "motor_moment"] + sm.METRIC_KEYS)
+        for i, kp in enumerate(kp_vals):
+            for j, kd in enumerate(kd_vals):
+                m = dict(sm.METRIC_DEFAULTS)
+                if metrics:
+                    m.update(metrics.get((kp, kd), {}))
+                m["score"] = scores_2d[i, j]
+                m["effort"] = efforts_2d[i, j]
+                w.writerow(
+                    [-1, fixed_wn, fixed_b, kp, kd, mm]
+                    + [sm.format_metric(k, m[k]) for k in sm.METRIC_KEYS]
+                )
+    carb.log_warn(f"[kpkd-sweep] grid archive → {path}")
+
+
+def run_kpkd_sweep(world, timeline, kp_vals, kd_vals, mm_vals, results_base):
+    """(Kp_att, Kd_att) sweep at fixed M_dyn — the causal complement to
+    run_ab_sweep. Structure mirrors it exactly:
+
+    • One drone per Kp_att value  →  simulated simultaneously.
+    • Kd_att is the inner serial loop  →  one pass per Kd.
+    • motor_moment is the outer serial loop.
+    • wn_mdyn / b_mdyn are pinned at ARGS.fixed_wn / ARGS.fixed_b throughout,
+      isolating the outer-loop gains from the motor-dynamics block.
+
+    Output: results/eigen_sweep/kpkd_sweep/mm_<km>/grid_archive.csv
+            results/eigen_sweep/kpkd_sweep/mm_<km>/kd_<kd>/kp<kp>_statistics.npz
+    """
+    render_sim = not ARGS.headless
+    bounds     = ARGS.bounds
+    n_kp       = len(kp_vals)
+    fixed_wn   = ARGS.fixed_wn
+    fixed_b    = ARGS.fixed_b
+
+    carb.log_warn("\n" + "=" * 60)
+    carb.log_warn("[kpkd-sweep] Mode: (Kp_att, Kd_att) sweep at fixed M_dyn")
+    carb.log_warn(f"[kpkd-sweep] Kp values (parallel) : {kp_vals}")
+    carb.log_warn(f"[kpkd-sweep] Kd values (serial)   : {kd_vals}")
+    carb.log_warn(f"[kpkd-sweep] fixed wn_mdyn={fixed_wn}  b_mdyn={fixed_b}")
+    carb.log_warn(f"[kpkd-sweep] motor_moments        : {mm_vals}")
+    carb.log_warn(f"[kpkd-sweep] duration = {ARGS.duration} s per pass")
+    carb.log_warn("=" * 60)
+
+    # ── Drone spacing along X (identical layout to ab-sweep) ────────────────
+    x_min, x_max = bounds[0], bounds[1]
+    x_margin     = 1.5
+    x_usable     = x_max - x_min - 2.0 * x_margin
+    auto_spacing = x_usable / (n_kp - 1) if n_kp > 1 else 0.0
+    spacing      = min(ARGS.spacing, auto_spacing)
+    x_start      = x_min + x_margin
+    y_min, y_max = bounds[2], bounds[3]
+    z_min, z_max = bounds[4], bounds[5]
+
+    for i_kp in range(n_kp):
+        sx = x_start + i_kp * spacing
+        if not (x_min < sx < x_max):
+            raise ValueError(
+                f"[kpkd-sweep] Drone {i_kp} spawn X={sx:.2f} outside X bounds "
+                f"[{x_min},{x_max}]. Reduce --spacing or widen --bounds."
+            )
+
+    spawn_y = -1.5
+    spawn_z = 0.07
+    half    = spacing / 2.0
+    rng     = np.random.default_rng(ARGS.goal_seed)
+
+    tmp_files = [str(results_base / f"_kpkd_sweep_tmp_{i}.npz") for i in range(n_kp)]
+
+    # ── Spawn drones (one per Kp); Kd and mm are updated each pass ──────────
+    drones: list[tuple] = []
+    for i_kp, kp in enumerate(kp_vals):
+        spawn_x   = x_start + i_kp * spacing
+        spawn_pos = [spawn_x, spawn_y, spawn_z]
+        target    = build_target_position(spawn_pos, rng)
+        drone_bounds = [spawn_x - half, spawn_x + half, y_min, y_max, z_min, z_max]
+
+        inner = EigenController(
+            target_position=target,
+            results_file=tmp_files[i_kp],
+            wn_mdyn=fixed_wn,
+            b_mdyn=fixed_b,
+            Kp_att=kp,
+            Kd_att=kd_vals[0],
+            km=mm_vals[0],
+        )
+        backend = BoundedTelemetryBackend(inner, tmp_files[i_kp])
+
+        cfg              = MultirotorConfig()
+        cfg.backends     = [backend]
+        cfg.thrust_curve = make_thrust_curve(mm_vals[0])
+
+        vehicle = Multirotor(
+            f"/World/kpkd_kp{i_kp}",
+            ROBOTS["Iris"],
+            i_kp,
+            spawn_pos,
+            Rotation.from_euler("XYZ", [0., 0., 0.], degrees=True).as_quat(),
+            config=cfg,
+        )
+        drones.append((vehicle, backend, spawn_pos, drone_bounds))
+
+    world.reset()
+    for _ in range(10):
+        world.step(render=render_sim)
+
+    # ── Outer loop: motor_moment ────────────────────────────────────────────
+    for mm in mm_vals:
+        root_dir    = kpkd_sweep_dir(results_base, mm)
+        all_scores  = np.full((n_kp, len(kd_vals)), np.inf)
+        all_efforts = np.full((n_kp, len(kd_vals)), np.inf)
+        # Full metric dict per grid point — carries the effort DC/AC split and
+        # the spin rate through to grid_archive.csv alongside score/effort.
+        all_metrics = {}
+
+        for j_kd, kd in enumerate(kd_vals):
+            carb.log_warn(f"\n{'='*60}")
+            carb.log_warn(f"[kpkd-sweep] motor_moment = {mm:.2e}  |  Kd = {kd:.3f}  "
+                          f"({j_kd+1}/{len(kd_vals)})")
+            carb.log_warn(f"{'='*60}")
+
+            kd_dir = kpkd_kd_dir(results_base, mm, kd)
+
+            for i_kp, (vehicle, backend, spawn_pos, drone_bounds) in enumerate(drones):
+                kp = kp_vals[i_kp]
+
+                vehicle._thrusters    = make_thrust_curve(mm)
+                backend.inner.wn_mdyn = fixed_wn
+                backend.inner.b_mdyn  = fixed_b
+                backend.inner.Kp_att  = kp
+                backend.inner.Kd_att  = kd
+                backend.inner.km      = mm
+
+                backend.wn_mdyn = fixed_wn
+                backend.b_mdyn  = fixed_b
+                backend.mm      = mm
+                backend.omega_n = float("nan")
+                backend.zeta    = float("nan")
+
+                vehicle.set_world_pose(position=spawn_pos, orientation=[0., 0., 0., 1.])
+                vehicle.set_linear_velocity([0., 0., 0.])
+                vehicle.set_angular_velocity([0., 0., 0.])
+
+                backend.reset()
+                backend.start()
+                carb.log_warn(f"  [Kp={kp:.2f}  Kd={kd:.2f}]  drone {i_kp} ready")
+
+            for _ in range(5):
+                world.step(render=render_sim)
+
+            # ── Simulate ─────────────────────────────────────────────────
+            timeline.play()
+            sim_time = 0.0
+            dt       = 1.0 / 60.0
+            while simulation_app.is_running() and sim_time < ARGS.duration:
+                world.step(render=render_sim)
+                sim_time += dt
+                all_oob = True
+                for _, backend, _, drone_bounds in drones:
+                    if backend.is_oob:
+                        continue
+                    all_oob = False
+                    backend.check_oob(drone_bounds)
+                if all_oob:
+                    carb.log_warn("  [kpkd-sweep] all drones OOB — ending pass early")
+                    break
+            timeline.stop()
+
+            # ── Stop, move npz, score ────────────────────────────────────
+            for i_kp, (_, backend, _, _) in enumerate(drones):
+                if not backend._stopped:
+                    backend.stop()
+                kp  = kp_vals[i_kp]
+                src = tmp_files[i_kp]
+                dst = kd_dir / f"kp{kp:.3f}_statistics.npz"
+
+                m = run_metrics(src, T_total=ARGS.duration)
+                score, effort = m["score"], m["effort"]
+                all_scores [i_kp, j_kd] = score
+                all_efforts[i_kp, j_kd] = effort
+                all_metrics[(kp, kd)] = m
+
+                ac_str = "∞" if not np.isfinite(m["effort_ac"]) else f"{m['effort_ac']:.4f}"
+                r_str  = "n/a" if not np.isfinite(m["r_ss"]) else f"{m['r_ss']:.2f}"
+                carb.log_warn(
+                    f"  [Kp={kp:.2f}  Kd={kd:.2f}]  "
+                    f"score={'∞' if not np.isfinite(score)  else f'{score:.4f}'}  "
+                    f"effort={'∞' if not np.isfinite(effort) else f'{effort:.4f}'}  "
+                    f"effort_ac={ac_str}  r_ss={r_str}"
+                )
+                if os.path.isfile(src):
+                    try:
+                        os.rename(src, str(dst))
+                    except Exception as exc:
+                        carb.log_warn(f"  move failed: {exc}")
+
+        # ── Per-mm outputs ──────────────────────────────────────────────────
+        save_kpkd_grid_archive(kp_vals, kd_vals, all_scores, all_efforts,
+                               fixed_wn, fixed_b, mm, root_dir,
+                               metrics=all_metrics)
+        fin_mask = np.isfinite(all_scores)
+        if fin_mask.any():
+            bi, bj = np.unravel_index(
+                np.argmin(np.where(fin_mask, all_scores, np.inf)), all_scores.shape)
+            carb.log_warn(
+                f"\n  ★ Best for mm={mm:.1e}: Kp={kp_vals[bi]:.3f}  Kd={kd_vals[bj]:.3f}  "
+                f"→ score={all_scores[bi,bj]:.4f}  (wn={fixed_wn}, b={fixed_b} fixed)")
+        else:
+            carb.log_warn(f"\n  ✗ All drones OOB for mm={mm:.1e}")
+
+    for f in tmp_files:
+        try:
+            os.remove(f)
+        except FileNotFoundError:
+            pass
+
+
+def save_wn_zeta_archive(
+    on_vals,
+    zeta,
+    scores,
+    efforts,
+    mm,
+    out_dir,
+):
+    import csv
+    import math
+
+    path = out_dir / "grid_archive.csv"
+
+    with open(path, "w", newline="") as f:
+        writer = csv.writer(f)
+
+        writer.writerow([
+            "gen",
+            "omega_n",
+            "zeta",
+            "wn_mdyn",
+            "b_mdyn",
+            "motor_moment",
+            "score",
+            "effort",
+        ])
+
+        for i, omega_n in enumerate(on_vals):
+            wn_mdyn = zeta * omega_n
+            b_mdyn = omega_n * math.sqrt(max(1.0 - zeta**2, 0.0))
+
+            writer.writerow([
+                -1,
+                omega_n,
+                zeta,
+                wn_mdyn,
+                b_mdyn,
+                mm,
+                scores[i] if np.isfinite(scores[i]) else "inf",
+                efforts[i] if np.isfinite(efforts[i]) else "inf",
+            ])
+
+def save_grid_archive(a_vals, b_vals, scores_2d, efforts_2d, mm, out_dir,
+                       step_scores=None, step_efforts=None, metrics=None):
+    """Long-format (a, b) grid archive for interactive_dashboard.py.
+
+    Metric columns come from sweep_metrics.METRIC_KEYS, so this archive carries
+    the same set — effort DC/AC split and spin rate included — as every other
+    sweep's.
+
+    step_scores/step_efforts: optional {(a, b): value} dicts from the
+    Pareto-front step-response validation pass — NaN for any (a, b) that
+    wasn't on the front and so was never validated.
+    metrics: optional {(a, b): metric dict} from run_metrics().
+    """
+    import csv
+
+    path = out_dir / "grid_archive.csv"
+
+    with open(path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["gen", "wn_mdyn", "b_mdyn", "motor_moment"] + sm.METRIC_KEYS)
+
+        for i, a in enumerate(a_vals):
+            for j, b in enumerate(b_vals):
+                m = dict(sm.METRIC_DEFAULTS)
+                if metrics:
+                    m.update(metrics.get((a, b), {}))
+                # scores_2d/efforts_2d stay authoritative for the two primary
+                # objectives — they are what the Pareto mask was computed on.
+                m["score"] = scores_2d[i, j]
+                m["effort"] = efforts_2d[i, j]
+                if step_scores:
+                    m["step_score"] = step_scores.get((a, b), float("nan"))
+                if step_efforts:
+                    m["step_effort"] = step_efforts.get((a, b), float("nan"))
+                writer.writerow(
+                    [-1, a, b, mm]
+                    + [sm.format_metric(k, m[k]) for k in sm.METRIC_KEYS]
+                )
+
+
 # ─────────────────────────── Main ────────────────────────────────────────────
 
 def main():
@@ -1074,6 +1632,46 @@ def main():
     mm_vals      = ARGS.motor_moments
     base_dir     = Path(__file__).resolve().parent.parent
     results_base = base_dir / "results"
+
+    # ── Dispatch: (Kp_att, Kd_att) sweep if --kp-values is provided ─────────
+    if ARGS.kp_values is not None:
+        if not ARGS.kd_values:
+            raise ValueError(
+                "--kd-values must be supplied together with --kp-values for kpkd-sweep mode."
+            )
+        pg       = PegasusInterface()
+        pg._world = World(**pg._world_settings)
+        world    = pg.world
+        pg.load_environment(SIMULATION_ENVIRONMENTS["Curved Gridroom"])
+        for _ in range(20):
+            world.step(render=render_sim)
+
+        run_kpkd_sweep(
+            world=world,
+            timeline=timeline,
+            kp_vals=ARGS.kp_values,
+            kd_vals=ARGS.kd_values,
+            mm_vals=mm_vals,
+            results_base=results_base,
+        )
+
+        carb.log_warn("\n=== kpkd-sweep complete ===")
+        try:
+            timeline.stop()
+        except Exception:
+            pass
+        if world is not None:
+            try:
+                world.stop()
+            except Exception:
+                pass
+            for fn in ("stop", "clear_all_callbacks", "clear"):
+                try:
+                    getattr(world, fn)()
+                except Exception:
+                    pass
+        simulation_app.close()
+        return
 
     # ── Dispatch: direct (a, b) sweep if --a-values is provided ─────────────
     if ARGS.a_values is not None:
@@ -1251,6 +1849,13 @@ def main():
                 backend.inner.Kd_att  = ARGS.kd_att
                 backend.inner.km      = mm
 
+                # Labels for the npz
+                backend.omega_n = on
+                backend.zeta    = zeta
+                backend.wn_mdyn = wn_m
+                backend.b_mdyn  = b_m
+                backend.mm      = mm
+
                 # Reset kinematics
                 vehicle.set_world_pose(
                     position=spawn_pos,
@@ -1302,8 +1907,8 @@ def main():
                 src = tmp_files[i_on]
                 dst = rdir / f"on{on:.1f}_statistics.npz"
 
-                score  = stability_score(src,          T_total=ARGS.duration)
-                effort = control_effort_score(src,      T_total=ARGS.duration)
+                _m = run_metrics(src, T_total=ARGS.duration)
+                score, effort = _m["score"], _m["effort"]
                 scores[i_on] = score
                 efforts[i_on] = effort
                 carb.log_warn(
@@ -1323,6 +1928,7 @@ def main():
             if len(zeta_vals) == 1:
                 save_score_plot(on_vals, scores, zeta, mm, rdir)
             save_csv(on_vals, scores, zeta, rdir)
+            save_wn_zeta_archive(on_vals, zeta, scores, efforts, mm, rdir)
 
             # Summary
             fin_idx = [i for i in range(n_on) if np.isfinite(scores[i])]

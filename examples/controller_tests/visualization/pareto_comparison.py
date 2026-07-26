@@ -9,8 +9,11 @@ Reads sweep data from:
 
 METRIC (shared by ALL sweep scripts and this visualiser)
 --------------------------------------------------------
-  score(t)  = Σ w(t)·‖ep(t)‖ / Σ w(t)     w(t) = t / T  (future-biased)
-  effort(t) = Σ w(t)·(Σ_i u_i²) / Σ w(t)
+  score(t)  = Σ w(t)·‖ep(t)‖ / Σ w(t)          w(t) = t/T  (future-biased)
+  effort    = Saturated Effort Score (SES):
+                E_mean   = Σ w(t)·E(t) / Σ w(t)  where E(t) = Σᵢ uᵢ²
+                sat_frac = fraction of timesteps where E(t) > 80 N²
+                SES      = E_mean × (1 + 5 × sat_frac)
 
 WHY PARETO?
 -----------
@@ -114,6 +117,13 @@ def parse_args():
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+# Saturated Effort Score constants — MUST match all three sweep scripts.
+_U_MAX_PER_MOTOR: float = 5.0
+_E_SAT:           float = 4.0 * _U_MAX_PER_MOTOR ** 2   # 100 N²
+_SAT_THRESH:      float = 0.80 * _E_SAT                 # 80 N²
+_SAT_ALPHA:       float = 5.0
+
+
 def _future_biased_mean(t: np.ndarray, values: np.ndarray) -> float:
     """Weighted mean with w(t) = t / T — same metric used by all sweep scripts."""
     T = float(t[-1]) if len(t) > 0 else 1.0
@@ -126,12 +136,33 @@ def _future_biased_mean(t: np.ndarray, values: np.ndarray) -> float:
     return float(np.dot(w, values) / w_sum)
 
 
+def _saturated_effort_score(t: np.ndarray, eff_per_step: np.ndarray) -> float:
+    """Compute Saturated Effort Score from pre-computed per-timestep effort.
+
+    SES = E_mean × (1 + SAT_ALPHA × sat_frac)
+    where E_mean is the future-biased mean and sat_frac is the fraction
+    of timesteps where total motor thrust² > SAT_THRESH.
+    """
+    T = float(t[-1]) if len(t) > 0 else 1.0
+    if T < 1e-6:
+        return float("nan")
+    w     = t / T
+    w_sum = float(np.sum(w))
+    if w_sum < 1e-12:
+        return float("nan")
+    e_mean   = float(np.dot(w, eff_per_step) / w_sum)
+    sat_frac = float(np.mean(eff_per_step > _SAT_THRESH))
+    return e_mean * (1.0 + _SAT_ALPHA * sat_frac)
+
+
 def operating_point_from_npz(path: Path, t_limit: float | None) -> tuple[float, float] | None:
     """Return (effort, score) from a single-run NPZ.
 
-    Uses the SAME future-biased weighted metric as the sweep scripts:
-      score  = Σ w(t)·‖ep(t)‖ / Σ w(t),   w(t) = t / T
-      effort = Σ w(t)·(Σ_i u_i²) / Σ w(t)
+    Uses the SAME metrics as the sweep scripts:
+      score  = future-biased mean ‖ep‖:  Σ w(t)·‖ep(t)‖ / Σ w(t),  w(t)=t/T
+      effort = Saturated Effort Score (SES):
+                 E_mean × (1 + SAT_ALPHA × sat_frac)
+                 where sat_frac = fraction of timesteps with E(t) > SAT_THRESH
     """
     if not path.exists():
         return None
@@ -154,7 +185,7 @@ def operating_point_from_npz(path: Path, t_limit: float | None) -> tuple[float, 
         return None
 
     score  = _future_biased_mean(t, errors)
-    effort = _future_biased_mean(t, eff_per_step)
+    effort = _saturated_effort_score(t, eff_per_step)
     if not (np.isfinite(score) and np.isfinite(effort)):
         return None
     return effort, score
@@ -222,6 +253,61 @@ def read_1d_sweep_csv(csv_dir: Path) -> tuple[np.ndarray, np.ndarray] | None:
         return None
 
 
+def read_genetic_csv(csv_dir: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+    """Read genetic_archive.csv → (efforts, scores, labels) with outlier filtering."""
+    arc_path = csv_dir / "genetic_archive.csv"
+    if not arc_path.exists():
+        return None
+    try:
+        scores, efforts, labels = [], [], []
+        metric_keys = {"motor_moment", "score", "effort", "rise_time", "settling_time", "max_overshoot", 
+                       "rms_error", "peak_effort", "total_energy", "stable", "oscillation", "gen"}
+        with open(str(arc_path)) as f:
+            reader = csv.DictReader(f)
+            gene_cols = [k for k in reader.fieldnames if k not in metric_keys]
+            for row in reader:
+                sc = row["score"].strip()
+                ef = row["effort"].strip()
+                scores.append(float("inf") if sc == "inf" else float(sc))
+                efforts.append(float("inf") if ef == "inf" else float(ef))
+                
+                lbl_parts = []
+                for gc in gene_cols:
+                    if not (gc.startswith("wn") or gc.startswith("Kp")):
+                        continue
+                    
+                    short_name = gc.split("_")[0]
+                    val = row[gc]
+                    try:
+                        f_val = float(val)
+                        if f_val.is_integer(): lbl_parts.append(f"{short_name}={int(f_val)}")
+                        else: lbl_parts.append(f"{short_name}={f_val:.1f}")
+                    except:
+                        lbl_parts.append(f"{short_name}={val}")
+                labels.append("\n".join(lbl_parts))
+                
+        s_arr = np.array(scores)
+        e_arr = np.array(efforts)
+        l_arr = np.array(labels)
+        
+        e_filt, s_filt, valid_idx = _apply_outlier_filter(e_arr, s_arr)
+        if len(e_filt) == 0:
+            return None
+        return e_filt, s_filt, l_arr[valid_idx]
+    except Exception as exc:
+        print(f"[warn] could not read genetic archive in {csv_dir}: {exc}")
+        return None
+
+
+def _merge_frontiers(a: tuple[np.ndarray, np.ndarray] | None,
+                     b: tuple[np.ndarray, np.ndarray] | None
+                     ) -> tuple[np.ndarray, np.ndarray] | None:
+    """Concatenate two (efforts, scores) arrays."""
+    if a is None: return b
+    if b is None: return a
+    return (np.concatenate([a[0], b[0]]), np.concatenate([a[1], b[1]]))
+
+
 def read_sweep_csv(csv_path: Path) -> tuple[list, list, np.ndarray] | None:
     """
     Parse the eigen ab_sweep CSV (wn×b grid).
@@ -269,7 +355,10 @@ def plot_pareto(sweep_data,
                 single_points: dict[str, tuple[float, float]],
                 sweep_frontiers: dict[str, tuple[np.ndarray, np.ndarray]],
                 out_dir: Path, show: bool, mm_label: str = "",
-                plot_name: str = "pareto_plane") -> None:
+                plot_name: str = "pareto_plane",
+                effort_max: float = 200.0,
+                score_max: float = 2.0,
+                genetic_eigen_data: tuple[np.ndarray, np.ndarray] | None = None) -> None:
 
     bg = "#1A1D2E"
     grid_kw = dict(color="#2A2D3E", linestyle="--", linewidth=0.6, alpha=0.7)
@@ -308,6 +397,14 @@ def plot_pareto(sweep_data,
         eff_v = flat_eff[valid]
         sc_v  = flat_score[valid]
         a_v, b_v = a_flat[valid], b_flat[valid]
+        lbl_v = np.array([f"a={a:.0f}\nb={b:.0f}" for a,b in zip(a_v, b_v)])
+
+        # Merge genetic Eigen points (no a/b labels for these)
+        if genetic_eigen_data is not None:
+            ge_eff, ge_sc, ge_lbl = genetic_eigen_data
+            eff_v = np.concatenate([eff_v, ge_eff])
+            sc_v  = np.concatenate([sc_v, ge_sc])
+            lbl_v = np.concatenate([lbl_v, ge_lbl])
 
         if len(sc_v) > 0:
             # Colour by (a, b) label
@@ -315,7 +412,7 @@ def plot_pareto(sweep_data,
             cmap       = plt.cm.YlOrRd
 
             sc_plot = ax1.scatter(eff_v, sc_v, c=sc_v, cmap=cmap, norm=norm_color,
-                                 s=70, zorder=4, edgecolors="#555", linewidths=0.4,
+                                 s=15, zorder=4, edgecolors="#555", linewidths=0.4,
                                  label="Eigen Configs (suboptimal)")
             cb = plt.colorbar(sc_plot, ax=ax1, label="Stability score (lower=better)", pad=0.01)
             cb.ax.yaxis.label.set_color("white")
@@ -324,23 +421,22 @@ def plot_pareto(sweep_data,
             pf_mask  = pareto_frontier(eff_v, sc_v)
             pf_eff   = eff_v[pf_mask]
             pf_sc    = sc_v[pf_mask]
-            pf_a     = a_v[pf_mask]
-            pf_b     = b_v[pf_mask]
+            pf_lbl   = lbl_v[pf_mask]
             sort_idx = np.argsort(pf_eff)
             pf_eff, pf_sc = pf_eff[sort_idx], pf_sc[sort_idx]
-            pf_a, pf_b = pf_a[sort_idx], pf_b[sort_idx]
+            pf_lbl   = pf_lbl[sort_idx]
 
             ax1.plot(pf_eff, pf_sc, color=COLORS["Eigen sweep"], linewidth=2.0,
-                    linestyle="-", zorder=5, marker="D", markersize=6,
+                    linestyle="-", zorder=5, marker="D", markersize=4,
                     label="Eigen Pareto frontier")
             legend_handles.append(Line2D([0],[0], color=COLORS["Eigen sweep"],
-                                         linewidth=2, marker="D", markersize=6,
+                                         linewidth=2, marker="D", markersize=4,
                                          label="Eigen Pareto frontier"))
                                          
-            for e, s, a, b in zip(pf_eff, pf_sc, pf_a, pf_b):
-                ax1.annotate(f"a={a:.0f}\nb={b:.0f}", (e, s),
-                            textcoords="offset points", xytext=(4, 2),
-                            fontsize=8, color="#DDDDDD", alpha=0.9, fontweight="bold")
+            for e, s, lbl in zip(pf_eff, pf_sc, pf_lbl):
+                ax1.annotate(lbl, (e, s),
+                            textcoords="offset points", xytext=(3, -3),
+                            fontsize=5, color="#DDDDDD", alpha=0.9, fontweight="bold")
 
     # ── PD and MPC sweep frontiers (from pd_sweep / mpc_sweep CSVs) ──────────
     sweep_line_styles = {"Cascaded PD": "-", "LPV-MPC": "-."}
@@ -353,15 +449,15 @@ def plot_pareto(sweep_data,
         ax1.plot(eff_f[sort_i], sc_f[sort_i],
                 color=COLORS[name], linewidth=2.0,
                 linestyle=sweep_line_styles.get(name, "-"),
-                marker=MARKERS.get(name, "o"), markersize=7, zorder=6,
+                marker=MARKERS.get(name, "o"), markersize=4, zorder=6,
                 label=f"{name} Pareto frontier")
         legend_handles.append(Line2D([0],[0], color=COLORS[name],
                                      linewidth=2, marker=MARKERS.get(name, "o"),
-                                     markersize=7, linestyle=sweep_line_styles.get(name, "-"),
+                                     markersize=4, linestyle=sweep_line_styles.get(name, "-"),
                                      label=f"{name} Pareto frontier"))
         # Annotate individual points
         for e, s in zip(eff_f, sc_f):
-            ax1.scatter(e, s, color=COLORS[name], s=60, zorder=7,
+            ax1.scatter(e, s, color=COLORS[name], s=20, zorder=7,
                        edgecolors="white", linewidths=0.5)
 
     # Single operating points (fallback when no sweep available)
@@ -374,7 +470,7 @@ def plot_pareto(sweep_data,
         if name == "Eigen (single)" and sweep_data is not None:
             continue
         eff, rmse = pt
-        ax1.scatter(eff, rmse, color=COLORS[name], s=200, marker=MARKERS[name],
+        ax1.scatter(eff, rmse, color=COLORS[name], s=100, marker=MARKERS[name],
                    zorder=8, edgecolors="white", linewidths=1.2)
         ax1.axvline(eff,  color=COLORS[name], linestyle=":", linewidth=0.8, alpha=0.5)
         ax1.axhline(rmse, color=COLORS[name], linestyle=":", linewidth=0.8, alpha=0.5)
@@ -385,53 +481,25 @@ def plot_pareto(sweep_data,
                                      linestyle="none", marker=MARKERS[name],
                                      markersize=9, label=f"{name} (single run)"))
 
-    # Iso-efficiency background gradient and hyperbolas: RMSE * effort = k
-    if single_points:
-        all_pts = [v for v in single_points.values() if v is not None]
-        
-        # Collect all points from all sweeps to set correct plot bounds
-        all_effs = list(eff_v) if 'eff_v' in locals() else []
-        all_scs  = list(sc_v) if 'sc_v' in locals() else []
-        for name, frontier in sweep_frontiers.items():
-            if frontier is not None:
-                all_effs.extend(frontier[0])
-                all_scs.extend(frontier[1])
-        
-        if all_effs and all_scs:
-            e_min = max(1e-9, min(all_effs)*0.8)
-            r_min = max(1e-9, min(all_scs)*0.8)
-            e_max = max(all_effs)*1.1
-            r_max = max(all_scs)*1.1
-            
-            # Cap the graph to some reasonable range for unstable runs
-            e_p95 = float(np.percentile(all_effs, 95)) if all_effs else e_max
-            r_p95 = float(np.percentile(all_scs, 95)) if all_scs else r_max
-            
-            if plot_name == "cascaded_pd":
-                e_max = min(e_max, max(300.0, e_p95 * 1.5))
-                r_max = min(r_max, r_p95 * 1.5)
-            else:
-                e_max = min(e_max, max(800.0, e_p95 * 1.5))
-                r_max = min(r_max, r_p95 * 1.5)
-                
-            E, R = np.meshgrid(np.linspace(e_min, e_max, 100),
-                               np.linspace(r_min, r_max, 100))
-            Z = E * R
-            
-            # Low opacity gradient
-            ax1.contourf(E, R, Z, levels=20, cmap="viridis", alpha=0.1, zorder=0)
-            
-            # Draw a few hyperbola lines
-            k_vals = np.percentile(Z.ravel(), [10, 30, 50, 70, 90])
-            for k in k_vals:
-                ax1.plot(E[0], k / E[0], color="white", linewidth=0.5, linestyle=":", alpha=0.2, zorder=1)
-                
-            legend_handles.append(Line2D([0],[0], color="white", linewidth=0.5,
-                                         linestyle=":", label="Iso-efficiency (Effort × Score)"))
-            ax1.set_xlim(e_min, e_max)
-            ax1.set_ylim(r_min, r_max)
+    # ── Hard axis limits (user-specified) ────────────────────────────────────
+    e_min = 1e-9
+    r_min = 1e-9
 
-    ax1.set_xlabel("Control Effort [future-biased mean Σ motor_thrust²]  (Lower is cheaper)", fontsize=11)
+    # Iso-efficiency background gradient and hyperbolas: RMSE * effort = k
+    E, R = np.meshgrid(np.linspace(e_min, effort_max, 100),
+                       np.linspace(r_min, score_max, 100))
+    Z = E * R
+    ax1.contourf(E, R, Z, levels=20, cmap="viridis", alpha=0.25, zorder=0)
+    k_vals = np.percentile(Z.ravel(), [10, 30, 50, 70, 90])
+    for k in k_vals:
+        ax1.plot(E[0], k / E[0], color="white", linewidth=0.5, linestyle=":", alpha=0.4, zorder=1)
+    legend_handles.append(Line2D([0],[0], color="white", linewidth=0.5,
+                                 linestyle=":", label="Iso-efficiency (Effort × Score)"))
+
+    ax1.set_xlim(0, effort_max)
+    ax1.set_ylim(0, score_max)
+
+    ax1.set_xlabel("Control Effort  [SES = E_mean × (1 + 5 × sat_frac)]  (Lower is cheaper)", fontsize=11)
     ax1.set_ylabel("Stability Score [future-biased mean ‖ep‖  m]  (Lower is better)", fontsize=11)
     ax1.set_title("Pareto Plane: Each point is a different controller tuning\n"
                  "(Controllers closest to the bottom-left are most efficient)", fontsize=11)
@@ -582,25 +650,23 @@ SWEEP_INSTRUCTIONS = """
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║                                                                              ║
 ║  ⚠ SWEEP DIMENSIONALITY:                                                     ║
-║    Eigen has a 2D sweep (wn × b = 30 configs). PD/MPC currently have         ║
-║    1D sweeps (α or q_weight alone). A 1D slice can only trace a subset       ║
-║    of a controller's true Pareto frontier. For a fair comparison,            ║
-║    consider 2D sweeps for PD (Kp_xy × Kd_xy) and MPC (q × r).                ║
+║    Eigen has a 2D sweep (wn × b = 30 configs).                               ║
+║    PD sweeps Kp_att × Kd_att (inner attitude loop).                          ║
+║    MPC sweeps q × r (state/effort weights).                                  ║
+║    All are 2D sweeps — Pareto comparison is dimensionally fair.               ║
 ║                                                                              ║
 ║  METRIC CONSISTENCY:                                                         ║
-║    All axes use the same future-biased weighted mean metric                  ║
-║    (score = Σ w(t)·‖ep(t)‖ / Σ w(t), w(t) = t/T) as the sweep scripts.       ║
+║    Score : future-biased mean ‖ep‖   (w(t)=t/T, identical for all sweeps)   ║
+║    Effort: Saturated Effort Score (SES):                                     ║
+║              SES = E_mean × (1 + 5 × sat_frac)                              ║
+║              sat_frac = fraction of timesteps with Σuᵢ² > 80 N²             ║
 ║    Outlier filtering uses the same 95th-percentile-based threshold           ║
 ║    for all controllers.                                                      ║
 ║                                                                              ║
-║  CURRENT PD/MPC SWEEPS (1D):                                                 ║
-║    mpc_sweep.py --q-values 5 10 15 20 30 --r-weight 0.02                     ║
-║    pd_sweep.py  --alpha-values 0.3 0.5 0.75 1.0 1.5 2.0 3.0                  ║
-║                                                                              ║
-║  RECOMMENDED 2D SWEEPS (for fairness):                                       ║
-║    pd_sweep.py  --kp-xy-values 0.3 0.5 0.7 --kd-xy-values 0.5 1.0 2.0        ║
-║    mpc_sweep.py --q-values 5 10 20 --r-values 0.01 0.02 0.05                 ║
-║    (These CLI flags require extending the sweep scripts.)                    ║
+║  CURRENT SWEEPS (2D):                                                        ║
+║    pd_sweep.py  --kp-att-values 10 15 20 25 30                               ║
+║                 --kd-att-values 0.2 0.35 0.5 0.7 1.0                        ║
+║    mpc_sweep.py --q-values 5 10 20 --r-values 0.01 0.02 0.05                ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -633,7 +699,7 @@ def main():
     # Find all mm_ directories in the parent ab_sweep dir
     ab_sweep_dir = RESULTS_DIR / "eigen_sweep" / "ab_sweep"
     if ab_sweep_dir.exists():
-        mm_dirs = [d for d in ab_sweep_dir.iterdir() if d.is_dir() and d.name.startswith("mm_")]
+        mm_dirs = [d for d in ab_sweep_dir.iterdir() if d.is_dir() and d.name.startswith("mm_") and "6.0e-07" not in d.name]
     else:
         mm_dirs = [Path(args.sweep_dir)]
 
@@ -649,9 +715,13 @@ def main():
             a_vals, b_vals, scores_2d  = scores_raw
             _,      _,      efforts_2d = efforts_raw
             sweep_data = (a_vals, b_vals, scores_2d, efforts_2d)
-            print(f"\nLoaded Eigen sweep: {len(a_vals)} × {len(b_vals)} grid from {mm_dir.name}")
+            print(f"\nLoaded Eigen grid sweep: {len(a_vals)} × {len(b_vals)} from {mm_dir.name}")
         else:
-            print(f"\n[warn] Eigen sweep CSVs not found at {mm_dir}")
+            print(f"\n[warn] Eigen grid sweep CSVs not found at {mm_dir}")
+            # Try genetic-only Eigen data as scatter points
+            gen_eigen_only = RESULTS_DIR / "genetic_eigen_sweep" / mm_dir.name
+            if gen_eigen_only.exists():
+                print(f"  (genetic Eigen data will be loaded below)")
         import subprocess
         
         mm_str = mm_dir.name.replace('mm_', '')
@@ -659,7 +729,12 @@ def main():
         pd_mm_dir = RESULTS_DIR / "pd_sweep" / mm_dir.name
         if not pd_mm_dir.exists() or not (pd_mm_dir / "scores.csv").exists():
             print(f"\n[pareto] PD grid not found for mm={mm_str}. Running pd_sweep...")
-            cmd = f"bash -i -c 'isaac_run examples/controller_tests/sweeps/pd_sweep.py --kp-xy-values 0.3 0.5 0.7 1.0 1.5 --kd-xy-values 0.5 1.0 2.0 3.0 --headless --motor-moment {mm_str}'"
+            cmd = (
+                f"bash -i -c 'isaac_run examples/controller_tests/sweeps/pd_sweep.py "
+                f"--kp-att-values 10 15 20 25 30 "
+                f"--kd-att-values 0.2 0.35 0.5 0.7 1.0 "
+                f"--headless --motor-moment {mm_str}'"
+            )
             subprocess.run(cmd, shell=True)
             
         mpc_mm_dir = RESULTS_DIR / "mpc_sweep" / mm_dir.name
@@ -671,29 +746,41 @@ def main():
         sweep_frontiers: dict[str, tuple | None] = {}
         pd_frontier = read_1d_sweep_csv(pd_mm_dir)
         if pd_frontier:
-            sweep_frontiers["Cascaded PD"] = pd_frontier
-            print(f"Loaded PD sweep for mm={mm_str}")
-        
+            print(f"Loaded PD grid sweep for mm={mm_str} ({len(pd_frontier[0])} pts)")
+
+        # Merge genetic PD results if available
+        gen_pd_dir = RESULTS_DIR / "genetic_pd_sweep" / mm_dir.name
+        gen_pd = read_genetic_csv(gen_pd_dir)
+        if gen_pd:
+            print(f"Loaded genetic PD sweep for mm={mm_str} ({len(gen_pd[0])} pts)")
+            gen_pd_2 = (gen_pd[0], gen_pd[1])
+        else:
+            gen_pd_2 = None
+        pd_merged = _merge_frontiers(pd_frontier, gen_pd_2)
+        if pd_merged:
+            sweep_frontiers["Cascaded PD"] = pd_merged
+
         mpc_frontier = read_1d_sweep_csv(mpc_mm_dir)
         if mpc_frontier:
             sweep_frontiers["LPV-MPC"] = mpc_frontier
             print(f"Loaded MPC sweep for mm={mm_str}")
 
+        # Merge genetic Eigen results with the grid sweep
+        gen_eigen_dir = RESULTS_DIR / "genetic_eigen_sweep" / mm_dir.name
+        gen_eigen = read_genetic_csv(gen_eigen_dir)
+        if gen_eigen:
+            print(f"Loaded genetic Eigen sweep for mm={mm_str} ({len(gen_eigen[0])} pts)")
+
         mm_label = f" (kt={mm_str})" if sweep_data else ""
-        
-        eigen_mpc_frontiers = {k: v for k, v in sweep_frontiers.items() if "Cascaded PD" not in k}
-        pd_frontiers = {k: v for k, v in sweep_frontiers.items() if "Cascaded PD" in k}
-        
-        eigen_mpc_singles = {k: v for k, v in single_points.items() if "Cascaded PD" not in k}
-        pd_singles = {k: v for k, v in single_points.items() if "Cascaded PD" in k}
-        
-        plot_pareto(sweep_data, eigen_mpc_singles, eigen_mpc_frontiers,
-                    out_dir=out_dir, show=can_show, mm_label=mm_label + " (Eigen vs MPC)",
-                    plot_name="eigen_mpc")
-                    
-        plot_pareto(None, pd_singles, pd_frontiers,
-                    out_dir=out_dir, show=can_show, mm_label=mm_label + " (Cascaded PD)",
-                    plot_name="cascaded_pd")
+
+        # Single merged plot: Eigen sweep + LPV-MPC + Cascaded PD
+        plot_pareto(sweep_data, single_points, sweep_frontiers,
+                    out_dir=out_dir, show=can_show,
+                    mm_label=mm_label + " (All Controllers)",
+                    plot_name="all_controllers",
+                    effort_max=200.0,
+                    score_max=2.0,
+                    genetic_eigen_data=gen_eigen)
 
 if __name__ == "__main__":
     main()

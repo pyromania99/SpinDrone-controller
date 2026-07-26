@@ -92,6 +92,7 @@ logs/
 # any "results" directory anywhere in the repo, not just one path, so new
 # sweep output dirs (e.g. results/eigen_explore/) are covered automatically.
 **/results/
+**/results_pre_thrust_fix_20260726
 
 # Isaac-Sim packman
 _isaac_sim/

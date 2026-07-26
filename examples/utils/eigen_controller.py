@@ -8,11 +8,20 @@
 | The core physics and torque generation laws remain completely untouched.
 """
 
+import sys
+from pathlib import Path
+
 import carb
 import numpy as np
 
 from pegasus.simulator.logic.backends import Backend
 from pegasus.simulator.logic.state import State
+
+# Sibling module in examples/utils. The sweeps put this directory on sys.path
+# before importing the controller; the insert keeps a direct import working too.
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from applied_thrust import applied_rotor_forces
 
 
 class EigenController(Backend):
@@ -36,11 +45,11 @@ class EigenController(Backend):
         Ixx=0.01,
         Iyy=0.01,
         Izz=0.02,
-        Kp_att=0.7,
-        Kd_att=10.0,
+        Kp_att=4.68,
+        Kd_att=1.0,
         max_total_thrust=80.0,
-        wn_mdyn=2.0,
-        b_mdyn=2.0,
+        wn_mdyn=13.3,
+        b_mdyn=6.720,
     ):
         super().__init__(config=None)
 
@@ -331,13 +340,22 @@ class EigenController(Backend):
         u3 = base_thrust + altitude_correction + roll_correction - pitch_correction
         u4 = base_thrust + altitude_correction - roll_correction - pitch_correction
 
-        # Cap individual motor thrusts to physical reality (they can't exceed max_total_thrust individually)
-        motor_thrusts = np.clip(np.array([u1, u2, u3, u4]), 0.0, self.max_total_thrust)
-        total_thrust = float(np.clip(np.sum(motor_thrusts), 0.0, self.max_total_thrust))
+        commanded_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
+        total_thrust = float(np.clip(np.sum(commanded_thrusts), 0.0, self.max_total_thrust))  # commanded
         tau = np.array([roll_correction, pitch_correction, 0.0])
 
+        # motor_thrusts logs what the vehicle ACTUALLY applies, not this
+        # mixer's idealisation of it. The old code clipped each u_i at
+        # max_total_thrust (80 N) — the *total* limit, ~8x the true per-rotor
+        # maximum of 10.34 N — so the logged effort was a quantity the
+        # simulator never produced. The allocator also saturates by scaling
+        # all rotors together rather than clipping them individually, which
+        # the u1..u4 mixer cannot represent. See examples/utils/applied_thrust.py.
         if self.vehicle:
             self.input_ref = self.vehicle.force_and_torques_to_velocities(total_thrust, tau)
+            motor_thrusts = applied_rotor_forces(self.vehicle, self.input_ref)
+        else:
+            motor_thrusts = np.zeros(4)
 
         # ---- Logging Arrays Capture ----
         self.time_vector.append(self.total_time)
@@ -348,6 +366,7 @@ class EigenController(Backend):
         self.attitude_error_over_time.append(np.array([roll_error, pitch_error, 0.0]))
         self.yaw_rate_over_time.append(self.w[2])
         self.desired_yaw_rate_over_time.append(desired_yaw_rate)
-        self.thrust_over_time.append(total_thrust)
+        # Applied, not commanded — matches motor_thrusts above.
+        self.thrust_over_time.append(float(np.sum(motor_thrusts)))
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())

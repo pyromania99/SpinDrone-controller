@@ -39,7 +39,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--kd-pos", type=float, default=1.00)
     p.add_argument("--kp-z",   type=float, default=15.0)
     p.add_argument("--kd-z",   type=float, default=8.0)
-    p.add_argument("--duration",        type=float, default=20.0)
+    p.add_argument("--duration",        type=float, default=25.0,
+                   help="Simulation seconds per run (default: 25.0 to ensure >20s of stable hover)")
     p.add_argument("--target-altitude", type=float, default=1.5)
     p.add_argument("--spacing",         type=float, default=4.0)
     p.add_argument("--bounds", nargs=6, type=float, default=[-12., 12., -12., 12., 0., 20.])
@@ -130,10 +131,8 @@ def effort_score(npz_path: str, T_total: float) -> float:
                 worst = float(np.max(eff_arr)) if eff_arr.size else 0.0
                 t_arr = np.concatenate([t_arr, pad_t])
                 eff_arr = np.concatenate([eff_arr, np.full(len(pad_t), worst)])
-        w = t_arr / T_total
-        w_sum = float(np.sum(w))
-        if w_sum < 1e-12: return np.inf
-        s = float(np.dot(w, eff_arr) / w_sum)
+        # Use peak effort instead of mean effort to penalize late-stage destabilization
+        s = float(np.max(eff_arr))
         return s if np.isfinite(s) else np.inf
     except Exception as exc:
         carb.log_warn(f"[mpc_sweep] effort read failed: {exc}")
@@ -171,6 +170,12 @@ class BoundedMPCBackend(Backend):
         if not (xmin < x < xmax and ymin < y < ymax and zmin < z < zmax):
             self.is_oob = True
             self.oob_time = self.total_time
+            return True
+        # Check for crashing on the floor after initial takeoff
+        if self.total_time > 2.0 and z < 0.15:
+            self.is_oob   = True
+            self.oob_time = self.total_time
+            carb.log_warn(f"[mpc_sweep] CRASH DETECTED at z={z:.3f} t={self.total_time:.2f}s")
             return True
         return False
 
