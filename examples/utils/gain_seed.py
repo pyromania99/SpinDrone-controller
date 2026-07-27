@@ -39,12 +39,38 @@ from __future__ import annotations
 
 import csv
 import math
+import re
 from pathlib import Path
 
 # Columns that identify which controller wrote an archive. The Eigen sweeps
 # record the M_dyn genes; the PD sweeps record the yaw-rate damping gene.
 _EIGEN_MARKERS = ("wn_mdyn", "b_mdyn")
 _PD_MARKERS = ("Kd_yaw_rate",)
+
+
+_MM_DIR = re.compile(r"^mm_([-+0-9.eE]+)$")
+
+
+def _close(a: float, b: float, rtol: float = 1e-6, atol: float = 1e-12) -> bool:
+    return abs(a - b) <= atol + rtol * max(abs(a), abs(b))
+
+
+def _group_from_path(path: Path, group_column: str):
+    """Group value encoded in the archive's directory name, or None.
+
+    Only motor_moment is encoded this way (results/<sweep>/mm_<value>/), so
+    any other grouping column falls through to the CSV alone.
+    """
+    if group_column != "motor_moment":
+        return None
+    for part in path.parts:
+        match = _MM_DIR.match(part)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                return None
+    return None
 
 
 class SeedError(RuntimeError):
@@ -157,3 +183,120 @@ def load_best_gains(source, controller: str, keys=("Kp_att", "Kd_att"),
     result["_score"] = best_score
     result["_source"] = str(best_path)
     return result
+
+
+def load_best_gains_by_group(source, controller: str, keys=("Kp_att", "Kd_att"),
+                             group_column: str = "motor_moment",
+                             score_column: str = "score",
+                             max_score: float = None) -> dict:
+    """Best-scoring row's `keys` for EACH distinct value of `group_column`.
+
+    Returns {group_value: {key: value, ..., '_score': ..., '_source': ...}}.
+
+    A single global best is the wrong pin when the optimum moves with the
+    grouping variable. Measured on the Eigen genetic archives, the best
+    Kd_att ranges from 4.45 at km=4e-7 to 11.98 at km=1e-7 — a factor of 2.7.
+    Pinning every motor moment to whichever one happened to score best overall
+    maps the high- and low-spin ends of the sweep at gains that are not theirs.
+
+    Rows whose group value is missing or unparseable are skipped rather than
+    pooled into an arbitrary bucket.
+    """
+    if controller not in ("eigen", "pd"):
+        raise SeedError(f"unknown controller {controller!r}")
+
+    archives = find_archives(Path(source))
+    if not archives:
+        raise SeedError(f"no archive CSV found under {source}")
+
+    best = {}
+    wrong_controller = []
+    stale = []
+
+    for path in archives:
+        try:
+            rows = _read_rows(path)
+        except Exception as exc:
+            raise SeedError(f"could not read {path}: {exc}") from exc
+        if not rows:
+            continue
+
+        found = detect_controller(rows[0].keys())
+        if found != controller:
+            wrong_controller.append(f"{path} (looks like '{found}')")
+            continue
+        if not all(k in rows[0] for k in keys) or group_column not in rows[0]:
+            continue
+
+        # The sweeps write one archive per motor moment into an mm_<value>
+        # directory, so the path is an independent record of the group value.
+        # Archives written before genetic_sweep.py switched to str(mm)
+        # formatted this column with "%.6f", which rounds every km below
+        # ~5e-7 to "0.000000" — such a file would silently deposit its rows in
+        # the km=0 bucket and outrank the real km=0 results. When the column
+        # and the path disagree the archive is stale: skip it and carry on
+        # with the others rather than seeding from data known to be mislabelled.
+        path_group = _group_from_path(path, group_column)
+        if path_group is not None and rows:
+            column_group = _as_float(rows[0].get(group_column))
+            if column_group is not None and not _close(path_group, column_group):
+                stale.append(f"{path} (path says {path_group:g}, "
+                             f"column says {column_group:g})")
+                continue
+
+        for row in rows:
+            group = path_group if path_group is not None else _as_float(
+                row.get(group_column))
+            score = _as_float(row.get(score_column))
+            if group is None or score is None:
+                continue
+            if max_score is not None and score > max_score:
+                continue
+            values = {k: _as_float(row.get(k)) for k in keys}
+            if any(v is None for v in values.values()):
+                continue
+            if group not in best or score < best[group]["_score"]:
+                entry = dict(values)
+                entry["_score"] = score
+                entry["_source"] = str(path)
+                best[group] = entry
+
+    if stale:
+        best["_stale_skipped"] = stale
+
+    if not [k for k in best if not isinstance(k, str)]:
+        detail = ""
+        if wrong_controller:
+            detail = ("\n  archives found but written by a different "
+                      "controller (Kp_att/Kd_att are NOT the same quantity "
+                      "across controllers, so these cannot be used):\n    "
+                      + "\n    ".join(wrong_controller))
+        if stale:
+            detail += ("\n  stale archives skipped (motor_moment column "
+                       "disagrees with the mm_<value> directory, so their "
+                       "rows cannot be grouped):\n    " + "\n    ".join(stale))
+        raise SeedError(
+            f"no usable '{controller}' rows with columns {list(keys)} grouped "
+            f"by '{group_column}' under {source}{detail}")
+    return best
+
+
+def lookup_group(table: dict, value: float, rtol: float = 1e-6,
+                 atol: float = 1e-12) -> dict:
+    """Entry in a load_best_gains_by_group table matching `value`.
+
+    Motor moments round-trip through the CSV as text, so keys are compared
+    with a tolerance instead of by equality. Raises SeedError listing the
+    available values when there is no match — a near-miss must not quietly
+    resolve to the wrong operating point.
+    """
+    for key, entry in table.items():
+        if abs(key - value) <= atol + rtol * abs(value):
+            return entry
+    available = ", ".join(f"{k:g}" for k in sorted(table))
+    raise SeedError(
+        f"no seed row for {group_repr(value)}; archive covers: {available}")
+
+
+def group_repr(value: float) -> str:
+    return f"{value:g}"

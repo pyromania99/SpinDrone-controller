@@ -10,10 +10,18 @@ Reads sweep data from:
 METRIC (shared by ALL sweep scripts and this visualiser)
 --------------------------------------------------------
   score(t)  = Σ w(t)·‖ep(t)‖ / Σ w(t)          w(t) = t/T  (future-biased)
-  effort    = Saturated Effort Score (SES):
-                E_mean   = Σ w(t)·E(t) / Σ w(t)  where E(t) = Σᵢ uᵢ²
-                sat_frac = fraction of timesteps where E(t) > 80 N²
-                SES      = E_mean × (1 + 5 × sat_frac)
+  effort    = effort_ac_ses — the DIFFERENTIAL (torque) effort channel:
+                ū(t)      = mean of the four applied rotor thrusts
+                E_ac(t)   = Σᵢ (uᵢ(t) − ū(t))²      (E_dc = 4·ū² is the rest)
+                E_mean    = Σ w(t)·E_ac(t) / Σ w(t)
+                sat_frac  = fraction of timesteps with Σuᵢ² > 342.4 N² (80 % of
+                            E_SAT = 4 × 10.34², the real per-rotor limit)
+                effort_ac_ses = E_mean × (1 + 5 × sat_frac)
+
+              The total-thrust effort used previously is ~95 % constant hover
+              bias (the hover floor alone is ~73.7 N²), so fronts computed on
+              it collapse toward a point. uᵢ are the thrusts the simulator
+              actually applies, not a mixer reconstruction of them.
 
 WHY PARETO?
 -----------
@@ -49,6 +57,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -117,75 +126,37 @@ def parse_args():
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-# Saturated Effort Score constants — MUST match all three sweep scripts.
-_U_MAX_PER_MOTOR: float = 5.0
-_E_SAT:           float = 4.0 * _U_MAX_PER_MOTOR ** 2   # 100 N²
-_SAT_THRESH:      float = 0.80 * _E_SAT                 # 80 N²
-_SAT_ALPHA:       float = 5.0
+# Metric constants and implementation come from examples/utils/sweep_metrics.py.
+# This file used to carry its own copy with U_MAX_PER_MOTOR hard-coded to 5.0 N
+# — a fifth divergent copy of the same metric. The true per-rotor limit is
+# 10.34 N (rotor_constant 8.54858e-6 x 1100 rad/s squared), so that copy put the
+# saturation threshold at 4 % above hover thrust and applied a penalty to
+# essentially every run it scored.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
+import sweep_metrics as sm  # noqa: E402
+
+# Arena box matching every sweep's --bounds default; only affects the value the
+# post-OOB tail is charged at, so it must match what the sweeps scored with.
+_BOUNDS_DIAG = sm.bounds_diagonal([-12.0, 12.0, -12.0, 12.0, 0.0, 20.0])
+
+# Effort axis for the Pareto plane. effort_ac_ses is the differential (torque)
+# channel — the part the attitude gains actually move. The legacy total-thrust
+# effort is ~95 % constant hover bias, which is why fronts computed on it
+# collapse toward a single point and cannot express a trade-off.
+EFFORT_KEY = "effort_ac_ses"
 
 
-def _future_biased_mean(t: np.ndarray, values: np.ndarray) -> float:
-    """Weighted mean with w(t) = t / T — same metric used by all sweep scripts."""
-    T = float(t[-1]) if len(t) > 0 else 1.0
-    if T < 1e-6:
-        return float("nan")
-    w = t / T
-    w_sum = float(np.sum(w))
-    if w_sum < 1e-12:
-        return float("nan")
-    return float(np.dot(w, values) / w_sum)
+def operating_point_from_npz(path: Path, t_limit: float | None,
+                             effort_key: str = EFFORT_KEY):
+    """Return (effort, score) from a single-run NPZ, or None if unusable.
 
-
-def _saturated_effort_score(t: np.ndarray, eff_per_step: np.ndarray) -> float:
-    """Compute Saturated Effort Score from pre-computed per-timestep effort.
-
-    SES = E_mean × (1 + SAT_ALPHA × sat_frac)
-    where E_mean is the future-biased mean and sat_frac is the fraction
-    of timesteps where total motor thrust² > SAT_THRESH.
-    """
-    T = float(t[-1]) if len(t) > 0 else 1.0
-    if T < 1e-6:
-        return float("nan")
-    w     = t / T
-    w_sum = float(np.sum(w))
-    if w_sum < 1e-12:
-        return float("nan")
-    e_mean   = float(np.dot(w, eff_per_step) / w_sum)
-    sat_frac = float(np.mean(eff_per_step > _SAT_THRESH))
-    return e_mean * (1.0 + _SAT_ALPHA * sat_frac)
-
-
-def operating_point_from_npz(path: Path, t_limit: float | None) -> tuple[float, float] | None:
-    """Return (effort, score) from a single-run NPZ.
-
-    Uses the SAME metrics as the sweep scripts:
-      score  = future-biased mean ‖ep‖:  Σ w(t)·‖ep(t)‖ / Σ w(t),  w(t)=t/T
-      effort = Saturated Effort Score (SES):
-                 E_mean × (1 + SAT_ALPHA × sat_frac)
-                 where sat_frac = fraction of timesteps with E(t) > SAT_THRESH
+    t_limit is honoured by passing it as the scoring horizon T, so a truncated
+    run is charged for its missing tail exactly as the sweeps charge it.
     """
     if not path.exists():
         return None
-    d = np.load(path)
-    t  = d["time"].astype(float)
-    ep = d["ep"].astype(float)
-    mt = d.get("motor_thrusts")
-    if mt is None:
-        return None
-    mt = mt.astype(float)
-
-    mask = t <= t_limit if t_limit is not None else np.ones(len(t), bool)
-    t, ep, mt = t[mask], ep[mask], mt[mask]
-    if len(t) < 10:
-        return None
-
-    errors = np.linalg.norm(ep, axis=1)
-    eff_per_step = np.sum(mt ** 2, axis=1)
-    if not (np.all(np.isfinite(errors)) and np.all(np.isfinite(eff_per_step))):
-        return None
-
-    score  = _future_biased_mean(t, errors)
-    effort = _saturated_effort_score(t, eff_per_step)
+    metrics = sm.compute_metrics(str(path), float(t_limit or 0.0), _BOUNDS_DIAG)
+    score, effort = metrics["score"], metrics[effort_key]
     if not (np.isfinite(score) and np.isfinite(effort)):
         return None
     return effort, score
@@ -499,7 +470,7 @@ def plot_pareto(sweep_data,
     ax1.set_xlim(0, effort_max)
     ax1.set_ylim(0, score_max)
 
-    ax1.set_xlabel("Control Effort  [SES = E_mean × (1 + 5 × sat_frac)]  (Lower is cheaper)", fontsize=11)
+    ax1.set_xlabel("Differential control effort  [effort_ac_ses, N²]  (Lower is cheaper)", fontsize=11)
     ax1.set_ylabel("Stability Score [future-biased mean ‖ep‖  m]  (Lower is better)", fontsize=11)
     ax1.set_title("Pareto Plane: Each point is a different controller tuning\n"
                  "(Controllers closest to the bottom-left are most efficient)", fontsize=11)
@@ -658,8 +629,8 @@ SWEEP_INSTRUCTIONS = """
 ║  METRIC CONSISTENCY:                                                         ║
 ║    Score : future-biased mean ‖ep‖   (w(t)=t/T, identical for all sweeps)   ║
 ║    Effort: Saturated Effort Score (SES):                                     ║
-║              SES = E_mean × (1 + 5 × sat_frac)                              ║
-║              sat_frac = fraction of timesteps with Σuᵢ² > 80 N²             ║
+║              effort_ac_ses = E_mean(Σ(uᵢ-ū)²) × (1 + 5 × sat_frac)          ║
+║              sat_frac = fraction of timesteps with Σuᵢ² > 342.4 N²          ║
 ║    Outlier filtering uses the same 95th-percentile-based threshold           ║
 ║    for all controllers.                                                      ║
 ║                                                                              ║

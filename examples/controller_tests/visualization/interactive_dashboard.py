@@ -297,8 +297,18 @@ def main():
     # ----------------------------------------------------------------------
     # Normal grid sweeps (single grid_archive.csv)
     # ----------------------------------------------------------------------
-    grid_sweeps = [
-        (results_dir / "eigen_sweep" / "ab_sweep" / mm_dir,   "Eigen (Grid)"),
+    # run_all_sweeps.sh writes the ab-sweep under a --run-tag suffix so a
+    # coarse and a refined pass can coexist (ab_sweep_wide, ab_sweep_fine)
+    # instead of the second overwriting the first. Try the tagged variants
+    # before falling back to the untagged legacy name.
+    grid_sweeps = []
+    for tag, label in [("_wide", "Eigen (Grid, wide b)"),
+                        ("_fine", "Eigen (Grid, fine b)"),
+                        ("", "Eigen (Grid)")]:
+        cand = results_dir / "eigen_sweep" / f"ab_sweep{tag}" / mm_dir
+        if (cand / "grid_archive.csv").exists():
+            grid_sweeps.append((cand, label))
+    grid_sweeps += [
         (results_dir / "eigen_sweep" / "kpkd_sweep" / mm_dir, "Eigen Kp/Kd @fixed wn,b"),
         (results_dir / "mpc_sweep" / mm_dir,                  "LPV-MPC (Grid)"),
         (results_dir / "pd_sweep" / mm_dir,                   "Cascaded PD (Grid)"),

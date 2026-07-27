@@ -113,7 +113,12 @@ def _plot(
 
         if "yaw_rate" in data.files:
             yaw_rate = data["yaw_rate"]
-            yaw_ref = data["desired_yaw_rate"] if "desired_yaw_rate" in data.files else None
+            # "desired_yaw_rate" was a misnomer: neither controller tracks a
+            # yaw reference, so it is only read from pre-rename archives.
+            yaw_ref = (data["unused_yaw_rate_cmd"]
+                       if "unused_yaw_rate_cmd" in data.files
+                       else data["desired_yaw_rate"]
+                       if "desired_yaw_rate" in data.files else None)
             yaw_body_ref = data["desired_body_z_rate"] if "desired_body_z_rate" in data.files else None
 
             fig3 = plt.figure(figsize=(10, 4.5))

@@ -32,7 +32,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import math
 import os
 import sys
 from pathlib import Path
@@ -88,6 +87,12 @@ def parse_args() -> argparse.Namespace:
         metavar=("XMIN", "XMAX", "YMIN", "YMAX", "ZMIN", "ZMAX"),
     )
     p.add_argument("--goal-seed",  type=int,  default=7)
+    p.add_argument("--goal-radius", type=float, default=None,
+                   help="Lateral distance [m] from spawn XY to the hover target. "
+                        "Every run is a takeoff followed by a translation of this "
+                        "distance in a random direction; see examples/utils/"
+                        "sweep_task.py for why a zero-offset target made the score "
+                        "unable to distinguish attitude gains at all.")
     p.add_argument("--motor-moments", nargs="+", type=float,
                    default=[0.0, 1e-7, 2e-7, 4e-7],
                    help="km (motor moment) values to sweep — outer serial loop "
@@ -106,12 +111,17 @@ def parse_args() -> argparse.Namespace:
                    help="Max stability score during the validation step to count as feasible")
     p.add_argument("--validation-seed", type=int, default=123,
                    help="Separate RNG seed for validation target directions")
+    p.add_argument("--spawn-altitude", type=float, default=None,
+                   help="Altitude [m] to spawn at. Defaults to a ground start, so "
+                        "every run includes the takeoff transient. Pass the target "
+                        "altitude for the old air start.")
     p.add_argument("--headless",   action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
     return p.parse_args()
 
 
 ARGS = parse_args()
+
 simulation_app = SimulationApp({
     "headless": ARGS.headless,
     "hide_ui":                   True if ARGS.headless else None,
@@ -147,6 +157,15 @@ from pegasus.simulator.logic.state import State
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from cascaded_pd_controller import CascadedPDController
 import sweep_metrics as sm
+import sim_clock
+import sweep_task as task
+
+# Resolved after the late imports so every code path below sees numbers.
+# The task is a ground start followed by a translation to a laterally offset
+# goal — see examples/utils/sweep_task.py for why.
+ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
+if ARGS.goal_radius is None:
+    ARGS.goal_radius = task.DEFAULT_GOAL_RADIUS
 
 
 # ── OOB-aware telemetry wrapper ───────────────────────────────────────────────
@@ -154,15 +173,27 @@ import sweep_metrics as sm
 class BoundedPDBackend(Backend):
     """Wraps CascadedPDController; tracks OOB and gates all calls."""
 
-    def __init__(self, inner: CascadedPDController, results_file: str):
+    def __init__(self, inner: CascadedPDController, results_file: str,
+                 target_altitude: float):
         super().__init__(config=None)
         self.inner        = inner
         self.results_file = results_file
         self.total_time   = 0.0
-        self.oob_time     = float("nan")
-        self.is_oob       = False
         self._stopped     = False
         self.position     = np.zeros(3)
+        self.monitor      = task.FlightMonitor(
+            target_altitude, label="pd_sweep", log=carb.log_warn)
+
+    # is_oob/oob_time stay part of this class's surface — the sweep loops and
+    # sweep_metrics both read them — but the monitor is the single owner of
+    # the flight-phase state behind them.
+    @property
+    def is_oob(self) -> bool:
+        return self.monitor.failed
+
+    @property
+    def oob_time(self) -> float:
+        return self.monitor.oob_time
 
     def initialize(self, vehicle):
         super().initialize(vehicle)
@@ -170,9 +201,8 @@ class BoundedPDBackend(Backend):
 
     def start(self):
         self.total_time = 0.0
-        self.oob_time   = float("nan")
-        self.is_oob     = False
         self._stopped   = False
+        self.monitor.reset()
         self.inner.start()
 
     def stop(self):
@@ -184,6 +214,14 @@ class BoundedPDBackend(Backend):
             try:
                 data = dict(np.load(self.results_file))
                 data["oob_time"] = np.array(self.oob_time)
+                # Flight-phase diagnostics. min_altitude is the transient-safety
+                # number the future-biased score cannot express: it is measured
+                # post-takeoff, so it says how close the vehicle came to the
+                # floor while actually flying.
+                data["takeoff_time"]  = np.array(self.monitor.takeoff_time)
+                data["min_altitude"]  = np.array(self.monitor.min_altitude)
+                data["max_excursion"] = np.array(self.monitor.max_excursion)
+                data["failure"]       = np.array(self.monitor.failure)
                 np.savez(self.results_file, **data)
             except Exception as exc:
                 carb.log_warn(f"[pd_sweep] oob_time append failed: {exc}")
@@ -214,23 +252,12 @@ class BoundedPDBackend(Backend):
         self.inner.update(dt)
 
     def check_oob(self, bounds) -> bool:
-        if self.is_oob:
-            return False
-        x, y, z = self.position
-        if not (bounds[0] < x < bounds[1]
-                and bounds[2] < y < bounds[3]
-                and bounds[4] < z < bounds[5]):
-            self.is_oob   = True
-            self.oob_time = self.total_time
-            carb.log_warn(f"[pd_sweep] OOB at {self.position} t={self.total_time:.2f}s")
-            return True
-        # Check for crashing on the floor after initial takeoff
-        if self.total_time > 2.0 and z < 0.15:
-            self.is_oob   = True
-            self.oob_time = self.total_time
-            carb.log_warn(f"[pd_sweep] CRASH DETECTED at z={z:.3f} t={self.total_time:.2f}s")
-            return True
-        return False
+        """Advance the flight-phase monitor. True once the run is over.
+
+        Takeoff failures and crashes are distinguished in
+        examples/utils/sweep_task.py, shared with every other sweep.
+        """
+        return self.monitor.update(self.total_time, self.position, bounds)
 
 
 # ── Score helpers (copied from eigen_stability_sweep) ─────────────────────────
@@ -238,17 +265,15 @@ class BoundedPDBackend(Backend):
 _BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 
 
-def _validation_target(spawn_pos, altitude, radius, rng):
-    """Random-direction, fixed-radius offset from the hover point — same
-    convention as genetic_sweep.py/eigen_stability_sweep.py's
-    _validation_target, so step-response results are directly comparable
-    across GA and grid searches for both controllers."""
-    theta = float(rng.uniform(0.0, 2.0 * math.pi))
-    return (
-        spawn_pos[0] + radius * math.cos(theta),
-        spawn_pos[1] + radius * math.sin(theta),
-        float(altitude),
-    )
+def _validation_target(spawn_pos, altitude, radius, rng, max_dx=None):
+    """Second, independently drawn offset target for the Pareto-front pass.
+
+    Same builder as the main pass now uses (sweep_task.offset_target), drawn
+    from a separate RNG stream, so validation asks "does this configuration
+    generalise to a different heading" rather than "does it fly at all" —
+    which the main pass already answers.
+    """
+    return task.offset_target(spawn_pos, altitude, radius, rng, max_dx=max_dx)
 
 
 def _pareto_mask(scores, efforts):
@@ -410,13 +435,23 @@ def save_heatmap(x_vals, y_vals, data_2d, out_dir: Path, filename: str, title: s
 
 # ── Pareto-front step-response validation ─────────────────────────────────────
 
-def run_pd_validation_pass(world, timeline, drones, tmp_files, pairs, val_targets):
+def run_pd_validation_pass(world, timeline, drones, tmp_files, pairs, val_targets,
+                            hover_targets):
     """Re-run exactly the (kp, kd) pairs in `pairs` (the grid's current
     Pareto-front points) against `val_targets` instead of their normal hover
     target, batching them through the existing n_kp drone slots. Returns
     {(kp, kd): (score, effort)}. Mirrors genetic_sweep.py's validate_subset
     and eigen_stability_sweep.py's run_ab_validation_pass, using the same SES
-    scoring so results are directly comparable across GA and grid searches."""
+    scoring so results are directly comparable across GA and grid searches.
+
+    `hover_targets` is restored onto the drones before returning. The drone
+    objects outlive this function — they are reused for every motor moment —
+    so an offset target left installed here becomes the *grid's* target on the
+    next pass. That is not hypothetical: it is what the archived runs show.
+    At mm=0 the grid measured a hold at the spawn point (score ~0.052), while
+    every later motor moment measured a 2 m step (score ~0.16) against a target
+    left over from the previous validation pass, making the tables incomparable
+    and the apparent effect of spin mostly an artefact of the task changing."""
     render_sim = not ARGS.headless
     n_slots = len(drones)
     results = {}
@@ -443,11 +478,16 @@ def run_pd_validation_pass(world, timeline, drones, tmp_files, pairs, val_target
             world.step(render=render_sim)
 
         timeline.play()
+        # world.step() advances ONE physics step (physics_dt = 1/250),
+        # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+        # request. steps_for_duration asks the world for its real dt.
+        n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
         sim_time = 0.0
-        dt = 1.0 / 60.0
-        while simulation_app.is_running() and sim_time < ARGS.duration:
+        for _ in range(n_steps):
+            if not simulation_app.is_running():
+                break
             world.step(render=render_sim)
-            sim_time += dt
+            sim_time += step_dt
             all_oob = True
             for _, backend, _, drone_bounds in drones:
                 if backend.is_oob:
@@ -464,6 +504,10 @@ def run_pd_validation_pass(world, timeline, drones, tmp_files, pairs, val_target
                 backend.stop()
             m = run_metrics(tmp_files[slot], ARGS.duration)
             results[chunk[slot]] = (m["score"], m["effort"])
+
+    # Put the sweep's own targets back before anything else runs.
+    for slot, (_, backend, _, _) in enumerate(drones):
+        backend.inner.hover_target = np.asarray(hover_targets[slot], dtype=float)
 
     return results
 
@@ -491,6 +535,9 @@ def main():
     carb.log_warn(f"[pd_sweep] Kp_z fixed    : {ARGS.kp_z}    Kd_z fixed   : {ARGS.kd_z}")
     carb.log_warn(f"[pd_sweep] motor_moments : {ARGS.motor_moments}")
     carb.log_warn(f"[pd_sweep] duration      : {ARGS.duration} s")
+    carb.log_warn(f"[pd_sweep] task          : ground start z={ARGS.spawn_altitude:.2f}m "
+                  f"→ takeoff → {ARGS.goal_radius:.1f}m lateral step "
+                  f"(goal seed {ARGS.goal_seed})")
     carb.log_warn("="*60)
 
     # ── World ────────────────────────────────────────────────────────────────
@@ -518,10 +565,21 @@ def main():
             )
 
     spawn_y = -1.5
-    spawn_z = 0.07
+    # Ground start: every run begins on the floor and has to take off. The air
+    # start this replaced put the vehicle exactly on its target, so initial
+    # position error was zero and the attitude gains being swept could not
+    # affect the score at all. See examples/utils/sweep_task.py.
+    spawn_z = float(ARGS.spawn_altitude)
     half    = spacing / 2.0
     y_min, y_max = bounds[2], bounds[3]
     z_min, z_max = bounds[4], bounds[5]
+
+    # Random goal direction per drone, bounded in X so a drone's target stays
+    # inside its own slice of the arena and neighbours cannot be sent into
+    # each other. Seeded, so the same --goal-seed reproduces the same task.
+    goal_rng = np.random.default_rng(ARGS.goal_seed)
+    max_dx   = task.slice_max_dx(spacing)
+    task.check_goal_reachable(spawn_y, ARGS.goal_radius, bounds, label="pd_sweep")
 
     tmp_files = [str(results_base / f"_pd_sweep_tmp_{i}.npz")
                  for i in range(n_kp)]
@@ -532,7 +590,9 @@ def main():
     for i, kp_att in enumerate(kp_vals):
         spawn_x   = x_start + i * spacing
         spawn_pos = [spawn_x, spawn_y, spawn_z]
-        target    = (spawn_x, spawn_y, float(ARGS.target_altitude))
+        target    = task.offset_target(spawn_pos, ARGS.target_altitude,
+                                       ARGS.goal_radius, goal_rng,
+                                       max_dx=max_dx)
 
         drone_bounds = [
             spawn_x - half, spawn_x + half,
@@ -550,7 +610,7 @@ def main():
             Kp_att=(kp_att, kp_att),
             Kd_att=(kd_vals[0], kd_vals[0]),   # overwritten each pass
         )
-        backend = BoundedPDBackend(inner, tmp_files[i])
+        backend = BoundedPDBackend(inner, tmp_files[i], ARGS.target_altitude)
 
         cfg          = MultirotorConfig()
         cfg.backends = [backend]
@@ -565,7 +625,16 @@ def main():
             config=cfg,
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
-        carb.log_warn(f"  [Kp_att={kp_att:.4f}]  drone {i} spawned at x={spawn_x:.1f}")
+        carb.log_warn(
+            f"  [Kp_att={kp_att:.4f}]  drone {i} spawns at "
+            f"({spawn_x:.1f}, {spawn_y:.1f}, {spawn_z:.2f}) → target "
+            f"({target[0]:.2f}, {target[1]:.2f}, {target[2]:.2f})")
+
+    # The sweep's own hover targets, kept so the Pareto validation pass can put
+    # them back afterwards. Without this, the offset target validation installs
+    # on backend.inner.hover_target survives into the NEXT motor moment's grid
+    # pass, which then silently measures a different task from the first one.
+    hover_targets = [tuple(d[1].inner.hover_target) for d in drones]
 
     world.reset()
     for _ in range(10):
@@ -607,12 +676,16 @@ def main():
                 world.step(render=render_sim)
 
             timeline.play()
+            # world.step() advances ONE physics step (physics_dt = 1/250),
+            # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+            # request. steps_for_duration asks the world for its real dt.
+            n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
             sim_time = 0.0
-            dt       = 1.0 / 60.0
-
-            while simulation_app.is_running() and sim_time < ARGS.duration:
+            for _ in range(n_steps):
+                if not simulation_app.is_running():
+                    break
                 world.step(render=render_sim)
-                sim_time += dt
+                sim_time += step_dt
 
                 all_oob = True
                 for _, backend, _, drone_bounds in drones:
@@ -678,11 +751,13 @@ def main():
             )
             val_targets = [
                 _validation_target(drones[i][2], ARGS.target_altitude,
-                                    ARGS.validation_radius, val_rng)
+                                    ARGS.validation_radius, val_rng,
+                                    max_dx=max_dx)
                 for i in range(n_kp)
             ]
             val_results = run_pd_validation_pass(
-                world, timeline, drones, tmp_files, pareto_pairs, val_targets
+                world, timeline, drones, tmp_files, pareto_pairs, val_targets,
+                hover_targets
             )
             step_scores  = {k: v[0] for k, v in val_results.items()}
             step_efforts = {k: v[1] for k, v in val_results.items()}

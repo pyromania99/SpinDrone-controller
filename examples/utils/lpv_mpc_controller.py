@@ -120,6 +120,13 @@ class LPVMPCController(Backend):
         self.desired_position_over_time = []
         self.position_error_over_time = []
         self.yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
         self.thrust_over_time = []          
         self.torque_over_time = []          
         self.motor_thrusts_over_time = []   
@@ -141,6 +148,8 @@ class LPVMPCController(Backend):
             "desired_p": np.vstack(self.desired_position_over_time),
             "ep": np.vstack(self.position_error_over_time),
             "yaw_rate": np.array(self.yaw_rate_over_time),
+            "angular_velocity": np.vstack(self.angular_velocity_over_time)
+            if self.angular_velocity_over_time else np.zeros((0, 3)),
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
@@ -154,12 +163,33 @@ class LPVMPCController(Backend):
     def reset_statistics(self):
         self.index = 0
         self.total_time = 0.0
+        # Wait for a fresh state before logging or acting again.
+        #
+        # This flag was set once, in __init__, and never cleared. The sweeps
+        # reuse one controller object across many passes, and the backend's
+        # update() runs before update_state() delivers the post-teleport state
+        # — so every pass after the first logged one sample carrying the
+        # PREVIOUS pass's position, velocity, attitude and body rates before
+        # the real ones arrived. That single stale row is a genuine artefact:
+        # it made p[0] read as wherever the last run ended (which looks exactly
+        # like a failed reset), it seeded prev_error_world_* with a bogus error
+        # producing a one-step derivative spike, and it corrupted any metric
+        # reduced over the raw arrays — min-altitude most of all, since the
+        # stale row is often a crashed drone lying on the floor.
+        self.received_first_state = False
         self.pos_int_world = np.zeros((3,))
         self.time_vector = []
         self.position_over_time = []
         self.desired_position_over_time = []
         self.position_error_over_time = []
         self.yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
         self.thrust_over_time = []
         self.torque_over_time = []
         self.motor_thrusts_over_time = []
@@ -347,6 +377,7 @@ class LPVMPCController(Backend):
         self.desired_position_over_time.append(target_pos.copy())
         self.position_error_over_time.append(pos_error_world.copy())
         self.yaw_rate_over_time.append(self.w[2])
+        self.angular_velocity_over_time.append(np.asarray(self.w, dtype=float).copy())
         self.thrust_over_time.append(total_thrust)
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())

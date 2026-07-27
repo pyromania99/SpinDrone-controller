@@ -61,6 +61,27 @@ What is measured
     25 s runs end; ``r_drift`` reports the residual slope over the tail so any
     analysis regressing against spin rate can confirm that per run rather than
     assuming it.
+
+**Roll/pitch settling (``oscillation``)**
+    RMS of ‖(p, q)‖ over the settled tail of the run — how much roll/pitch rate
+    is still present once the vehicle should have converged.
+
+    This deliberately excludes the yaw rate ``r``. The metric used to be
+    ``Σ‖(p, q, r)‖·dt`` over the whole run, which on this vehicle is ~97 % yaw:
+    the airframe spins at up to 29 rad/s by design, so the number reported the
+    motor moment back and told you nothing about control quality. Dropping r
+    leaves the two axes the attitude loop actually stabilises.
+
+    It is also the channel a gyroscopic coning divergence shows up in first. The
+    ``(Iyy − Izz)·q·r`` cross terms couple roll into pitch with a gain set by the
+    spin rate, so an underdamped configuration grows in p and q well before the
+    position error moves — measured at km=2e-7, ‖eR‖ ran 0.012 → 0.091 → 0.619
+    over three seconds while the vehicle still looked stationary. A settled run
+    lands near zero here; one that is oscillating or diverging does not.
+
+    Note the units changed with the definition: this is a rate (rad/s), not the
+    integrated angle (rad) the old version produced. Values are not comparable
+    across the change, and archives written before it carry the old quantity.
 """
 from __future__ import annotations
 
@@ -121,6 +142,7 @@ METRIC_DEFAULTS: dict = {
     "peak_effort":   np.nan,
     "total_energy":  np.nan,
     "stable":        0,
+    # RMS of ‖(p, q)‖ over the settled tail [rad/s] — yaw deliberately excluded
     "oscillation":   np.nan,
     # Populated only on validation passes (step response to an offset target)
     "step_score":    np.nan,
@@ -219,6 +241,28 @@ def spin_metrics(yaw_rate, time=None) -> dict:
     return out
 
 
+def pq_settling(angular_velocity) -> float:
+    """RMS of the roll/pitch rate magnitude over the settled tail [rad/s].
+
+    ``angular_velocity`` is the (N, 3) body-frame [p, q, r] trace the
+    controllers log. Only the first two columns are used — see the module
+    docstring for why yaw is excluded.
+
+    Uses the same SPIN_TAIL_FRAC tail as ``spin_metrics`` so "settled" means the
+    same window for both. Returns NaN rather than 0.0 for a trace that is
+    missing, too short, or non-finite: a run with no data has not demonstrated
+    that its roll/pitch rates settled, and must not be scored as if it had.
+    """
+    w = np.asarray(angular_velocity, dtype=float)
+    if w.ndim != 2 or w.shape[0] < 3 or w.shape[1] < 2:
+        return np.nan
+    pq = np.linalg.norm(w[:, :2], axis=1)
+    if not np.all(np.isfinite(pq)):
+        return np.nan
+    n_tail = max(2, int(round(pq.size * SPIN_TAIL_FRAC)))
+    return float(np.sqrt(np.mean(np.square(pq[-n_tail:]))))
+
+
 def effort_channels(motor_thrusts: np.ndarray) -> tuple:
     """Split per-timestep motor thrusts into (E_total, E_dc, E_ac).
 
@@ -295,9 +339,7 @@ def compute_metrics(npz_path: str, T_total: float, bounds_diag: float) -> dict:
         metrics["total_energy"] = float(np.sum(e_total * dt_arr))
 
         if "angular_velocity" in keys:
-            w_body = np.asarray(d["angular_velocity"], dtype=float)
-            metrics["oscillation"] = float(
-                np.sum(np.linalg.norm(w_body, axis=1) * dt_arr))
+            metrics["oscillation"] = pq_settling(d["angular_velocity"])
 
         if not (np.all(np.isfinite(errors)) and np.all(np.isfinite(e_total))):
             return metrics

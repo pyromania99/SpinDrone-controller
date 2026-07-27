@@ -53,11 +53,23 @@ def parse_args():
     p.add_argument("--validation-seed", type=int, default=123,
                    help="Separate RNG seed for validation target directions, so enabling/"
                         "disabling validation doesn't change the population RNG stream")
+    p.add_argument("--spawn-altitude", type=float, default=None,
+                   help="Altitude [m] to spawn at. Defaults to a ground start, so "
+                        "every run includes the takeoff transient. Pass the target "
+                        "altitude for the old air start.")
+    p.add_argument("--goal-seed", type=int, default=7,
+                   help="RNG seed for goal directions, kept separate from the "
+                        "search RNG so the task stays fixed as the search changes")
+    p.add_argument("--goal-radius", type=float, default=None,
+                   help="Lateral distance [m] from spawn XY to the goal. Every run "
+                        "is a takeoff followed by a translation of this distance in "
+                        "a random direction; see examples/utils/sweep_task.py.")
     p.add_argument("--headless", action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
     return p.parse_args()
 
 ARGS = parse_args()
+
 simulation_app = SimulationApp({
     "headless": ARGS.headless,
     "hide_ui": True if ARGS.headless else None,
@@ -88,6 +100,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from eigen_controller import EigenController
 from cascaded_pd_controller import CascadedPDController
 import sweep_metrics as sm
+import sim_clock
+import sweep_task as task
+
+# Resolved after the late imports so every code path below sees numbers. The
+# task is a ground start followed by a translation to a laterally offset goal.
+ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
+if getattr(ARGS, "goal_radius", None) is None:
+    ARGS.goal_radius = task.DEFAULT_GOAL_RADIUS
 
 _BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 
@@ -122,10 +142,22 @@ class BoundedBackend(Backend):
         self.inner = inner
         self.results_file = results_file
         self.total_time = 0.0
-        self.oob_time = float("nan")
-        self.is_oob = False
         self._stopped = False
         self.position = np.zeros(3)
+        self.monitor = task.FlightMonitor(
+            ARGS.target_altitude, label="genetic", log=carb.log_warn)
+
+
+    # is_oob/oob_time stay part of this class's surface — the sweep loops and
+    # sweep_metrics both read them — but FlightMonitor is the single owner of
+    # the flight-phase state behind them.
+    @property
+    def is_oob(self) -> bool:
+        return self.monitor.failed
+
+    @property
+    def oob_time(self) -> float:
+        return self.monitor.oob_time
 
     def initialize(self, vehicle):
         super().initialize(vehicle)
@@ -133,9 +165,8 @@ class BoundedBackend(Backend):
 
     def start(self):
         self.total_time = 0.0
-        self.oob_time = float("nan")
-        self.is_oob = False
         self._stopped = False
+        self.monitor.reset()
         self.inner.start()
 
     def stop(self):
@@ -146,6 +177,14 @@ class BoundedBackend(Backend):
             try:
                 data = dict(np.load(self.results_file))
                 data["oob_time"] = np.array(self.oob_time)
+                # Flight-phase diagnostics. min_altitude is the transient-safety
+                # number the future-biased score cannot express: it is measured
+                # post-takeoff, so it says how close the vehicle came to the
+                # floor while actually flying.
+                data["takeoff_time"]  = np.array(self.monitor.takeoff_time)
+                data["min_altitude"]  = np.array(self.monitor.min_altitude)
+                data["max_excursion"] = np.array(self.monitor.max_excursion)
+                data["failure"]       = np.array(self.monitor.failure)
                 np.savez(self.results_file, **data)
             except Exception: pass
 
@@ -164,19 +203,12 @@ class BoundedBackend(Backend):
         self.total_time += dt
         self.inner.update(dt)
     def check_oob(self, bounds) -> bool:
-        if self.is_oob: return True
-        x, y, z = self.position
-        if not (bounds[0]<x<bounds[1] and bounds[2]<y<bounds[3] and bounds[4]<z<bounds[5]):
-            self.is_oob = True
-            self.oob_time = self.total_time
-            return True
-        # Check for crashing on the floor after initial takeoff (give it 2 seconds to climb)
-        if self.total_time > 2.0 and z < 0.15:
-            self.is_oob = True
-            self.oob_time = self.total_time
-            carb.log_warn(f"[genetic] CRASH DETECTED at z={z:.3f} t={self.total_time:.2f}s")
-            return True
-        return False
+        """Advance the flight-phase monitor. True once the run is over.
+
+        Takeoff failures and crashes are distinguished in
+        examples/utils/sweep_task.py, shared with every other sweep.
+        """
+        return self.monitor.update(self.total_time, self.position, bounds)
 
 
 
@@ -190,17 +222,14 @@ def _score_from_npz(path, T):
 
 
 # ── Step-response validation target ──────────────────────────────────────────
-def _validation_target(spawn_pos, altitude, radius, rng):
-    """Random-direction, fixed-radius offset from the hover point (same pattern
-    as eigen_stability_sweep.py's random_xy goal mode) — forces the drone to
-    translate instead of just holding its spawn XY, so the step-response
-    result actually exercises position control."""
-    theta = float(rng.uniform(0.0, 2.0 * math.pi))
-    return (
-        spawn_pos[0] + radius * math.cos(theta),
-        spawn_pos[1] + radius * math.sin(theta),
-        float(altitude),
-    )
+def _validation_target(spawn_pos, altitude, radius, rng, max_dx=None):
+    """Second, independently drawn offset goal for the validation pass.
+
+    Same builder as the main pass (sweep_task.offset_target), drawn from a
+    separate RNG stream, so validation asks "does this individual generalise to
+    a different heading" rather than "does it fly at all" — which the main pass
+    now answers, since every run is a takeoff plus a translation."""
+    return task.offset_target(spawn_pos, altitude, radius, rng, max_dx=max_dx)
 
 
 # ── NSGA-II helpers ──────────────────────────────────────────────────────────
@@ -441,10 +470,21 @@ def main():
     auto_spacing = x_usable / (pop_size - 1) if pop_size > 1 else 0.0
     spacing = min(ARGS.spacing, auto_spacing)
     x_start = x_min + x_margin
-    spawn_y, spawn_z = -1.5, 0.07
+    # Ground start: every run begins on the floor and has to take off. The air
+    # start this replaced put the vehicle exactly on its target, so initial
+    # position error was zero and the gains being searched could not affect the
+    # score at all. See examples/utils/sweep_task.py.
+    spawn_y, spawn_z = -1.5, float(ARGS.spawn_altitude)
     half = spacing / 2.0
     y_min, y_max = bounds[2], bounds[3]
     z_min, z_max = bounds[4], bounds[5]
+
+    # Random goal direction per drone, bounded in X so a drone's target stays
+    # inside its own slice of the arena and neighbours cannot be sent into each
+    # other. Seeded, so the same --goal-seed reproduces the same task.
+    goal_rng = np.random.default_rng(ARGS.goal_seed)
+    max_dx   = task.slice_max_dx(spacing)
+    task.check_goal_reachable(spawn_y, ARGS.goal_radius, bounds, label="genetic")
 
     results_base = base_dir / "results"
     tmp_files = [str(results_base / f"_genetic_tmp_{i}.npz") for i in range(pop_size)]
@@ -460,7 +500,9 @@ def main():
     for i in range(pop_size):
         spawn_x = x_start + i * spacing
         spawn_pos = [spawn_x, spawn_y, spawn_z]
-        target = (spawn_x, spawn_y, float(ARGS.target_altitude))
+        target = task.offset_target(spawn_pos, ARGS.target_altitude,
+                                    ARGS.goal_radius, goal_rng,
+                                    max_dx=max_dx)
         drone_bounds = [spawn_x-half, spawn_x+half, y_min, y_max, z_min, z_max]
 
         if is_eigen:
@@ -480,7 +522,9 @@ def main():
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
 
-    hover_targets = [(d[2][0], d[2][1], float(ARGS.target_altitude)) for d in drones]
+    # The sweep's own goals, read back off the controllers so this list can
+    # never drift from what they were actually constructed with.
+    hover_targets = [tuple(d[1].inner.hover_target) for d in drones]
     val_rng = np.random.default_rng(ARGS.validation_seed)
 
     world.reset()
@@ -511,11 +555,16 @@ def main():
             world.step(render=render_sim)
             
         timeline.play()
+        # world.step() advances ONE physics step (physics_dt = 1/250),
+        # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+        # request. steps_for_duration asks the world for its real dt.
+        n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
         sim_time = 0.0
-        dt = 1.0/60.0
-        while simulation_app.is_running() and sim_time < ARGS.duration:
+        for _ in range(n_steps):
+            if not simulation_app.is_running():
+                break
             world.step(render=render_sim)
-            sim_time += dt
+            sim_time += step_dt
             all_oob = True
             for _, backend, _, db in drones:
                 if not backend.is_oob:
@@ -634,7 +683,8 @@ def main():
                 front0 = hover_fronts[0]
                 val_targets = [
                     _validation_target(drones[i][2], ARGS.target_altitude,
-                                        ARGS.validation_radius, val_rng)
+                                        ARGS.validation_radius, val_rng,
+                                        max_dx=max_dx)
                     for i in range(pop_size)
                 ]
                 carb.log_warn(

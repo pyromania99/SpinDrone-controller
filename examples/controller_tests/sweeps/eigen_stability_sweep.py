@@ -163,7 +163,12 @@ def parse_args():
     p.add_argument("--target-altitude", type=float, default=1.5)
     p.add_argument(
         "--goal-mode", type=str,
-        choices=["spawn_xy", "random_xy"], default="spawn_xy",
+        choices=["spawn_xy", "random_xy"], default="random_xy",
+        help="random_xy (default) puts the goal --goal-radius metres from the "
+             "spawn XY in a random direction, so every run is a takeoff plus a "
+             "translation. spawn_xy restores the old zero-offset goal, which "
+             "made the score unable to distinguish gains at all — see "
+             "examples/utils/sweep_task.py.",
     )
     p.add_argument("--goal-radius",     type=float, default=2.0)
     p.add_argument("--goal-seed",       type=int,   default=7)
@@ -202,12 +207,17 @@ def parse_args():
              "the same plane twice with different settings so the second run "
              "lands beside the first instead of overwriting it.",
     )
+    p.add_argument("--spawn-altitude", type=float, default=None,
+                   help="Altitude [m] to spawn at. Defaults to a ground start, so "
+                        "every run includes the takeoff transient. Pass the target "
+                        "altitude for the old air start.")
     p.add_argument("--headless",        action="store_true", default=False)
     p.add_argument("--no-headless",     dest="headless", action="store_false")
     return p.parse_args()
 
 
 ARGS = parse_args()
+
 simulation_app = SimulationApp(
     {
         "headless": ARGS.headless,
@@ -238,30 +248,24 @@ def mdyn_params_for(omega_n: float, zeta: float) -> tuple[float, float]:
 
 # ─────────────────────────── Goal builder ────────────────────────────────────
 
-def build_target_position(spawn_pos: list, rng) -> tuple:
+def build_target_position(spawn_pos: list, rng, max_dx: float = None) -> tuple:
     if ARGS.goal_mode == "spawn_xy":
         return (spawn_pos[0], spawn_pos[1], float(ARGS.target_altitude))
-    theta = float(rng.uniform(0.0, 2.0 * math.pi))
-    r     = float(ARGS.goal_radius)
-    return (
-        spawn_pos[0] + r * math.cos(theta),
-        spawn_pos[1] + r * math.sin(theta),
-        float(ARGS.target_altitude),
-    )
+    # Checked here rather than per sweep mode: all three (ab, kpkd, wn/zeta)
+    # route their goals through this one function.
+    task.check_goal_reachable(spawn_pos[1], ARGS.goal_radius, ARGS.bounds,
+                              label="eigen_sweep")
+    return task.offset_target(spawn_pos, ARGS.target_altitude,
+                              ARGS.goal_radius, rng, max_dx=max_dx)
 
 
-def _validation_target(spawn_pos, altitude, radius, rng):
-    """Random-direction, fixed-radius offset from the hover point, used
-    ONLY for the Pareto-front validation pass — decoupled from --goal-mode
-    so validation is a consistent check regardless of how the main sweep's
-    own hover target is configured. Same convention as genetic_sweep.py's
-    _validation_target, so results are directly comparable across GA/grid."""
-    theta = float(rng.uniform(0.0, 2.0 * math.pi))
-    return (
-        spawn_pos[0] + radius * math.cos(theta),
-        spawn_pos[1] + radius * math.sin(theta),
-        float(altitude),
-    )
+def _validation_target(spawn_pos, altitude, radius, rng, max_dx=None):
+    """Second, independently drawn offset goal for the Pareto-front pass.
+
+    Same builder as the main pass, drawn from a separate RNG stream and
+    decoupled from --goal-mode, so validation is a consistent check regardless
+    of how the sweep's own goal is configured."""
+    return task.offset_target(spawn_pos, altitude, radius, rng, max_dx=max_dx)
 
 
 def _pareto_mask(scores, efforts):
@@ -310,7 +314,15 @@ from pegasus.simulator.logic.state import State
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from eigen_controller import EigenController
 import sweep_metrics as sm
-from gain_seed import load_best_gains, SeedError
+import sim_clock
+import sweep_task as task
+
+# Resolved after the late imports so every code path below sees numbers. The
+# task is a ground start followed by a translation to a laterally offset goal.
+ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
+if getattr(ARGS, "goal_radius", None) is None:
+    ARGS.goal_radius = task.DEFAULT_GOAL_RADIUS
+from gain_seed import load_best_gains_by_group, lookup_group, SeedError
 
 
 # ── Resolve the pinned attitude gains ────────────────────────────────────────
@@ -318,30 +330,93 @@ from gain_seed import load_best_gains, SeedError
 # legacy defaults. Seeding failures are fatal on purpose — silently falling
 # back to Kp_att=0.7 after being asked to seed is how the ab-sweep ended up
 # mapping a region where only 12 % of cells flew.
+#
+# Seeds are resolved PER MOTOR MOMENT, not once globally: the searched optimum
+# moves with spin rate (Kd_att spans 4.45 at km=4e-7 to 11.98 at km=1e-7), so a
+# single pin would map the fast- and slow-spin ends of the sweep at gains that
+# belong to neither.
 _KP_ATT_FALLBACK, _KD_ATT_FALLBACK = 0.7, 10.0
+_SEED_TABLE = None
 
 if ARGS.seed_from is not None:
     try:
-        _seed = load_best_gains(ARGS.seed_from, "eigen", keys=("Kp_att", "Kd_att"))
+        _SEED_TABLE = load_best_gains_by_group(
+            ARGS.seed_from, "eigen", keys=("Kp_att", "Kd_att"))
     except SeedError as _exc:
         carb.log_error(f"[eigen-sweep] --seed-from failed: {_exc}")
         raise SystemExit(2)
-    if ARGS.kp_att is None:
-        ARGS.kp_att = _seed["Kp_att"]
-    if ARGS.kd_att is None:
-        ARGS.kd_att = _seed["Kd_att"]
-    carb.log_warn(
-        f"[eigen-sweep] seeded pinned gains from {_seed['_source']} "
-        f"(score {_seed['_score']:.4f}): Kp_att={_seed['Kp_att']:.4f} "
-        f"Kd_att={_seed['Kd_att']:.4f}"
-    )
+    for _skipped in _SEED_TABLE.pop("_stale_skipped", []):
+        carb.log_warn(f"[eigen-sweep] ignoring stale archive: {_skipped}")
+    carb.log_warn("[eigen-sweep] per-motor-moment seeds:")
+    for _mm in sorted(_SEED_TABLE):
+        _e = _SEED_TABLE[_mm]
+        carb.log_warn(f"    km={_mm:<10g} Kp_att={_e['Kp_att']:.4f} "
+                      f"Kd_att={_e['Kd_att']:.4f}  (score {_e['_score']:.4f})")
 
-if ARGS.kp_att is None:
+# What the user asked for explicitly, captured BEFORE any default or
+# representative value is filled in. attitude_gains_for() keys off these:
+# reading ARGS afterwards cannot distinguish "user passed --kp-att 3.0" from
+# "we back-filled a representative value", which would silently disable the
+# per-motor-moment lookup entirely.
+_KP_ATT_EXPLICIT = ARGS.kp_att
+_KD_ATT_EXPLICIT = ARGS.kd_att
+
+# True when at least one pin varies per motor moment — used to label plots
+# honestly rather than quoting one km's value across all of them.
+SEEDED_PER_MM = _SEED_TABLE is not None and (_KP_ATT_EXPLICIT is None
+                                             or _KD_ATT_EXPLICIT is None)
+
+if ARGS.kp_att is None and _SEED_TABLE is None:
     ARGS.kp_att = _KP_ATT_FALLBACK
-if ARGS.kd_att is None:
+if ARGS.kd_att is None and _SEED_TABLE is None:
     ARGS.kd_att = _KD_ATT_FALLBACK
-carb.log_warn(f"[eigen-sweep] pinned attitude gains: "
-              f"Kp_att={ARGS.kp_att:.4f}  Kd_att={ARGS.kd_att:.4f}")
+
+if _SEED_TABLE is not None:
+    # Representative values so drone construction and any log line without a
+    # motor moment in scope still have a number. The real pin is applied per
+    # motor moment inside the sweep loops via attitude_gains_for().
+    _first = _SEED_TABLE[sorted(_SEED_TABLE)[0]]
+    if ARGS.kp_att is None:
+        ARGS.kp_att = _first["Kp_att"]
+    if ARGS.kd_att is None:
+        ARGS.kd_att = _first["Kd_att"]
+
+
+def gains_label(mm: float = None) -> str:
+    """Human-readable description of the pinned gains for a plot title."""
+    if mm is not None:
+        kp, kd = attitude_gains_for(mm)
+        suffix = " (seeded for this km)" if SEEDED_PER_MM else ""
+        return f"Kp_att = {kp:.3f}   Kd_att = {kd:.3f}{suffix}"
+    if SEEDED_PER_MM:
+        return "Kp_att, Kd_att seeded per motor moment"
+    return f"Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}"
+
+
+def attitude_gains_for(mm: float) -> tuple:
+    """(Kp_att, Kd_att) to pin for this motor moment.
+
+    An explicit --kp-att/--kd-att always wins. Otherwise the seed table is
+    consulted; a motor moment the archive does not cover is fatal rather than
+    silently substituted, since the whole point of seeding is that the wrong
+    operating point produces a map of a dead region.
+    """
+    kp, kd = _KP_ATT_EXPLICIT, _KD_ATT_EXPLICIT
+    if _SEED_TABLE is not None and (kp is None or kd is None):
+        try:
+            entry = lookup_group(_SEED_TABLE, mm)
+        except SeedError as exc:
+            carb.log_error(f"[eigen-sweep] {exc}")
+            raise SystemExit(2)
+        if kp is None:
+            kp = entry["Kp_att"]
+        if kd is None:
+            kd = entry["Kd_att"]
+    if kp is None:
+        kp = ARGS.kp_att
+    if kd is None:
+        kd = ARGS.kd_att
+    return float(kp), float(kd)
 
 
 # ─────────────────────────── Telemetry / OOB backend ─────────────────────────
@@ -354,10 +429,10 @@ class BoundedTelemetryBackend(Backend):
         self.inner        = inner
         self.results_file = results_file
         self.total_time   = 0.0
-        self.oob_time     = float("nan")
-        self.is_oob       = False
         self._stopped     = False
         self.position     = np.zeros(3)
+        self.monitor = task.FlightMonitor(
+            ARGS.target_altitude, label="sweep", log=carb.log_warn)
         # Labeling fields — same role as genetic_sweep.py's reliable oob_time
         # write: these must live on the backend itself (not backend.inner) so
         # stop() can always read them, even before the first update. Callers
@@ -369,15 +444,26 @@ class BoundedTelemetryBackend(Backend):
         self.b_mdyn   = float("nan")
         self.mm       = float("nan")
 
+
+    # is_oob/oob_time stay part of this class's surface — the sweep loops and
+    # sweep_metrics both read them — but FlightMonitor is the single owner of
+    # the flight-phase state behind them.
+    @property
+    def is_oob(self) -> bool:
+        return self.monitor.failed
+
+    @property
+    def oob_time(self) -> float:
+        return self.monitor.oob_time
+
     def initialize(self, vehicle):
         super().initialize(vehicle)
         self.inner.initialize(vehicle)
 
     def start(self):
         self.total_time = 0.0
-        self.oob_time   = float("nan")
-        self.is_oob     = False
         self._stopped   = False
+        self.monitor.reset()
         self.inner.start()
 
     def stop(self):
@@ -395,6 +481,14 @@ class BoundedTelemetryBackend(Backend):
             try:
                 data = dict(np.load(self.results_file))
                 data["oob_time"]      = np.array(self.oob_time)
+                # Flight-phase diagnostics. min_altitude is the transient-safety
+                # number the future-biased score cannot express: it is measured
+                # post-takeoff, so it says how close the vehicle came to the
+                # floor while actually flying.
+                data["takeoff_time"]  = np.array(self.monitor.takeoff_time)
+                data["min_altitude"]  = np.array(self.monitor.min_altitude)
+                data["max_excursion"] = np.array(self.monitor.max_excursion)
+                data["failure"]       = np.array(self.monitor.failure)
                 data["omega_n"]       = np.array(self.omega_n)
                 data["zeta"]          = np.array(self.zeta)
                 data["a"]             = np.array(self.wn_mdyn)
@@ -431,23 +525,12 @@ class BoundedTelemetryBackend(Backend):
         self.inner.update(dt)
 
     def check_oob(self, bounds) -> bool:
-        if self.is_oob:
-            return False
-        x, y, z = self.position
-        if not (bounds[0] < x < bounds[1]
-                and bounds[2] < y < bounds[3]
-                and bounds[4] < z < bounds[5]):
-            self.is_oob   = True
-            self.oob_time = self.total_time
-            carb.log_warn(f"[sweep] OOB at {self.position} t={self.total_time:.2f}s")
-            return True
-        # Check for crashing on the floor after initial takeoff
-        if self.total_time > 2.0 and z < 0.15:
-            self.is_oob   = True
-            self.oob_time = self.total_time
-            carb.log_warn(f"[sweep] CRASH DETECTED at z={z:.3f} t={self.total_time:.2f}s")
-            return True
-        return False
+        """Advance the flight-phase monitor. True once the run is over.
+
+        Takeoff failures and crashes are distinguished in
+        examples/utils/sweep_task.py, shared with every other sweep.
+        """
+        return self.monitor.update(self.total_time, self.position, bounds)
 
 
 # ─────────────────────────── Score computation ───────────────────────────────
@@ -520,7 +603,7 @@ def save_score_plot(on_vals, scores, zeta, mm, out_dir: Path):
         ax.set_ylabel("Stability score  [future-biased mean ‖ep‖  m]", fontsize=11)
         ax.set_title(
             f"Eigen M_dyn Eigenvalue Sweep   |   km = {mm:.2e}\n"
-            f"ζ = {zeta:.2f} (fixed)   |   Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}   "
+            f"ζ = {zeta:.2f} (fixed)   |   {gains_label(mm)}   "
             f"|   lower score = more stable",
             fontsize=11,
         )
@@ -605,7 +688,7 @@ def save_multi_zeta_heatmap(on_vals, zeta_vals, zeta_to_scores, mm, out_dir: Pat
         ax.set_ylabel("Damping ratio ζ", fontsize=11)
         ax.set_title(
             f"Eta/Zeta Heatmap   |   km = {mm:.2e}\n"
-            f"Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}   |   lower score = more stable",
+            f"{gains_label(mm)}   |   lower score = more stable",
             fontsize=11,
         )
 
@@ -698,7 +781,7 @@ def save_multi_zeta_effort_heatmap(on_vals, zeta_vals, zeta_to_efforts, mm, out_
         ax.set_ylabel("Damping ratio ζ", fontsize=11)
         ax.set_title(
             f"Eta/Zeta Control Effort Heatmap   |   km = {mm:.2e}\n"
-            f"Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}   |   lower = less actuation effort",
+            f"{gains_label(mm)}   |   lower = less actuation effort",
             fontsize=11,
         )
 
@@ -889,7 +972,7 @@ def save_ab_heatmap(a_vals, b_vals, scores_2d, mm, out_dir: Path, label="score")
         ax.set_ylabel("a  (M_dyn diagonal  wn_mdyn)", fontsize=11)
         ax.set_title(
             f"M_dyn (a, b) Direct Sweep   |   km = {mm:.2e}\n"
-            f"Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}   "
+            f"{gains_label(mm)}   "
             f"|   lower = {'less effort' if is_effort else 'more stable'}",
             fontsize=11,
         )
@@ -921,7 +1004,8 @@ def save_ab_heatmap(a_vals, b_vals, scores_2d, mm, out_dir: Path, label="score")
 
 # ──────────────────── Pareto-front step-response validation ──────────────────
 
-def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm, val_targets):
+def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm,
+                            val_targets, hover_targets):
     """Re-run exactly the (a, b) pairs in `pairs` (the ab-sweep's current
     Pareto-front points for this mm) against `val_targets` instead of their
     normal hover target, batching them through the existing n_a drone slots.
@@ -943,8 +1027,9 @@ def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm, val_ta
             vehicle._thrusters   = make_thrust_curve(mm)
             backend.inner.wn_mdyn = a
             backend.inner.b_mdyn  = b
-            backend.inner.Kp_att  = ARGS.kp_att
-            backend.inner.Kd_att  = ARGS.kd_att
+            _kp_v, _kd_v = attitude_gains_for(mm)
+            backend.inner.Kp_att  = _kp_v
+            backend.inner.Kd_att  = _kd_v
             backend.inner.km      = mm
             backend.inner.hover_target = np.asarray(val_targets[slot], dtype=float)
 
@@ -958,11 +1043,16 @@ def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm, val_ta
             world.step(render=render_sim)
 
         timeline.play()
+        # world.step() advances ONE physics step (physics_dt = 1/250),
+        # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+        # request. steps_for_duration asks the world for its real dt.
+        n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
         sim_time = 0.0
-        dt = 1.0 / 60.0
-        while simulation_app.is_running() and sim_time < ARGS.duration:
+        for _ in range(n_steps):
+            if not simulation_app.is_running():
+                break
             world.step(render=render_sim)
-            sim_time += dt
+            sim_time += step_dt
             all_oob = True
             for _, backend, _, drone_bounds in drones:
                 if backend.is_oob:
@@ -980,6 +1070,13 @@ def run_ab_validation_pass(world, timeline, drones, tmp_files, pairs, mm, val_ta
             _m = run_metrics(tmp_files[slot], T_total=ARGS.duration)
             score, effort = _m["score"], _m["effort"]
             results[chunk[slot]] = (score, effort)
+
+    # Put the sweep's own goals back before anything else runs. The drone
+    # objects outlive this function — they are reused for every motor moment —
+    # so an offset target left installed here becomes the GRID's target on the
+    # next pass, silently changing the task partway through the sweep.
+    for slot, (_, backend, _, _) in enumerate(drones):
+        backend.inner.hover_target = np.asarray(hover_targets[slot], dtype=float)
 
     return results
 
@@ -1022,7 +1119,7 @@ def run_ab_sweep(
     carb.log_warn(f"[ab-sweep] a values (wn_mdyn diagonal): {a_vals}")
     carb.log_warn(f"[ab-sweep] b values (b_mdyn off-diag) : {b_vals}")
     carb.log_warn(f"[ab-sweep] motor_moments              : {mm_vals}")
-    carb.log_warn(f"[ab-sweep] Kp_att = {ARGS.kp_att}   Kd_att = {ARGS.kd_att}")
+    carb.log_warn(f"[ab-sweep] {gains_label()}")
     carb.log_warn(f"[ab-sweep] duration = {ARGS.duration} s per pass")
     carb.log_warn("="*60)
 
@@ -1045,7 +1142,11 @@ def run_ab_sweep(
             )
 
     spawn_y = -1.5
-    spawn_z = 0.07
+    # Ground start: every run begins on the floor and has to take off. The air
+    # start this replaced put the vehicle exactly on its target, so initial
+    # position error was zero and the gains being searched could not affect the
+    # score at all. See examples/utils/sweep_task.py.
+    spawn_z = float(ARGS.spawn_altitude)
     half    = spacing / 2.0
     rng     = np.random.default_rng(ARGS.goal_seed)
     val_rng = np.random.default_rng(ARGS.validation_seed)
@@ -1060,7 +1161,8 @@ def run_ab_sweep(
     for i_a, a in enumerate(a_vals):
         spawn_x   = x_start + i_a * spacing
         spawn_pos = [spawn_x, spawn_y, spawn_z]
-        target    = build_target_position(spawn_pos, rng)
+        target    = build_target_position(spawn_pos, rng,
+                                          max_dx=task.slice_max_dx(spacing))
         drone_bounds = [
             spawn_x - half, spawn_x + half,
             y_min, y_max,
@@ -1092,12 +1194,20 @@ def run_ab_sweep(
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
 
+    # The sweep's own goals, read back off the controllers so this list can
+    # never drift from what they were actually constructed with. Restored after
+    # every validation pass — see run_ab_validation_pass.
+    hover_targets = [tuple(d[1].inner.hover_target) for d in drones]
+
     world.reset()
     for _ in range(10):
         world.step(render=render_sim)
 
     # ── Outer loop: motor_moment ─────────────────────────────────────────────
     for mm in mm_vals:
+        kp_att_mm, kd_att_mm = attitude_gains_for(mm)
+        carb.log_warn(f"[ab-sweep] mm={mm:.2e}: pinned Kp_att={kp_att_mm:.4f} "
+                      f"Kd_att={kd_att_mm:.4f}")
         root_dir = ab_sweep_dir(results_base, mm)
         # 2-D accumulators: rows = a, cols = b
         all_scores  = np.full((n_a, len(b_vals)), np.inf)
@@ -1144,8 +1254,8 @@ def run_ab_sweep(
                 vehicle._thrusters        = make_thrust_curve(mm)
                 backend.inner.wn_mdyn     = a
                 backend.inner.b_mdyn      = b
-                backend.inner.Kp_att      = ARGS.kp_att
-                backend.inner.Kd_att      = ARGS.kd_att
+                backend.inner.Kp_att      = kp_att_mm
+                backend.inner.Kd_att      = kd_att_mm
                 backend.inner.km          = mm
 
                 # Labels for the npz (ab-sweep has no ωn/ζ axis; a/b are direct)
@@ -1174,12 +1284,16 @@ def run_ab_sweep(
 
             # ── Simulate ──────────────────────────────────────────────────
             timeline.play()
+            # world.step() advances ONE physics step (physics_dt = 1/250),
+            # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+            # request. steps_for_duration asks the world for its real dt.
+            n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
             sim_time = 0.0
-            dt       = 1.0 / 60.0
-
-            while simulation_app.is_running() and sim_time < ARGS.duration:
+            for _ in range(n_steps):
+                if not simulation_app.is_running():
+                    break
                 world.step(render=render_sim)
-                sim_time += dt
+                sim_time += step_dt
 
                 all_oob = True
                 for _, backend, _, drone_bounds in drones:
@@ -1261,11 +1375,13 @@ def run_ab_sweep(
             )
             val_targets = [
                 _validation_target(drones[i][2], ARGS.target_altitude,
-                                    ARGS.validation_radius, val_rng)
+                                    ARGS.validation_radius, val_rng,
+                                    max_dx=task.slice_max_dx(spacing))
                 for i in range(n_a)
             ]
             val_results = run_ab_validation_pass(
-                world, timeline, drones, tmp_files, pareto_pairs, mm, val_targets
+                world, timeline, drones, tmp_files, pareto_pairs, mm, val_targets,
+                hover_targets
             )
             step_scores  = {k: v[0] for k, v in val_results.items()}
             step_efforts = {k: v[1] for k, v in val_results.items()}
@@ -1387,7 +1503,11 @@ def run_kpkd_sweep(world, timeline, kp_vals, kd_vals, mm_vals, results_base):
             )
 
     spawn_y = -1.5
-    spawn_z = 0.07
+    # Ground start: every run begins on the floor and has to take off. The air
+    # start this replaced put the vehicle exactly on its target, so initial
+    # position error was zero and the gains being searched could not affect the
+    # score at all. See examples/utils/sweep_task.py.
+    spawn_z = float(ARGS.spawn_altitude)
     half    = spacing / 2.0
     rng     = np.random.default_rng(ARGS.goal_seed)
 
@@ -1398,7 +1518,8 @@ def run_kpkd_sweep(world, timeline, kp_vals, kd_vals, mm_vals, results_base):
     for i_kp, kp in enumerate(kp_vals):
         spawn_x   = x_start + i_kp * spacing
         spawn_pos = [spawn_x, spawn_y, spawn_z]
-        target    = build_target_position(spawn_pos, rng)
+        target    = build_target_position(spawn_pos, rng,
+                                          max_dx=task.slice_max_dx(spacing))
         drone_bounds = [spawn_x - half, spawn_x + half, y_min, y_max, z_min, z_max]
 
         inner = EigenController(
@@ -1476,11 +1597,16 @@ def run_kpkd_sweep(world, timeline, kp_vals, kd_vals, mm_vals, results_base):
 
             # ── Simulate ─────────────────────────────────────────────────
             timeline.play()
+            # world.step() advances ONE physics step (physics_dt = 1/250),
+            # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+            # request. steps_for_duration asks the world for its real dt.
+            n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
             sim_time = 0.0
-            dt       = 1.0 / 60.0
-            while simulation_app.is_running() and sim_time < ARGS.duration:
+            for _ in range(n_steps):
+                if not simulation_app.is_running():
+                    break
                 world.step(render=render_sim)
-                sim_time += dt
+                sim_time += step_dt
                 all_oob = True
                 for _, backend, _, drone_bounds in drones:
                     if backend.is_oob:
@@ -1721,8 +1847,7 @@ def main():
     carb.log_warn(f"[sweep] ωn  values : {on_vals}")
     carb.log_warn(f"[sweep] ζ values    : {zeta_vals}")
     carb.log_warn(f"[sweep] km  values : {mm_vals}")
-    carb.log_warn(f"[sweep] Kp_att     : {ARGS.kp_att}  (baseline, fixed)")
-    carb.log_warn(f"[sweep] Kd_att     : {ARGS.kd_att}  (baseline, fixed)")
+    carb.log_warn(f"[sweep] attitude   : {gains_label()}")
     carb.log_warn(f"[sweep] duration   : {ARGS.duration}s per mm pass")
 
     for zeta in zeta_vals:
@@ -1761,7 +1886,11 @@ def main():
             )
 
     spawn_y  = -1.5
-    spawn_z  = 0.07
+    # Ground start: every run begins on the floor and has to take off. The air
+    # start this replaced put the vehicle exactly on its target, so initial
+    # position error was zero and the gains being searched could not affect the
+    # score at all. See examples/utils/sweep_task.py.
+    spawn_z  = float(ARGS.spawn_altitude)
     half     = spacing / 2.0
     y_min, y_max = bounds[2], bounds[3]
     z_min, z_max = bounds[4], bounds[5]
@@ -1783,7 +1912,8 @@ def main():
         wn_m, b_m = mdyn_params_for(on, zeta_vals[0])
         spawn_x   = x_start + i_on * spacing
         spawn_pos = [spawn_x, spawn_y, spawn_z]
-        target    = build_target_position(spawn_pos, rng)
+        target    = build_target_position(spawn_pos, rng,
+                                          max_dx=task.slice_max_dx(spacing))
 
         drone_bounds = [
             spawn_x - half, spawn_x + half,
@@ -1845,8 +1975,9 @@ def main():
                 # Update M_dyn params (Kp/Kd stay at baseline)
                 backend.inner.wn_mdyn = wn_m
                 backend.inner.b_mdyn  = b_m
-                backend.inner.Kp_att  = ARGS.kp_att
-                backend.inner.Kd_att  = ARGS.kd_att
+                _kp_w, _kd_w = attitude_gains_for(mm)
+                backend.inner.Kp_att  = _kp_w
+                backend.inner.Kd_att  = _kd_w
                 backend.inner.km      = mm
 
                 # Labels for the npz
@@ -1877,12 +2008,16 @@ def main():
             # ── Simulate ─────────────────────────────────────────────
 
             timeline.play()
+            # world.step() advances ONE physics step (physics_dt = 1/250),
+            # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+            # request. steps_for_duration asks the world for its real dt.
+            n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
             sim_time = 0.0
-            dt       = 1.0 / 60.0
-
-            while simulation_app.is_running() and sim_time < ARGS.duration:
+            for _ in range(n_steps):
+                if not simulation_app.is_running():
+                    break
                 world.step(render=render_sim)
-                sim_time += dt
+                sim_time += step_dt
 
                 all_oob = True
                 for _, backend, _, drone_bounds in drones:

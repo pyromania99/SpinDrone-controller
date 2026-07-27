@@ -40,8 +40,8 @@ class CascadedPDController(Backend):
         Kd_xy=(1.0, 1.0),
         Kp_z=15.0,
         Kd_z=8.0,
-        Kp_att=(32.3, 32.3),
-        Kd_att=(1.9,1.9),
+        Kp_att=(1.6, 1.6),
+        Kd_att=(1.8,1.8),
         Kd_yaw_rate=0.0,
         mass=1.50,
         gravity=9.81,
@@ -102,7 +102,16 @@ class CascadedPDController(Backend):
         self.desired_angles_over_time = []
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
-        self.desired_yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
+        # This controller commands no yaw rate (tau_z is pure rate damping);
+        # the column exists only to keep the npz schema uniform.
+        self.unused_yaw_rate_cmd_over_time = []
 
         # Reset new energy arrays
         self.thrust_over_time = []
@@ -160,7 +169,9 @@ class CascadedPDController(Backend):
             "desired_angles": np.vstack(self.desired_angles_over_time),
             "eR": np.vstack(self.attitude_error_over_time),
             "yaw_rate": np.array(self.yaw_rate_over_time),
-            "desired_yaw_rate": np.array(self.desired_yaw_rate_over_time),
+            "angular_velocity": np.vstack(self.angular_velocity_over_time)
+            if self.angular_velocity_over_time else np.zeros((0, 3)),
+            "unused_yaw_rate_cmd": np.array(self.unused_yaw_rate_cmd_over_time),
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
@@ -174,6 +185,20 @@ class CascadedPDController(Backend):
     def reset_statistics(self):
         self.index = 0
         self.total_time = 0.0
+        # Wait for a fresh state before logging or acting again.
+        #
+        # This flag was set once, in __init__, and never cleared. The sweeps
+        # reuse one controller object across many passes, and the backend's
+        # update() runs before update_state() delivers the post-teleport state
+        # — so every pass after the first logged one sample carrying the
+        # PREVIOUS pass's position, velocity, attitude and body rates before
+        # the real ones arrived. That single stale row is a genuine artefact:
+        # it made p[0] read as wherever the last run ended (which looks exactly
+        # like a failed reset), it seeded prev_error_world_* with a bogus error
+        # producing a one-step derivative spike, and it corrupted any metric
+        # reduced over the raw arrays — min-altitude most of all, since the
+        # stale row is often a crashed drone lying on the floor.
+        self.received_first_state = False
 
         self.time_vector = []
         self.position_over_time = []
@@ -182,7 +207,16 @@ class CascadedPDController(Backend):
         self.desired_angles_over_time = []
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
-        self.desired_yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
+        # This controller commands no yaw rate (tau_z is pure rate damping);
+        # the column exists only to keep the npz schema uniform.
+        self.unused_yaw_rate_cmd_over_time = []
         self._last_yaw_rate_log_time = -1.0
 
         self.prev_error_world_x = 0.0
@@ -340,7 +374,8 @@ class CascadedPDController(Backend):
         self.desired_angles_over_time.append(np.array([desired_roll, desired_pitch, desired_yaw]))
         self.attitude_error_over_time.append(e_R.copy())
         self.yaw_rate_over_time.append(self.w[2])
-        self.desired_yaw_rate_over_time.append(0.0)
+        self.angular_velocity_over_time.append(np.asarray(self.w, dtype=float).copy())
+        self.unused_yaw_rate_cmd_over_time.append(0.0)
 
         if self.log_yaw_rate and self.yaw_rate_log_period >= 0.0:
             should_log = self._last_yaw_rate_log_time < 0.0

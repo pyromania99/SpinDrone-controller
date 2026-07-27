@@ -45,11 +45,11 @@ class EigenController(Backend):
         Ixx=0.01,
         Iyy=0.01,
         Izz=0.02,
-        Kp_att=4.68,
+        Kp_att=7,
         Kd_att=1.0,
         max_total_thrust=80.0,
-        wn_mdyn=13.3,
-        b_mdyn=6.720,
+        wn_mdyn=18,
+        b_mdyn=10.2,
     ):
         super().__init__(config=None)
 
@@ -109,7 +109,15 @@ class EigenController(Backend):
         self.desired_angles_over_time = []
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
-        self.desired_yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
+        # Not a yaw reference — see unused_yaw_rate_cmd in update().
+        self.unused_yaw_rate_cmd_over_time = []
         self.thrust_over_time = []          # Total lumped thrust scalar [N]
         self.torque_over_time = []          # [roll, pitch, yaw] control torques [N·m]
         self.motor_thrusts_over_time = []   # [u1, u2, u3, u4] output allocations [N]
@@ -166,7 +174,10 @@ class EigenController(Backend):
             "desired_angles": np.vstack(self.desired_angles_over_time),
             "eR": np.vstack(self.attitude_error_over_time),
             "yaw_rate": np.array(self.yaw_rate_over_time),
-            "desired_yaw_rate": np.array(self.desired_yaw_rate_over_time),
+            "angular_velocity": np.vstack(self.angular_velocity_over_time)
+            if self.angular_velocity_over_time else np.zeros((0, 3)),
+            # Named to match the variable: this is NOT a tracked yaw reference.
+            "unused_yaw_rate_cmd": np.array(self.unused_yaw_rate_cmd_over_time),
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
@@ -181,6 +192,20 @@ class EigenController(Backend):
     def reset_statistics(self):
         self.index = 0
         self.total_time = 0.0
+        # Wait for a fresh state before logging or acting again.
+        #
+        # This flag was set once, in __init__, and never cleared. The sweeps
+        # reuse one controller object across many passes, and the backend's
+        # update() runs before update_state() delivers the post-teleport state
+        # — so every pass after the first logged one sample carrying the
+        # PREVIOUS pass's position, velocity, attitude and body rates before
+        # the real ones arrived. That single stale row is a genuine artefact:
+        # it made p[0] read as wherever the last run ended (which looks exactly
+        # like a failed reset), it seeded prev_error_world_* with a bogus error
+        # producing a one-step derivative spike, and it corrupted any metric
+        # reduced over the raw arrays — min-altitude most of all, since the
+        # stale row is often a crashed drone lying on the floor.
+        self.received_first_state = False
 
         self.time_vector = []
         self.position_over_time = []
@@ -189,7 +214,15 @@ class EigenController(Backend):
         self.desired_angles_over_time = []
         self.attitude_error_over_time = []
         self.yaw_rate_over_time = []
-        self.desired_yaw_rate_over_time = []
+        # Full body-frame rate [p, q, r] (FLU), not just yaw. The roll/pitch
+        # rates are what identify a gyroscopic coning divergence downstream:
+        # under spin the mode shows up as p and q growing in quadrature long
+        # before position error moves. "angular_velocity" is the key
+        # sweep_metrics.compute_metrics already looks for, so logging it also
+        # activates the `oscillation` metric, which was permanently NaN.
+        self.angular_velocity_over_time = []
+        # Not a yaw reference — see unused_yaw_rate_cmd in update().
+        self.unused_yaw_rate_cmd_over_time = []
         self.thrust_over_time = []
         self.torque_over_time = []
         self.motor_thrusts_over_time = []
@@ -305,12 +338,18 @@ class EigenController(Backend):
         ])
 
         net_thrust = base_thrust * 4.0
-        desired_yaw_rate = net_thrust * self.km / (self.kf * 0.3)
+        # NOTE: this has NO effect on the vehicle. It enters M_des only through
+        # row 2, whose correction (corrections[2]) is discarded — tau is built
+        # as [roll, pitch, 0.0] because a same-direction rotor set cannot
+        # produce a commanded yaw torque while also producing lift. Kept
+        # because M_des must be a 3-vector for the M_dyn algebra, and named
+        # "unused_" so nobody reads the logged trace as a real yaw reference.
+        unused_yaw_rate_cmd = net_thrust * self.km / (self.kf * 0.3)
 
         M_des = -M_dyn @ np.array([
             [desired_roll_rate],
             [desired_pitch_rate],
-            [desired_yaw_rate],
+            [unused_yaw_rate_cmd],
         ])
 
         M = np.hstack([M_dyn, M_des])
@@ -365,7 +404,8 @@ class EigenController(Backend):
         self.desired_angles_over_time.append(np.array([desired_roll, desired_pitch, yaw]))
         self.attitude_error_over_time.append(np.array([roll_error, pitch_error, 0.0]))
         self.yaw_rate_over_time.append(self.w[2])
-        self.desired_yaw_rate_over_time.append(desired_yaw_rate)
+        self.angular_velocity_over_time.append(np.asarray(self.w, dtype=float).copy())
+        self.unused_yaw_rate_cmd_over_time.append(unused_yaw_rate_cmd)
         # Applied, not commanded — matches motor_thrusts above.
         self.thrust_over_time.append(float(np.sum(motor_thrusts)))
         self.torque_over_time.append(tau.copy())
