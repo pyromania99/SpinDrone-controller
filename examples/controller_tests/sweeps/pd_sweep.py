@@ -524,7 +524,7 @@ def main():
     n_kd        = len(kd_vals)
 
     base_dir     = Path(__file__).resolve().parent.parent
-    results_base = base_dir / "results" / "pd_sweep"
+    results_base = task.results_root(base_dir) / "pd_sweep"
     results_base.mkdir(parents=True, exist_ok=True)
 
     carb.log_warn("\n" + "="*60)

@@ -465,7 +465,7 @@ def main():
     pop_size = ARGS.pop_size
 
     base_dir = Path(__file__).resolve().parent.parent
-    results_base = base_dir / "results"
+    results_base = task.results_root(base_dir)
 
     samples = sample_ab(ARGS.samples, ARGS.a_range, ARGS.b_range, ARGS.sampling, ARGS.seed)
     n_samples = len(samples)

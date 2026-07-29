@@ -1757,7 +1757,7 @@ def main():
     bounds       = ARGS.bounds
     mm_vals      = ARGS.motor_moments
     base_dir     = Path(__file__).resolve().parent.parent
-    results_base = base_dir / "results"
+    results_base = task.results_root(base_dir)
 
     # ── Dispatch: (Kp_att, Kd_att) sweep if --kp-values is provided ─────────
     if ARGS.kp_values is not None:

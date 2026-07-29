@@ -58,6 +58,12 @@ _DIR_PATTERNS = [
     ("b_mdyn",       re.compile(r"^b_([-+0-9.eE]+)$")),
     ("Kd_att",       re.compile(r"^kd_([-+0-9.eE]+)$")),
     ("zeta",         re.compile(r"^zeta_([-+0-9.eE]+)$")),
+    # mpc_sweep.py writes results/mpc_sweep/[mm_<km>/]r_<rval>/q_<qval>_statistics.npz.
+    # Without this the r_weight was unrecoverable, and the q pattern below did
+    # not match either (it lacked the underscore mpc_sweep actually writes), so
+    # every MPC row backfilled with NO gains at all — present in the CSV, and
+    # unusable for anything that needs to know what was flown.
+    ("mpc_r",        re.compile(r"^r_([-+0-9.eE]+)$")),
 ]
 _FILE_PATTERNS = [
     ("wn_mdyn", re.compile(r"^a([-+0-9.eE]+)_statistics")),
@@ -65,11 +71,11 @@ _FILE_PATTERNS = [
     ("Kp_att",  re.compile(r"^kp_?([-+0-9.eE]+)_statistics")),
     ("alpha",   re.compile(r"^alpha([-+0-9.eE]+)_statistics")),
     ("wn_mdyn", re.compile(r"^wn([-+0-9.eE]+)_statistics")),
-    ("mpc_q",   re.compile(r"^q([-+0-9.eE]+)_statistics")),
+    ("mpc_q",   re.compile(r"^q_?([-+0-9.eE]+)_statistics")),
 ]
 
 PARAM_COLUMNS = ["motor_moment", "wn_mdyn", "b_mdyn", "Kp_att", "Kd_att",
-                 "zeta", "alpha", "mpc_q"]
+                 "zeta", "alpha", "mpc_q", "mpc_r"]
 
 
 def _as_float(text: str):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-genetic_sweep.py — NSGA-II-style genetic Pareto search for Eigen & Cascaded PD.
+genetic_sweep.py — NSGA-II-style genetic Pareto search for Eigen, PD and LPV-MPC.
 
 Searches the full gain space of each controller to find Pareto-optimal
 (score, effort) configurations that the coarse grid sweeps miss.
@@ -26,7 +26,7 @@ from isaacsim import SimulationApp
 # ── CLI ──────────────────────────────────────────────────────────────────────
 def parse_args():
     p = argparse.ArgumentParser(description="Genetic Pareto sweep")
-    p.add_argument("--controller", choices=["eigen", "pd"], required=True)
+    p.add_argument("--controller", choices=["eigen", "pd", "mpc"], required=True)
     p.add_argument("--motor-moments", nargs="+", type=float,
                    default=[0.0, 1e-7, 2e-7, 2.7e-7, 4e-7])
     p.add_argument("--pop-size", type=int, default=20)
@@ -99,6 +99,7 @@ from pegasus.simulator.logic.state import State
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from eigen_controller import EigenController
 from cascaded_pd_controller import CascadedPDController
+from lpv_mpc_controller import LPVMPCController
 import sweep_metrics as sm
 import sim_clock
 import sweep_task as task
@@ -133,6 +134,44 @@ PD_GENES = [
     ("Kp_att",      1.0, 60.0),
     ("Kd_att",      0.05, 3.0),
     ("Kd_yaw_rate", 0.0, 2.0),
+]
+
+# The MPC's cost weights and horizon. These are hyperparameters the solver
+# never touches — it optimises the control INPUT given this cost, exactly as
+# Kp_att is a free parameter for the PD controller — so they need searching
+# like any other gain.
+#
+# Bounds come from the widened grid in results/mpc_widen, which was run because
+# the original 3x3 box (q 5-20, r 0.01-0.05) put BOTH objectives at the same
+# corner at all six motor moments: the textbook signature of an optimum outside
+# the searched region. Re-running with q 0.5-5 and r 0.05-1.0 cut effort_ac_ses
+# from 47-69 down to 0.12-0.14 — into line with Eigen and PD, whose best sit
+# near 0.14 — and flattened the spin dependence from an 81 % degradation across
+# the ladder to 4.5 %. Both of the MPC's apparent weaknesses were artefacts of
+# searching the wrong region.
+#
+# q is bracketed: q=5 was the MINIMUM of the old box and the MAXIMUM of the
+# widened one and won from both sides, so the optimum is genuinely interior
+# around 2-5; the range below keeps headroom either side. r is flat above ~0.25
+# (0.2242 / 0.2252 / 0.2268 at r = 1.0 / 0.5 / 0.25), so its upper bound is
+# generous rather than tight.
+#
+# N has never been searched at all — no grid has ever varied it — which is the
+# main reason this GA is worth running beyond refining q/r. It is a horizon
+# length in steps, carried as a float gene and rounded at apply time, so
+# crossover and mutation need no special integer handling.
+#
+# ``s_weight`` is deliberately NOT a gene. LPVMPCController accepts it and
+# stores it (self.s_weight = float(s_weight)) but never reads it again: the
+# cost is built from q_weight and r_weight alone. Searching it would spend a
+# quarter of the population's dimensionality on a parameter with no effect on
+# the plant, and would produce an archive column implying it had been tuned.
+# If it is meant to be a slew-rate or terminal cost, wiring it into the cost is
+# a change to the controller, not to this search.
+MPC_GENES = [
+    ("mpc_q", 0.5, 10.0),
+    ("mpc_r", 0.05, 2.0),
+    ("mpc_N", 5.0, 25.0),
 ]
 
 # ── OOB Backend (shared) ────────────────────────────────────────────────────
@@ -383,6 +422,24 @@ def _make_pd(genes_vec, target, results_file):
         Kd_yaw_rate=genes_vec[2],
     )
 
+def _make_mpc(genes_vec, target, results_file, mm):
+    return LPVMPCController(
+        target_position=target, results_file=results_file,
+        q_weight=genes_vec[0], r_weight=genes_vec[1],
+        N=int(round(genes_vec[2])), km=mm,
+    )
+
+
+def _apply_genes_mpc(backend, genes_vec, mm):
+    # Safe to set in place: LPVMPCController rebuilds its OSQP problem from
+    # self.N/q_weight/r_weight on every update() call, so a changed horizon
+    # takes effect on the next step with no reconstruction.
+    backend.inner.q_weight = float(genes_vec[0])
+    backend.inner.r_weight = float(genes_vec[1])
+    backend.inner.N        = int(round(genes_vec[2]))
+    backend.inner.km       = mm
+
+
 def _apply_genes_eigen(backend, genes_vec, mm):
     backend.inner.wn_mdyn = genes_vec[0]
     backend.inner.b_mdyn  = genes_vec[1]
@@ -447,14 +504,16 @@ def main():
     rng = np.random.default_rng(ARGS.seed)
 
     is_eigen = ARGS.controller == "eigen"
-    genes_def = EIGEN_GENES if is_eigen else PD_GENES
+    is_mpc = ARGS.controller == "mpc"
+    genes_def = MPC_GENES if is_mpc else (EIGEN_GENES if is_eigen else PD_GENES)
     n_genes = len(genes_def)
     pop_size = ARGS.pop_size
     n_gen = ARGS.generations
-    ctrl_name = "Eigen" if is_eigen else "Cascaded PD"
+    ctrl_name = "LPV-MPC" if is_mpc else ("Eigen" if is_eigen else "Cascaded PD")
 
     base_dir = Path(__file__).resolve().parent.parent
-    sweep_name = "genetic_eigen_sweep" if is_eigen else "genetic_pd_sweep"
+    sweep_name = ("genetic_mpc_sweep" if is_mpc else
+                  "genetic_eigen_sweep" if is_eigen else "genetic_pd_sweep")
 
     pg = PegasusInterface()
     pg._world = World(**pg._world_settings)
@@ -486,7 +545,7 @@ def main():
     max_dx   = task.slice_max_dx(spacing)
     task.check_goal_reachable(spawn_y, ARGS.goal_radius, bounds, label="genetic")
 
-    results_base = base_dir / "results"
+    results_base = task.results_root(base_dir)
     tmp_files = [str(results_base / f"_genetic_tmp_{i}.npz") for i in range(pop_size)]
 
     drones = []
@@ -505,7 +564,9 @@ def main():
                                     max_dx=max_dx)
         drone_bounds = [spawn_x-half, spawn_x+half, y_min, y_max, z_min, z_max]
 
-        if is_eigen:
+        if is_mpc:
+            inner = _make_mpc(init_dummy, target, tmp_files[i], mm_init)
+        elif is_eigen:
             inner = _make_eigen(init_dummy, target, tmp_files[i], mm_init)
         else:
             inner = _make_pd(init_dummy, target, tmp_files[i])
@@ -539,7 +600,9 @@ def main():
         for i in range(pop_size):
             vehicle, backend, spawn_pos, _ = drones[i]
             vehicle._thrusters = QuadraticThrustCurve(config={"motor_moment": motor_moment})
-            if is_eigen:
+            if is_mpc:
+                _apply_genes_mpc(backend, pop_array[i], motor_moment)
+            elif is_eigen:
                 _apply_genes_eigen(backend, pop_array[i], motor_moment)
             else:
                 _apply_genes_pd(backend, pop_array[i])

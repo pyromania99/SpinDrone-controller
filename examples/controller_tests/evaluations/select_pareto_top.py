@@ -77,11 +77,36 @@ SOURCES = {
         ("genetic_pd_sweep/{mm}/genetic_archive.csv", "GA", None),
         ("pd_sweep/{mm}/grid_archive.csv", "grid", None),
     ],
+    # mpc_sweep.py only started writing a grid_archive.csv (and only started
+    # sweeping the spin ladder at all) when it was brought in line with the
+    # other sweeps; before that this controller had no entry here, and
+    # pareto_top.json contained zero MPC configurations.
+    "mpc": [
+        ("mpc_sweep/{mm}/grid_archive.csv", "grid", None),
+        # The widened q/r box, pooled alongside the original rather than
+        # replacing it. The first grid (q 5-20, r 0.01-0.05) put BOTH objectives
+        # at the same corner at all six motor moments — an optimum outside the
+        # searched region — and re-running at q 0.5-5, r 0.05-1.0 cut
+        # effort_ac_ses from 47-69 to 0.12-0.14 and flattened the spin
+        # dependence from 81 % to 4.5 %. Pooling costs nothing: the original
+        # box's points are simply dominated and drop off the front on their own,
+        # while staying available as the record of what was searched.
+        #
+        # Kept as a separate path rather than merged into mpc_sweep/ because the
+        # two boxes overlap at (q=5, r=0.05) and merging would silently
+        # overwrite one run's telemetry with the other's.
+        ("mpc_widen/mpc_sweep/{mm}/grid_archive.csv", "grid-wide", None),
+    ],
 }
 
 GENES = {
     "eigen": ["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att"],
     "pd": ["Kp_att", "Kd_att", "Kd_yaw_rate"],
+    # The MPC's cost weights, not attitude gains. Named with the mpc_ prefix
+    # they carry in every archive so they cannot be confused with the other
+    # controllers' Kp_att/Kd_att, which are three different physical
+    # quantities across the three controllers (see examples/utils/gain_seed.py).
+    "mpc": ["mpc_q", "mpc_r"],
 }
 
 
@@ -379,8 +404,9 @@ def main() -> int:
 
     summary_rows = []
 
-    for controller in ("eigen", "pd"):
-        title = "Eigen" if controller == "eigen" else "Cascaded PD"
+    for controller in ("eigen", "pd", "mpc"):
+        title = {"eigen": "Eigen", "pd": "Cascaded PD",
+                 "mpc": "LPV-MPC"}[controller]
         md.append(f"\n---\n\n# {title}\n")
         for mm in args.motor_moments:
             rows = dedup(load_rows(controller, mm), controller)
@@ -452,7 +478,7 @@ def main() -> int:
     total = sum(len(s["configs"]) for s in payload["sets"])
     md.append(
         f"\n---\n\n## Replay\n\n**{total} runs total** "
-        f"({args.top} per controller per motor moment, two controllers, "
+        f"({args.top} per controller per motor moment, three controllers, "
         f"{len(args.motor_moments)} motor moments).\n\n"
         "`pareto_top.json` alongside this file carries the same configurations "
         "in machine-readable form, including the reconstructed attitude gains, "

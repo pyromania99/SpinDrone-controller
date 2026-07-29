@@ -6,16 +6,41 @@ The MPC has two primary cost-tuning knobs:
     q_weight  — tracking error penalty  (higher → tighter tracking, more effort)
     r_weight  — control energy penalty  (higher → softer response, less effort)
 
-This sweep varies both q_weight and r_weight.
 Parallelism layout:
 • One drone per q_weight  →  all simulated simultaneously in X.
-• Serial outer loop over r_weight.
+• Serial loop over r_weight, inside a serial outer loop over motor_moment.
 
-Outputs  (in results/mpc_sweep/)
+Brought in line with the other sweeps
+─────────────────────────────────────
+This file used to be the odd one out in three ways, each of which quietly
+excluded the MPC from any cross-controller analysis:
+
+**It scored itself.** It carried private copies of ``stability_score`` and
+``effort_score`` rather than importing examples/utils/sweep_metrics.py — and
+the copies had drifted. Its ``effort_score`` returned ``max(effort)`` where
+every other sweep reports a future-biased *mean*, so the MPC's effort numbers
+were a different statistic wearing the same column name and were never
+comparable to the numbers they were being placed beside.
+
+**It wrote no archive.** The 2D ``scores.csv``/``effort.csv`` grids are
+readable but are not the long-format one-row-per-run layout that
+evaluations/select_pareto_top.py consumes, so ``pareto_top.json`` contained
+zero MPC configurations and the MPC had no replayable operating points at all.
+It now also writes ``grid_archive.csv`` with the shared METRIC_KEYS columns.
+
+**It ran at one spin rate.** ``--motor-moment`` was singular and optional, and
+run_all_sweeps.sh never passed it — so every MPC run inherited
+QuadraticThrustCurve's default of km = 6e-7, the *fastest* spin on the ladder
+(~29 rad/s), while the Eigen and PD sweeps covered six values from 0 up. Any
+comparison against them was reading the MPC's worst-case spin against their
+average. ``--motor-moments`` is now plural and is the outer serial loop.
+
+Outputs  (in results/mpc_sweep/mm_<km>/)
 ────────
+  grid_archive.csv      one row per run: mpc_q, mpc_r, motor_moment + METRIC_KEYS
   scores.csv            future-biased mean ‖ep‖ (2D grid: q_weight x r_weight)
-  effort.csv            future-biased mean Σ motor_thrust² (2D grid)
-  r_<rval>/q<qval>_statistics.npz   raw telemetry per drone
+  effort.csv            effort_ac_ses (2D grid)
+  r_<rval>/q_<qval>_statistics.npz   raw telemetry per drone
 """
 
 from __future__ import annotations
@@ -49,8 +74,13 @@ def parse_args() -> argparse.Namespace:
                    help="Lateral distance [m] from spawn XY to the goal. Every run "
                         "is a takeoff followed by a translation of this distance in "
                         "a random direction; see examples/utils/sweep_task.py.")
-    p.add_argument("--motor-moment", type=float, default=None,
-                   help="Motor moment constant km. If provided, overrides default.")
+    p.add_argument("--motor-moments", nargs="+", type=float,
+                   default=[0.0, 1e-7, 2e-7, 2.7e-7, 4e-7, 6e-7],
+                   help="Motor moment constants km — the spin ladder, as the "
+                        "outer serial loop. This was singular and defaulted to "
+                        "None, which left every run at QuadraticThrustCurve's "
+                        "6e-7 (the fastest spin) while the other sweeps covered "
+                        "the whole ladder.")
     p.add_argument("--spawn-altitude", type=float, default=None,
                    help="Altitude [m] to spawn at. Defaults to a ground start, so "
                         "every run includes the takeoff transient. Pass the target "
@@ -90,6 +120,7 @@ from pegasus.simulator.logic.backends import Backend
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from lpv_mpc_controller import LPVMPCController
 import sim_clock
+import sweep_metrics as sm
 import sweep_task as task
 
 # Resolved after the late imports so every code path below sees numbers. The
@@ -98,61 +129,11 @@ ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
 if ARGS.goal_radius is None:
     ARGS.goal_radius = task.DEFAULT_GOAL_RADIUS
 
-_BOUNDS_DIAG = 45.0 # Precomputed diagonal for OOB penalty
-
-def stability_score(npz_path: str, T_total: float) -> float:
-    try:
-        d = np.load(npz_path)
-        ep = d["ep"]
-        t = d["time"]
-        if len(t) < 2: return np.inf
-        oob_time = float(d.get("oob_time", float("nan")))
-        drone_went_oob = np.isfinite(oob_time)
-        if T_total < 1e-6: T_total = float(t[-1])
-        errors = np.linalg.norm(ep, axis=1)
-        if not np.all(np.isfinite(errors)): return np.inf
-        t_arr, err_arr = t.copy(), errors.copy()
-        if drone_went_oob and oob_time < T_total - 1e-6:
-            dt_a = float(t[1] - t[0]) if len(t) > 1 else 1/60
-            pad_t = np.arange(oob_time + dt_a, T_total, dt_a)
-            if len(pad_t) > 0:
-                t_arr = np.concatenate([t_arr, pad_t])
-                err_arr = np.concatenate([err_arr, np.full(len(pad_t), _BOUNDS_DIAG)])
-        w = t_arr / T_total
-        w_sum = float(np.sum(w))
-        if w_sum < 1e-12: return np.inf
-        s = float(np.dot(w, err_arr) / w_sum)
-        return s if np.isfinite(s) else np.inf
-    except Exception as exc:
-        carb.log_warn(f"[mpc_sweep] score read failed: {exc}")
-        return np.inf
-
-def effort_score(npz_path: str, T_total: float) -> float:
-    try:
-        d = np.load(npz_path)
-        t = d["time"]
-        if len(t) < 2: return np.inf
-        oob_time = float(d.get("oob_time", float("nan")))
-        drone_went_oob = np.isfinite(oob_time)
-        if T_total < 1e-6: T_total = float(t[-1])
-        mt = d.get("motor_thrusts")
-        if mt is None or mt.ndim != 2 or mt.shape[0] != len(t): return np.inf
-        eff = np.sum(np.square(mt.astype(float)), axis=1)
-        if not np.all(np.isfinite(eff)): return np.inf
-        t_arr, eff_arr = t.copy(), eff.copy()
-        if drone_went_oob and oob_time < T_total - 1e-6:
-            dt_a = float(t[1] - t[0]) if len(t) > 1 else 1/60
-            pad_t = np.arange(oob_time + dt_a, T_total, dt_a)
-            if len(pad_t) > 0:
-                worst = float(np.max(eff_arr)) if eff_arr.size else 0.0
-                t_arr = np.concatenate([t_arr, pad_t])
-                eff_arr = np.concatenate([eff_arr, np.full(len(pad_t), worst)])
-        # Use peak effort instead of mean effort to penalize late-stage destabilization
-        s = float(np.max(eff_arr))
-        return s if np.isfinite(s) else np.inf
-    except Exception as exc:
-        carb.log_warn(f"[mpc_sweep] effort read failed: {exc}")
-        return np.inf
+# The arena diagonal used to pad an early crash out to full duration. Computed
+# from --bounds rather than the hardcoded 45.0 this file used to carry: the
+# default box is 24x24x20, whose diagonal is 39.40 m, so the old constant
+# charged crashed runs 14 % more than every other sweep charged them.
+_BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 
 
 class BoundedMPCBackend(Backend):
@@ -163,6 +144,9 @@ class BoundedMPCBackend(Backend):
         self.total_time   = 0.0
         self._stopped     = False
         self.position     = np.zeros(3)
+        # Recorded into the npz so backfill_metrics.py can group runs by spin
+        # rate without having to parse it back out of the directory name.
+        self.mm           = float("nan")
         self.monitor      = task.FlightMonitor(
             ARGS.target_altitude, label="mpc_sweep", log=carb.log_warn)
 
@@ -232,6 +216,7 @@ class BoundedMPCBackend(Backend):
                 data["min_altitude"]  = np.array(self.monitor.min_altitude)
                 data["max_excursion"] = np.array(self.monitor.max_excursion)
                 data["failure"]       = np.array(self.monitor.failure)
+                data["motor_moment"]  = np.array(self.mm)
                 np.savez(self.results_file, **data)
             except Exception as exc:
                 carb.log_warn(f"[mpc_sweep] oob_time append failed: {exc}")
@@ -251,6 +236,36 @@ class BoundedMPCBackend(Backend):
 
     def input_reference(self):
         return [0., 0., 0., 0.] if self.is_oob else self.inner.input_reference()
+
+def mm_dir(mm: float) -> str:
+    """Directory name for one motor moment, matching every other sweep."""
+    return f"mm_{mm:.1e}"
+
+
+def save_grid_archive(rows: list, out_dir: Path) -> None:
+    """One row per run, in the long format select_pareto_top.py consumes.
+
+    The 2D scores.csv/effort.csv grids remain — they are the readable form —
+    but nothing downstream can consume them: the Pareto selection, the
+    tuning-equivalence check and gain_seed all expect one row per run with the
+    shared METRIC_KEYS columns. Without this file the MPC had no replayable
+    operating points and was absent from pareto_top.json entirely.
+
+    Column names ``mpc_q``/``mpc_r`` rather than ``q``/``r`` so they survive
+    being pooled with the other controllers' archives, and so they match what
+    backfill_metrics.py recovers from the file layout.
+    """
+    path = out_dir / "grid_archive.csv"
+    with open(str(path), "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["mpc_q", "mpc_r", "motor_moment"] + sm.METRIC_KEYS)
+        for row in rows:
+            writer.writerow(
+                [f"{row['mpc_q']:.6f}", f"{row['mpc_r']:.6f}",
+                 str(row["motor_moment"])]
+                + [sm.format_metric(key, row[key]) for key in sm.METRIC_KEYS])
+    carb.log_warn(f"[mpc_sweep] archive → {path}")
+
 
 def save_qr_csv(q_vals, r_vals, scores_2d, out_dir: Path):
     path = out_dir / "scores.csv"
@@ -347,18 +362,17 @@ def main():
     n_q        = len(q_vals)
     n_r        = len(r_vals)
 
+    mm_vals      = ARGS.motor_moments
     base_dir     = Path(__file__).resolve().parent.parent
-    results_base = base_dir / "results" / "mpc_sweep"
-    if ARGS.motor_moment is not None:
-        results_base = results_base / f"mm_{ARGS.motor_moment:.1e}"
+    results_base = task.results_root(base_dir) / "mpc_sweep"
     results_base.mkdir(parents=True, exist_ok=True)
 
     carb.log_warn("\n" + "="*60)
     carb.log_warn("[mpc_sweep] LPV-MPC 2D Sweep")
-    carb.log_warn(f"[mpc_sweep] q_values    : {q_vals}")
-    carb.log_warn(f"[mpc_sweep] r_values    : {r_vals}")
-    carb.log_warn(f"[mpc_sweep] motor_moment: {ARGS.motor_moment}")
-    carb.log_warn(f"[mpc_sweep] duration    : {ARGS.duration} s")
+    carb.log_warn(f"[mpc_sweep] q_values     : {q_vals}")
+    carb.log_warn(f"[mpc_sweep] r_values     : {r_vals}")
+    carb.log_warn(f"[mpc_sweep] motor_moments: {mm_vals}")
+    carb.log_warn(f"[mpc_sweep] duration     : {ARGS.duration} s")
     carb.log_warn("="*60)
 
     pg        = PegasusInterface()
@@ -417,8 +431,8 @@ def main():
         backend = BoundedMPCBackend(inner, tmp_files[i])
         cfg          = MultirotorConfig()
         cfg.backends = [backend]
-        if ARGS.motor_moment is not None:
-            cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": ARGS.motor_moment})
+        cfg.thrust_curve = QuadraticThrustCurve(
+            config={"motor_moment": mm_vals[0]})
 
         vehicle = Multirotor(
             f"/World/mpc_q{i}", ROBOTS["Iris"], i, spawn_pos,
@@ -431,86 +445,111 @@ def main():
     for _ in range(10):
         world.step(render=render_sim)
 
-    all_scores  = np.full((n_q, n_r), np.inf)
-    all_efforts = np.full((n_q, n_r), np.inf)
+    # ── Outer loop: motor_moment ────────────────────────────────────────────
+    for i_mm, mm in enumerate(mm_vals):
+        mm_base = results_base / mm_dir(mm)
+        mm_base.mkdir(parents=True, exist_ok=True)
+        carb.log_warn(f"\n{'='*60}\n[mpc_sweep] motor_moment = {mm:.2e} "
+                      f"({i_mm+1}/{len(mm_vals)})\n{'='*60}")
 
-    for j_r, r in enumerate(r_vals):
-        carb.log_warn(f"\n[mpc_sweep] r_weight = {r:.4f}  ({j_r+1}/{n_r})")
-        r_dir = results_base / f"r_{r:.4f}"
-        r_dir.mkdir(parents=True, exist_ok=True)
+        all_scores  = np.full((n_q, n_r), np.inf)
+        all_efforts = np.full((n_q, n_r), np.inf)
+        archive_rows = []
 
-        for i_q, (vehicle, backend, spawn_pos, _) in enumerate(drones):
-            q = q_vals[i_q]
-            backend.inner.q_weight = q
-            backend.inner.r_weight = r
-            
-            vehicle.set_world_pose(position=spawn_pos, orientation=[0., 0., 0., 1.])
-            vehicle.set_linear_velocity([0., 0., 0.])
-            vehicle.set_angular_velocity([0., 0., 0.])
+        for j_r, r in enumerate(r_vals):
+            carb.log_warn(f"\n[mpc_sweep] r_weight = {r:.4f}  ({j_r+1}/{n_r})")
+            r_dir = mm_base / f"r_{r:.4f}"
+            r_dir.mkdir(parents=True, exist_ok=True)
 
-            backend.reset()
-            backend.start()
+            for i_q, (vehicle, backend, spawn_pos, _) in enumerate(drones):
+                q = q_vals[i_q]
+                backend.inner.q_weight = q
+                backend.inner.r_weight = r
+                # Both sides of the spin knob: the plant's rolling moment and
+                # the controller's own km. Swapping the thrust curve in place
+                # is what the Eigen sweeps do, so the vehicles are built once
+                # and re-used across the whole ladder.
+                vehicle._thrusters = QuadraticThrustCurve(
+                    config={"motor_moment": mm})
+                backend.inner.km = mm
+                backend.mm = mm
 
-        for _ in range(5):
-            world.step(render=render_sim)
+                vehicle.set_world_pose(position=spawn_pos, orientation=[0., 0., 0., 1.])
+                vehicle.set_linear_velocity([0., 0., 0.])
+                vehicle.set_angular_velocity([0., 0., 0.])
 
-        timeline.play()
-        # world.step() advances ONE physics step (physics_dt = 1/250),
-        # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
-        # request. steps_for_duration asks the world for its real dt.
-        n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
-        sim_time = 0.0
-        for _ in range(n_steps):
-            if not simulation_app.is_running():
-                break
-            world.step(render=render_sim)
-            sim_time += step_dt
+                backend.reset()
+                backend.start()
 
-            all_oob = True
-            for _, backend, _, drone_bounds in drones:
-                if not backend.is_oob:
-                    all_oob = False
-                    backend.check_oob(drone_bounds)
+            for _ in range(5):
+                world.step(render=render_sim)
 
-            if all_oob:
-                break
+            timeline.play()
+            # world.step() advances ONE physics step (physics_dt = 1/250),
+            # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
+            # request. steps_for_duration asks the world for its real dt.
+            n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
+            sim_time = 0.0
+            for _ in range(n_steps):
+                if not simulation_app.is_running():
+                    break
+                world.step(render=render_sim)
+                sim_time += step_dt
 
-        timeline.stop()
+                all_oob = True
+                for _, backend, _, drone_bounds in drones:
+                    if not backend.is_oob:
+                        all_oob = False
+                        backend.check_oob(drone_bounds)
 
-        for i_q, (_, backend, _, _) in enumerate(drones):
-            if not backend._stopped:
-                backend.stop()
+                if all_oob:
+                    break
 
-            q = q_vals[i_q]
-            src = tmp_files[i_q]
-            dst = r_dir / f"q_{q:.2f}_statistics.npz"
+            timeline.stop()
 
-            s = stability_score(src, ARGS.duration)
-            e = effort_score(src, ARGS.duration)
-            all_scores[i_q, j_r] = s
-            all_efforts[i_q, j_r] = e
+            for i_q, (_, backend, _, _) in enumerate(drones):
+                if not backend._stopped:
+                    backend.stop()
 
-            carb.log_warn(f"  q={q:.2f} r={r:.4f} → score={s:.4f} effort={e:.4f}")
+                q = q_vals[i_q]
+                src = tmp_files[i_q]
+                dst = r_dir / f"q_{q:.2f}_statistics.npz"
 
-            if os.path.isfile(src):
-                try:
-                    os.rename(src, str(dst))
-                except Exception:
-                    pass
+                # One shared metric implementation, one npz load. The private
+                # copies this replaced reported max(effort) under the name
+                # every other sweep uses for a future-biased mean.
+                metrics = sm.compute_metrics(src, ARGS.duration, _BOUNDS_DIAG)
+                all_scores[i_q, j_r] = metrics["score"]
+                all_efforts[i_q, j_r] = metrics["effort_ac_ses"]
+                archive_rows.append({"mpc_q": q, "mpc_r": r,
+                                     "motor_moment": mm, **metrics})
 
-    save_qr_csv(q_vals, r_vals, all_scores, results_base)
-    save_qr_effort_csv(q_vals, r_vals, all_efforts, results_base)
+                carb.log_warn(
+                    f"  q={q:.2f} r={r:.4f} → score={metrics['score']:.4f} "
+                    f"effort_ac_ses={metrics['effort_ac_ses']:.4f} "
+                    f"stable={metrics['stable']}")
 
-    # Heatmaps
-    save_heatmap(r_vals, q_vals, all_scores, results_base, "score_heatmap.png",
-                 "LPV-MPC Stability Score Heatmap",
-                 "R Weight (Control Penalty)", "Q Weight (State Penalty)", "Stability Score [m]", "RdYlGn_r")
-    save_heatmap(r_vals, q_vals, all_efforts, results_base, "effort_heatmap.png",
-                 "LPV-MPC Control Effort Heatmap",
-                 "R Weight (Control Penalty)", "Q Weight (State Penalty)", "Control Effort [N²]", "YlOrRd")
+                if os.path.isfile(src):
+                    try:
+                        os.rename(src, str(dst))
+                    except Exception:
+                        pass
+
+        save_grid_archive(archive_rows, mm_base)
+        save_qr_csv(q_vals, r_vals, all_scores, mm_base)
+        save_qr_effort_csv(q_vals, r_vals, all_efforts, mm_base)
+
+        save_heatmap(r_vals, q_vals, all_scores, mm_base, "score_heatmap.png",
+                     f"LPV-MPC Stability Score (km={mm:.1e})",
+                     "R Weight (Control Penalty)", "Q Weight (State Penalty)",
+                     "Stability Score [m]", "RdYlGn_r")
+        save_heatmap(r_vals, q_vals, all_efforts, mm_base, "effort_heatmap.png",
+                     f"LPV-MPC AC Control Effort (km={mm:.1e})",
+                     "R Weight (Control Penalty)", "Q Weight (State Penalty)",
+                     "effort_ac_ses [N²]", "YlOrRd")
 
     print(f"\n[mpc_sweep] results → {results_base}")
-    
+
     carb.log_warn("=== mpc_sweep complete ===")
     
     for f in tmp_files:

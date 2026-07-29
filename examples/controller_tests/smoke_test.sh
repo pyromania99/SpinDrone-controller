@@ -50,10 +50,26 @@ done
 
 [[ -x "$ISAAC_PY" ]] || { echo "Isaac python not found: $ISAAC_PY" >&2; exit 1; }
 
+# Every sweep launched from here writes into the smoke tree, never the real one.
+#
+# This is not a tidiness measure. Five of the seven sweeps had no way to
+# redirect their output and wrote straight into results/<sweep>/mm_<km>/, and
+# the smoke configs below pin --motor-moments 4e-7 — so each smoke run silently
+# REPLACED the real km=4e-7 archives with its own 2x2 grid. Measured after one
+# run: pd_sweep/mm_4.0e-07 held 4 rows where the real grid had 42, and
+# genetic_pd_sweep/mm_4.0e-07 held 12 where the real search had written 496.
+# The smoke test reported success both times; nothing downstream can tell a
+# 4-row archive from a 42-row one except by counting them.
+#
+# SWEEP_RESULTS_ROOT is read by examples/utils/sweep_task.results_root(), which
+# every sweep now resolves its output through.
+SMOKE_RESULTS="${OUT_ROOT}/tree"
+
 isaac_python() {
     env -u ROS_VERSION -u ROS_PYTHON_VERSION -u ROS_DISTRO \
         -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH -u PYTHONPATH \
         -u CMAKE_PREFIX_PATH \
+        SWEEP_RESULTS_ROOT="$SMOKE_RESULTS" \
         LD_LIBRARY_PATH="$(echo "${LD_LIBRARY_PATH:-}" | tr ':' '\n' \
             | grep -v '^/opt/ros/' | paste -sd':' -)" \
         "$ISAAC_PY" "$@"
@@ -92,7 +108,9 @@ cmd_for() {
 --kp-att-values $((10 + i * 4)) $((20 + i * 3)) --kd-att-values 0.5 1.5 \
 --duration ${DURATION} --no-validate-pareto --headless" ;;
         mpc)
-            echo "${SWEEPS}/mpc_sweep.py --duration ${DURATION} --headless" ;;
+            echo "${SWEEPS}/mpc_sweep.py --motor-moments 4e-7 \
+--q-values $((5 + i * 5)) $((10 + i * 5)) --r-values 0.01 0.05 \
+--duration ${DURATION} --headless" ;;
     esac
 }
 
@@ -133,8 +151,11 @@ for name in "${NAMES[@]}"; do
             problems+="seed-failed "
         fi
         # duration + thrust-ceiling assertions on whatever telemetry was written
+        # --root follows the redirected tree. Without it this validated
+        # whatever happened to be freshest under the REAL results/, which
+        # after the isolation fix is no longer what the smoke run produced.
         check=$(python3 "${SCRIPT_DIR}/evaluations/check_smoke_run.py" \
-                    --duration "$DURATION" 2>/dev/null)
+                    --root "$SMOKE_RESULTS" --duration "$DURATION" 2>/dev/null)
         [[ -n "$check" ]] && problems+="$check "
 
         if [[ -z "$problems" ]]; then

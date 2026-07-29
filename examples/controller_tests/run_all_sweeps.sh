@@ -210,8 +210,16 @@ command_for() {
 --motor-moments ${MOTOR_MOMENTS} \
 --pop-size ${GA_POP} --generations ${GA_GENERATIONS} \
 --duration ${DURATION} ${TASK_ARGS} ${HEADLESS}" ;;
+        # --motor-moments passed explicitly, like every other sweep. It used to
+        # be omitted, and mpc_sweep's own default was None — which meant no
+        # thrust curve was configured and every MPC run silently inherited
+        # QuadraticThrustCurve's 6e-7, the FASTEST spin on the ladder, while
+        # the Eigen and PD sweeps covered all six values. Comparisons against
+        # them were reading the MPC's worst-case spin against their average.
         mpc)
-            echo "${SWEEPS}/mpc_sweep.py --duration ${DURATION} ${TASK_ARGS} ${HEADLESS}" ;;
+            echo "${SWEEPS}/mpc_sweep.py \
+--motor-moments ${MOTOR_MOMENTS} \
+--duration ${DURATION} ${TASK_ARGS} ${HEADLESS}" ;;
         # Runs last so it can seed from the genetic_eigen_sweep archive that
         # eigen-ga writes earlier in this same run.
         eigen-ab-fine)

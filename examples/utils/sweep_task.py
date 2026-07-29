@@ -50,8 +50,45 @@ recorded before this module cannot be compared against runs recorded after it.
 from __future__ import annotations
 
 import math
+import os
+from pathlib import Path
 
 import numpy as np
+
+
+# ── Where a sweep writes ─────────────────────────────────────────────────────
+
+# Environment variable that redirects every sweep's output tree. Empty or unset
+# means the normal ``examples/controller_tests/results``.
+RESULTS_ROOT_ENV: str = "SWEEP_RESULTS_ROOT"
+
+
+def results_root(base_dir) -> Path:
+    """The directory a sweep should write its results into.
+
+    Why this is not simply ``base_dir / "results"``
+    ───────────────────────────────────────────────
+    Five of the seven sweeps had no way to redirect their output, so every
+    smoke run wrote straight into the real results tree at whatever motor
+    moment it used. ``smoke_test.sh`` pins ``--motor-moments 4e-7``, so each
+    smoke run silently replaced the km=4e-7 archives with its own 2x2 grid:
+    measured after one such run, ``pd_sweep/mm_4.0e-07`` held 4 rows where the
+    real grid had 42, and ``genetic_pd_sweep/mm_4.0e-07`` held 12 where the
+    real search had written 496. The loss is silent and total — the smoke test
+    reports success, and nothing downstream can tell a 4-row archive from a
+    42-row one except by counting.
+
+    ``eigen_stability_sweep.py`` was already safe because it takes a
+    ``--run-tag`` that lands its output in a per-run subdirectory; this gives
+    the other sweeps the same protection without each needing its own flag.
+
+    Callers pass their own ``base_dir`` so a redirect is opt-in and the default
+    is unchanged.
+    """
+    override = os.environ.get(RESULTS_ROOT_ENV, "").strip()
+    if override:
+        return Path(override)
+    return Path(base_dir) / "results"
 
 # ── Task geometry ────────────────────────────────────────────────────────────
 
