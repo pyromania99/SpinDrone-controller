@@ -22,6 +22,7 @@ from pegasus.simulator.logic.state import State
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 from applied_thrust import applied_rotor_forces
+import vehicle_params
 
 
 class EigenController(Backend):
@@ -123,35 +124,37 @@ class EigenController(Backend):
         self.motor_thrusts_over_time = []   # [u1, u2, u3, u4] output allocations [N]
 
     def _sync_physical_params_from_vehicle(self):
-        """Try to source mass/inertia from the vehicle model; keep defaults on failure."""
+        """Install the vehicle's real mass/inertia; keep defaults on failure.
+
+        This used to read ``physics:mass`` and ``physics:diagonalInertia``
+        straight off the ``/body`` prim, which is one link of a five-link
+        articulation. It therefore missed the four rotors entirely: 0.1186 kg
+        of vehicle, and their parallel-axis contribution to every inertia axis.
+        Measured against the composite truth, the model this controller flew
+        with was off by −7.3 % in mass, −16.4 % in Ixx, −6.8 % in Iyy and
+        −11.9 % in Izz. See examples/utils/vehicle_params.py.
+
+        Note for anyone reading old archives: this moves the operating point.
+        The gains the sweeps found are the best gains for a controller that
+        believed it weighed 1.5 kg with the body link's inertia; they are not
+        re-derived by this change, only re-applied to a correct model.
+        """
         if self.vehicle is None:
             return
 
-        try:
-            stage_prefix = getattr(self.vehicle, "_stage_prefix", "")
-            body_path = stage_prefix + "/body"
+        props = vehicle_params.composite_mass_properties(self.vehicle)
+        if props is None:
+            carb.log_warn(
+                "[EigenController] Could not read mass/inertia from the physics "
+                f"interface; keeping m={self.m:.4f}, "
+                f"I=({self.Ixx:.5f}, {self.Iyy:.5f}, {self.Izz:.5f})")
+            return
 
-            body_prim = self.vehicle._current_stage.GetPrimAtPath(body_path)
-            if not body_prim or not body_prim.IsValid():
-                return
-
-            mass_attr = body_prim.GetAttribute("physics:mass")
-            if mass_attr and mass_attr.HasAuthoredValueOpinion():
-                mass_value = mass_attr.Get()
-                if mass_value is not None and mass_value > 0.0:
-                    self.m = float(mass_value)
-
-            inertia_attr = body_prim.GetAttribute("physics:diagonalInertia")
-            if inertia_attr and inertia_attr.HasAuthoredValueOpinion():
-                inertia = inertia_attr.Get()
-                if inertia is not None and len(inertia) == 3:
-                    ixx, iyy, izz = float(inertia[0]), float(inertia[1]), float(inertia[2])
-                    if ixx > 0.0 and iyy > 0.0 and izz > 0.0:
-                        self.Ixx = ixx
-                        self.Iyy = iyy
-                        self.Izz = izz
-        except Exception as error:
-            carb.log_warn(f"[EigenController] Could not sync mass/inertia from vehicle model: {error}")
+        self.m = props["mass"]
+        self.Ixx = props["Ixx"]
+        self.Iyy = props["Iyy"]
+        self.Izz = props["Izz"]
+        carb.log_warn(f"[EigenController] model synced: {vehicle_params.describe(props)}")
 
     @staticmethod
     def read_trajectory_from_csv(file_name: str):

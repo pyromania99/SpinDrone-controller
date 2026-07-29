@@ -4,6 +4,9 @@
 | Description: LPV-MPC Predictive Inner-Loop Controller with a PID Outer Position Loop.
 """
 
+import sys
+from pathlib import Path
+
 import carb
 import numpy as np
 import osqp
@@ -11,6 +14,13 @@ from scipy import sparse
 
 from pegasus.simulator.logic.backends import Backend
 from pegasus.simulator.logic.state import State
+
+# Sibling module in examples/utils. The sweeps put this directory on sys.path
+# before importing the controller; the insert keeps a direct import working too.
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+from applied_thrust import applied_rotor_forces
+import vehicle_params
 
 
 class LPVMPCController(Backend):
@@ -135,7 +145,51 @@ class LPVMPCController(Backend):
     def read_trajectory_from_csv(file_name: str):
         return np.genfromtxt(file_name, delimiter=",")
 
+    def _sync_physical_params_from_vehicle(self):
+        """Install the vehicle's real mass/inertia; keep defaults on failure.
+
+        This controller previously synced *nothing* and flew on its constructor
+        values of m=1.2 kg and diag(0.01, 0.01, 0.02), while the vehicle is
+        1.6186 kg with diag(0.0349, 0.0313, 0.0627). That is −25.9 % on the
+        hover feedforward and roughly −70 % on every inertia axis — the model's
+        ``B = diag(1/Ixx, 1/Iyy)`` therefore claimed about 3.5x the torque
+        authority the airframe has, so the MPC solved for control increments
+        against a plant far more responsive than the real one.
+
+        The other two controllers here synced mass (and, for Eigen, inertia)
+        from the vehicle, so this was also the largest single source of
+        asymmetry in any cross-controller comparison: MPC was competing at
+        −25.9 % hover error against their −7.3 %. Archives written before this
+        change are at a materially different operating point, and the q/r
+        weights chosen there were chosen for the wrong plant.
+
+        See examples/utils/vehicle_params.py.
+        """
+        if self.vehicle is None:
+            return
+
+        props = vehicle_params.composite_mass_properties(self.vehicle)
+        if props is None:
+            carb.log_warn(
+                "[LPVMPCController] Could not read mass/inertia from the physics "
+                f"interface; keeping m={self.m:.4f}, "
+                f"I=({self.Ixx:.5f}, {self.Iyy:.5f}, {self.Izz:.5f})")
+            return
+
+        self.m = props["mass"]
+        self.Ixx = props["Ixx"]
+        self.Iyy = props["Iyy"]
+        self.Izz = props["Izz"]
+        # C is cached from the inertias at construction and used every step as
+        # the gyroscopic cross-coupling coefficient in the LPV A matrix, so it
+        # has to be recomputed here or the sync would leave the model
+        # internally inconsistent.
+        self.C = (self.Izz - self.Iyy) / self.Ixx
+        carb.log_warn(f"[LPVMPCController] model synced: {vehicle_params.describe(props)}"
+                      f"  C={self.C:.6f}")
+
     def start(self):
+        self._sync_physical_params_from_vehicle()
         self.reset_statistics()
 
     def stop(self):
@@ -364,12 +418,26 @@ class LPVMPCController(Backend):
         u3 = base_thrust + altitude_correction + roll_correction - pitch_correction
         u4 = base_thrust + altitude_correction - roll_correction - pitch_correction
 
-        motor_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
-        total_thrust = float(np.clip(np.sum(motor_thrusts), 0.0, self.max_total_thrust))
+        commanded_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
+        total_thrust = float(np.clip(np.sum(commanded_thrusts), 0.0, self.max_total_thrust))
         tau = np.array([roll_correction, pitch_correction, 0.0])
 
+        # motor_thrusts logs what the vehicle ACTUALLY applies, not this mixer's
+        # idealisation of it. EigenController and CascadedPDController were both
+        # converted to applied_rotor_forces; this one was missed, so every MPC
+        # archive's effort metric was computed from a quantity the simulator
+        # never produced. The u1..u4 reconstruction ignores two things the
+        # allocator does: it saturates by scaling all four rotors together
+        # rather than clipping them individually, and it bounds each rotor at
+        # rotor_constant × max_rotor_velocity² = 10.34 N. The reconstruction
+        # exceeded that ceiling on every logged run (13.6-17.4 N per rotor),
+        # which is what the smoke test's thrust-over assertion detects.
+        # See examples/utils/applied_thrust.py.
         if self.vehicle:
             self.input_ref = self.vehicle.force_and_torques_to_velocities(total_thrust, tau)
+            motor_thrusts = applied_rotor_forces(self.vehicle, self.input_ref)
+        else:
+            motor_thrusts = np.zeros(4)
 
         # Log Data Trace Elements
         self.time_vector.append(self.total_time)
@@ -378,6 +446,8 @@ class LPVMPCController(Backend):
         self.position_error_over_time.append(pos_error_world.copy())
         self.yaw_rate_over_time.append(self.w[2])
         self.angular_velocity_over_time.append(np.asarray(self.w, dtype=float).copy())
-        self.thrust_over_time.append(total_thrust)
+        # Applied, not commanded — consistent with motor_thrusts above and with
+        # the other two controllers.
+        self.thrust_over_time.append(float(np.sum(motor_thrusts)))
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())

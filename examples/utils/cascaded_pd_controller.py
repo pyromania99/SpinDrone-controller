@@ -26,6 +26,7 @@ from pegasus.simulator.logic.state import State
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 from applied_thrust import applied_rotor_forces
+import vehicle_params
 
 
 class CascadedPDController(Backend):
@@ -127,28 +128,30 @@ class CascadedPDController(Backend):
         return np.array([-S[1, 2], S[0, 2], -S[0, 1]])
 
     def _sync_physical_params_from_vehicle(self):
-        """Try to source mass from the vehicle model; keep the constructor
-        default on failure. Mirrors EigenController's sync so both
-        controllers use the same real vehicle mass for their feedforward
-        gravity term instead of two different hardcoded assumptions."""
+        """Install the vehicle's real mass; keep the constructor default on failure.
+
+        Mass only — this controller has no inertia in its model, since its
+        Kp_att/Kd_att map attitude error straight to a thrust differential
+        [N/rad] rather than through a torque. Every other controller here takes
+        its mass from the same place, so their gravity feedforwards cannot
+        drift apart again.
+
+        This used to read ``physics:mass`` off the ``/body`` prim, which is one
+        link of a five-link articulation and omits the four rotors — 0.1186 kg,
+        or −7.3 % on the hover feedforward. See examples/utils/vehicle_params.py.
+        """
         if self.vehicle is None:
             return
 
-        try:
-            stage_prefix = getattr(self.vehicle, "_stage_prefix", "")
-            body_path = stage_prefix + "/body"
+        props = vehicle_params.composite_mass_properties(self.vehicle)
+        if props is None:
+            carb.log_warn(
+                "[CascadedPDController] Could not read mass from the physics "
+                f"interface; keeping m={self.m:.4f}")
+            return
 
-            body_prim = self.vehicle._current_stage.GetPrimAtPath(body_path)
-            if not body_prim or not body_prim.IsValid():
-                return
-
-            mass_attr = body_prim.GetAttribute("physics:mass")
-            if mass_attr and mass_attr.HasAuthoredValueOpinion():
-                mass_value = mass_attr.Get()
-                if mass_value is not None and mass_value > 0.0:
-                    self.m = float(mass_value)
-        except Exception as error:
-            carb.log_warn(f"[CascadedPDController] Could not sync mass from vehicle model: {error}")
+        self.m = props["mass"]
+        carb.log_warn(f"[CascadedPDController] model synced: {vehicle_params.describe(props)}")
 
     def start(self):
         self._sync_physical_params_from_vehicle()
