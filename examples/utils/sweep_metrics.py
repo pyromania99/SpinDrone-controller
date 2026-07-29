@@ -62,6 +62,15 @@ What is measured
     analysis regressing against spin rate can confirm that per run rather than
     assuming it.
 
+**Truth vs. belief (``ep_true``)**
+    Every metric derived from position error is computed from ``ep_true`` when
+    the archive carries it, falling back to ``ep`` otherwise. The controllers
+    log ``ep`` from their own state estimate, which is the truth in every
+    nominal run and is *not* the truth under a sensor-lag perturbation. Scoring
+    a lagged controller's own belief would reward it for being badly informed:
+    it reports a small error while sitting far off target, and the score
+    improves monotonically with added delay. See examples/utils/robustness.py.
+
 **Roll/pitch settling (``oscillation``)**
     RMS of ‖(p, q)‖ over the settled tail of the run — how much roll/pitch rate
     is still present once the vehicle should have converged.
@@ -292,8 +301,18 @@ def compute_metrics(npz_path: str, T_total: float, bounds_diag: float) -> dict:
         if "time" not in keys or "ep" not in keys:
             return metrics
         t = np.asarray(d["time"], dtype=float)
-        ep = np.asarray(d["ep"], dtype=float)
-        if len(t) < 2:
+        # ``ep`` is what the CONTROLLER believed its position error was, since
+        # every controller logs its own ``self.p``. With a perfect state
+        # estimate those coincide, and every archive written before the
+        # robustness study is in that regime. Under a sensor-lag perturbation
+        # they do not: a controller fed a stale position logs a small error
+        # while sitting a long way off target, and scoring its belief would
+        # rank "badly informed" as "well controlled" — the more lag, the better
+        # the score. ``ep_true`` is written by the perturbation backend from the
+        # simulator's own state and is preferred wherever present.
+        ep_key = "ep_true" if "ep_true" in keys else "ep"
+        ep = np.asarray(d[ep_key], dtype=float)
+        if len(t) < 2 or ep.ndim != 2 or ep.shape[0] != len(t):
             return metrics
 
         oob = float(d["oob_time"]) if "oob_time" in keys else float("nan")
@@ -389,7 +408,27 @@ def effort_score(npz_path: str, T_total: float, bounds_diag: float) -> float:
 
 
 def format_metric(key: str, value) -> str:
-    """CSV cell for one metric — integer flags plain, non-finite as 'inf'."""
+    """CSV cell for one metric — integer flags plain, NaN as 'nan', inf as 'inf'.
+
+    NaN and inf mean different things and must not share a spelling. In this
+    module's defaults NaN is "never measured" and inf is "measured, and the run
+    was unusable". Both used to serialise to 'inf', which made the two
+    indistinguishable once written.
+
+    That was not cosmetic. ``step_score`` defaults to NaN and is only populated
+    for the Pareto-front members a sweep chooses to validate — and two sweeps
+    (eigen_ab_explore, mpc_sweep) plus eigen_stability's kpkd mode never run a
+    validation pass at all. Across the archives that produced, 7980 of 8518
+    rows read 'inf' in that column while only 538 had ever been flown against
+    an offset target, of which 532 passed. Read at face value the column says
+    94 % of every configuration failed a test that 94 % of them never took, and
+    anything gating on it would have discarded almost the entire population.
+
+    Readers are unaffected: every consumer parses with float()/pd.read_csv and
+    filters on isfinite, all of which treat 'nan' and 'inf' alike.
+    """
     if key in INT_METRIC_KEYS:
         return str(int(value))
-    return f"{value:.6f}" if np.isfinite(value) else "inf"
+    if np.isfinite(value):
+        return f"{value:.6f}"
+    return "nan" if np.isnan(value) else "inf"
