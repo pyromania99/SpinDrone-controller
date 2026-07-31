@@ -130,10 +130,19 @@ ARGS = parse_args()
 # Per-axis magnitude defaults. Chosen to straddle the interesting region rather
 # than to look symmetric: 1.0 is always present as the matched control.
 DEFAULT_MAGNITUDES = {
-    # Scale factors. Asymmetric on purpose — an under-modelled (heavier than
-    # believed) vehicle is the common real case and the more destabilising one,
-    # since the controller under-commands thrust and torque.
-    "inertia": [1.0, 1.25, 1.5, 2.0, 3.0, 0.75, 0.5],
+    # Scale factors, weighted toward gamma < 1 — the destabilising direction.
+    #
+    # The controller computes a torque from its own (nominal) inertia while the
+    # plant has gamma x that. With gamma > 1 the commanded torque produces LESS
+    # angular acceleration than intended: sluggish, but self-limiting. With
+    # gamma < 1 it produces MORE, so the attitude loop over-rotates and the
+    # error compounds — that is where a breakdown point exists to find.
+    #
+    # Measured on eigen at km=2.7e-7: gamma = 2.5 degraded the score only 6.9 %
+    # (0.1226 -> 0.1310) and every run stayed stable, so sampling the gamma > 1
+    # side densely just buys near-identical rows. The ladder below keeps three
+    # points above 1.0 for the trend and puts the resolution below it.
+    "inertia": [1.0, 0.75, 0.5, 0.35, 0.25, 1.5, 2.5, 4.0],
     "mass":    [1.0, 1.1, 1.25, 1.5, 0.9, 0.75],
     # Position delay in ms. 4 ms is one physics step; 200 ms is a bad GPS.
     "lag":     [0.0, 20.0, 50.0, 100.0, 150.0, 200.0],
@@ -319,6 +328,30 @@ def write_archive(rows: list, out_dir: Path) -> Path:
     return path
 
 
+# Columns that must NOT go through a fixed-point format. motor_moment spans
+# 0 to 6e-7, and "%.6f" renders every value below ~5e-7 as "0.000000" — which
+# would silently merge four of the six spin rates into the km=0 bucket. This is
+# the same bug examples/utils/gain_seed.py:234 records having already been
+# fixed once in the genetic archives; it reappeared here because a generic
+# "format floats with .6f" branch caught this column too.
+_BREAKDOWN_EXACT = frozenset({"motor_moment"})
+_BREAKDOWN_COMPACT = frozenset({"last_surviving", "first_failing"})
+
+
+def _format_breakdown(key: str, value):
+    """One breakdown cell. Empty for a boundary that was never reached."""
+    if value is None:
+        return ""
+    if key in _BREAKDOWN_EXACT:
+        return repr(float(value))
+    if key in _BREAKDOWN_COMPACT:
+        return f"{value:g}"
+    if isinstance(value, float):
+        return f"{value:.6f}" if np.isfinite(value) else (
+            "nan" if np.isnan(value) else "inf")
+    return value
+
+
 def write_breakdown(rows: list, out_dir: Path) -> Path:
     """One row per (config, motor moment): where the configuration gave out.
 
@@ -332,11 +365,8 @@ def write_breakdown(rows: list, out_dir: Path) -> Path:
         writer = csv.writer(f)
         writer.writerow(rb.BREAKDOWN_COLUMNS)
         for row in rb.breakdown_rows(rows, origin=origin):
-            writer.writerow([
-                "" if row[key] is None else
-                f"{row[key]:g}" if key in ("last_surviving", "first_failing") else
-                f"{row[key]:.6f}" if isinstance(row[key], float) else row[key]
-                for key in rb.BREAKDOWN_COLUMNS])
+            writer.writerow([_format_breakdown(key, row[key])
+                             for key in rb.BREAKDOWN_COLUMNS])
     carb.log_warn(f"[robustness] breakdown → {path}")
     return path
 
