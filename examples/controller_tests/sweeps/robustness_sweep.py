@@ -242,10 +242,24 @@ def load_configs() -> list:
     # tracking scores, which would cluster at one end and say nothing about
     # whether low-effort tunings are more or less robust.
     pooled.sort(key=lambda c: (c["score"] if c["score"] is not None else np.inf))
-    if len(pooled) <= ARGS.top:
-        return pooled
-    idx = np.linspace(0, len(pooled) - 1, ARGS.top).round().astype(int)
-    return [pooled[i] for i in idx]
+    if len(pooled) > ARGS.top:
+        idx = np.linspace(0, len(pooled) - 1, ARGS.top).round().astype(int)
+        pooled = [pooled[i] for i in idx]
+
+    # Unique id, assigned here rather than reusing pareto_top.json's `rank`.
+    #
+    # That rank is numbered 1..N *within* each (controller, motor_moment) set,
+    # and this function pools across every motor moment — so two different gain
+    # sets routinely arrive carrying the same rank. Grouping the results by it
+    # then merges two distinct configurations into one row: measured on the
+    # eigen inertia run, rank 3 covered both (wn=6.81, b=0.31) and
+    # (wn=60.0, b=2.52), and its breakdown row reported n_runs=16 for what
+    # should have been two separate 8-run configurations.
+    #
+    # `rank` and `source` are kept alongside for provenance.
+    for i, config in enumerate(pooled):
+        config["id"] = i
+    return pooled
 
 
 def make_controller(gains: dict, results_file: str, target, km: float):
@@ -310,7 +324,8 @@ def perturbation_for(magnitude: float, seed: int) -> dict:
 GAIN_COLUMNS = ["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
                 "mpc_q", "mpc_r"]
 ARCHIVE_COLUMNS = (["controller", "axis", "magnitude", "achieved_scale",
-                    "motor_moment", "config_rank", "config_source", "seed"]
+                    "motor_moment", "config_id", "config_rank", "config_source",
+                    "seed"]
                    + GAIN_COLUMNS + ["failure"] + sm.METRIC_KEYS)
 
 
@@ -509,11 +524,11 @@ def main():
     for mm in ARGS.motor_moments:
         for config in configs:
             for seed in seeds:
-                label = (f"mm={mm:.1e} cfg=rank{config['rank']}"
+                label = (f"mm={mm:.1e} cfg{config['id']} (rank {config['rank']})"
                          + (f" seed={seed}" if len(seeds) > 1 else ""))
                 carb.log_warn(f"\n[robustness] {label}")
 
-                leaf = f"cfg{config['rank']}"
+                leaf = f"cfg{config['id']}"
                 if len(seeds) > 1:
                     leaf += f"_seed{seed}"
                 run_dir = out_dir / f"mm_{mm:.1e}" / leaf
@@ -582,6 +597,7 @@ def main():
                             f"{check['inertia_scale_achieved'][0]:.4f}"
                             if ARGS.axis == "inertia" and check else ""),
                         "motor_moment": mm,
+                        "config_id": config["id"],
                         "config_rank": config["rank"],
                         "config_source": config["source"],
                         "seed": seed if len(seeds) > 1 else "",

@@ -528,74 +528,149 @@ def wind_force_body(wind_world, attitude, coefficients) -> np.ndarray:
 
 # ── Reducing a run table to a breakdown point ────────────────────────────────
 
-BREAKDOWN_COLUMNS = ["controller", "axis", "motor_moment", "config_rank",
-                     "n_runs", "last_surviving", "first_failing",
-                     "nominal_score", "score_at_last_surviving",
-                     "degradation_ratio"]
+BREAKDOWN_COLUMNS = ["controller", "axis", "motor_moment", "config_id",
+                     "config_rank", "n_runs", "failure_mode",
+                     "below_last_surviving", "below_first_failing",
+                     "above_last_surviving", "above_first_failing",
+                     "nominal_score", "nominal_effort",
+                     "worst_score", "worst_effort_ratio"]
+
+# A run counts as broken down when its differential effort exceeds this
+# multiple of the same configuration's effort at the matched condition.
+#
+# Not an arbitrary threshold. On the inertia axis the two populations are
+# cleanly separated: every healthy run across all three controllers sat within
+# 1.0-1.3x its own matched effort, while genuine breakdowns ran 300-500x
+# (Cascaded PD at km=0, gamma=0.25: effort_ac 0.163 -> 78.1). Anything in
+# between did not occur, so the exact cut-off is not load-bearing.
+EFFORT_BREAKDOWN_RATIO: float = 5.0
 
 
-def breakdown_rows(rows, origin: float = 1.0) -> list:
+def _failed(run, nominal_effort: float) -> str:
+    """Why this run counts as a breakdown, or "" if it does not.
+
+    Three independent criteria, because the inertia axis showed that the
+    controllers do not fail the same way:
+
+    ``crash``     the flight monitor terminated the run (crash or no takeoff).
+    ``tracking``  stability score above STABLE_SCORE_MAX — the vehicle left
+                  the arena or never converged. This is how the LPV-MPC failed
+                  at km=2.7e-7, gamma >= 1.5, with scores of 15-21.
+    ``effort``    differential effort above EFFORT_BREAKDOWN_RATIO x its own
+                  matched value. This is how Cascaded PD failed, and a
+                  score-only rule misses it completely: at km=0, gamma=0.25 it
+                  held position well enough to score 0.395 — comfortably
+                  "stable" — while burning 78.1 against a matched 0.163, a
+                  480x spike. A controller thrashing its actuators that hard
+                  has broken down whatever the position error says.
+    """
+    if run.get("failure"):
+        return "crash"
+    try:
+        if int(run.get("stable", 0)) != 1:
+            return "tracking"
+    except (TypeError, ValueError):
+        return "tracking"
+    try:
+        effort = float(run.get("effort_ac"))
+    except (TypeError, ValueError):
+        return ""
+    if (np.isfinite(effort) and np.isfinite(nominal_effort)
+            and nominal_effort > 0
+            and effort > EFFORT_BREAKDOWN_RATIO * nominal_effort):
+        return "effort"
+    return ""
+
+
+def breakdown_rows(rows, origin: float = 1.0, key_fields=None) -> list:
     """Reduce per-run results to one breakdown row per configuration.
 
     ``origin`` is the unperturbed magnitude — 1.0 for the scale axes, 0.0 for
-    lag and wind. Magnitudes are ordered by distance from it, so an axis that
-    runs both above and below its matched value (inertia can be scaled either
-    way) still reduces to a single boundary.
+    lag and wind.
 
-    Three decisions worth stating, because each one has a plausible-looking
-    alternative that would be wrong:
+    Boundaries are reported **per direction**, not as a single pair. The
+    inertia axis is the reason: Cascaded PD fails only below the matched value
+    (under-modelled inertia, so the commanded torque over-rotates) while the
+    LPV-MPC under spin fails only above it. Collapsing both sides into one
+    "last surviving / first failing" pair discards the direction, which is the
+    most informative part of the result, and produces rows that read as
+    nonsense — the earlier version reported last_surviving=0.25 alongside
+    first_failing=1.5 for a configuration that was perfectly healthy at 0.25.
+
+    Two further decisions, each with a plausible-looking wrong alternative:
 
     **A magnitude counts as survived only if every seed at it survived.** A
     configuration that falls out of the sky on one gust realisation in three
     has not survived that wind speed; averaging the seeds would hide it.
 
-    **Both the last surviving and the first failing magnitude are reported.** A
-    grid brackets the boundary, it does not locate it. Quoting one number would
-    imply a resolution the sweep does not have.
-
     **A configuration that survived everything gets an empty first_failing**
     rather than the largest value tested, so "never broke over the range
     tested" cannot be read as "broke at the largest value tested".
+
+    ``key_fields`` selects the grouping columns. It defaults to config_id,
+    which the driver assigns uniquely; pass an explicit tuple when recomputing
+    from an archive written before that column existed, where the gain columns
+    are the only reliable identifier — pareto_top.json's ``rank`` is numbered
+    within each motor-moment set and collides across them.
     """
+    if key_fields is None:
+        key_fields = ("controller", "axis", "motor_moment", "config_id")
+
     groups = {}
     for row in rows:
-        key = (row["controller"], row["axis"], row["motor_moment"],
-               row["config_rank"])
-        groups.setdefault(key, []).append(row)
+        groups.setdefault(tuple(row.get(f) for f in key_fields), []).append(row)
 
     out = []
     for key, group in sorted(groups.items(), key=lambda kv: str(kv[0])):
-        by_magnitude = {}
-        for row in group:
-            by_magnitude.setdefault(row["magnitude"], []).append(row)
-
-        survived, failed = [], []
-        for magnitude, runs in by_magnitude.items():
-            ok = all(int(r.get("stable", 0)) == 1 and not r.get("failure")
-                     for r in runs)
-            (survived if ok else failed).append(magnitude)
-        survived.sort(key=lambda m: abs(m - origin))
-        failed.sort(key=lambda m: abs(m - origin))
-
-        nominal = [r for r in group if r["magnitude"] == origin]
+        nominal = [r for r in group if float(r["magnitude"]) == origin]
         nominal_score = (min(float(r["score"]) for r in nominal)
                          if nominal else float("nan"))
-        edge = ([r for r in group if r["magnitude"] == survived[-1]]
-                if survived else [])
-        edge_score = (max(float(r["score"]) for r in edge)
-                      if edge else float("nan"))
-        ratio = (edge_score / nominal_score
-                 if np.isfinite(nominal_score) and nominal_score > 0
-                 and np.isfinite(edge_score) else float("nan"))
+        nominal_effort = (float(np.median([float(r["effort_ac"]) for r in nominal]))
+                          if nominal else float("nan"))
+
+        by_magnitude = {}
+        for row in group:
+            by_magnitude.setdefault(float(row["magnitude"]), []).append(row)
+
+        modes = set()
+        below_ok, below_bad, above_ok, above_bad = [], [], [], []
+        for magnitude, runs in by_magnitude.items():
+            reasons = {_failed(r, nominal_effort) for r in runs} - {""}
+            modes |= reasons
+            side_ok, side_bad = ((below_ok, below_bad) if magnitude < origin
+                                 else (above_ok, above_bad))
+            (side_bad if reasons else side_ok).append(magnitude)
+
+        # Below: "last surviving" is the smallest that held, "first failing"
+        # the largest that broke — i.e. both walk away from the origin.
+        below_ok.sort(); below_bad.sort()
+        above_ok.sort(); above_bad.sort()
+
+        worst_score = max((float(r["score"]) for r in group
+                           if np.isfinite(float(r["score"]))), default=float("nan"))
+        worst_ratio = float("nan")
+        if np.isfinite(nominal_effort) and nominal_effort > 0:
+            efforts = [float(r["effort_ac"]) for r in group
+                       if np.isfinite(float(r["effort_ac"]))]
+            if efforts:
+                worst_ratio = max(efforts) / nominal_effort
 
         out.append({
-            "controller": key[0], "axis": key[1], "motor_moment": key[2],
-            "config_rank": key[3], "n_runs": len(group),
-            "last_surviving": survived[-1] if survived else None,
-            "first_failing": failed[0] if failed else None,
+            "controller": key[0] if len(key) > 0 else "",
+            "axis": group[0].get("axis", ""),
+            "motor_moment": group[0].get("motor_moment", ""),
+            "config_id": group[0].get("config_id", ""),
+            "config_rank": group[0].get("config_rank", ""),
+            "n_runs": len(group),
+            "failure_mode": "+".join(sorted(modes)) if modes else "",
+            "below_last_surviving": below_ok[0] if below_ok else None,
+            "below_first_failing": below_bad[-1] if below_bad else None,
+            "above_last_surviving": above_ok[-1] if above_ok else None,
+            "above_first_failing": above_bad[0] if above_bad else None,
             "nominal_score": nominal_score,
-            "score_at_last_surviving": edge_score,
-            "degradation_ratio": ratio,
+            "nominal_effort": nominal_effort,
+            "worst_score": worst_score,
+            "worst_effort_ratio": worst_ratio,
         })
     return out
 
