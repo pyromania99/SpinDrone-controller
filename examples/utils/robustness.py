@@ -42,6 +42,7 @@ examples/controller_tests/evaluations/probe_robustness.py:
 """
 from __future__ import annotations
 
+import json
 import math
 from collections import deque
 
@@ -52,6 +53,7 @@ try:                                    # Only needed for the plant-side scaling
 except ImportError:                     # pragma: no cover - non-Isaac interpreter
     UsdPhysics = None
 
+import sweep_metrics
 import vehicle_params
 
 
@@ -826,6 +828,8 @@ class RobustnessBackend:
             data["min_altitude"] = np.array(self.monitor.min_altitude)
             data["max_excursion"] = np.array(self.monitor.max_excursion)
             data["failure"] = np.array(self.monitor.failure)
+            data["config_json"] = np.array(
+                json.dumps(sweep_metrics.controller_config(self.inner)))
 
             # The truth traces. Length-matched to the controller's own log:
             # both are appended once per update() call, but a controller that

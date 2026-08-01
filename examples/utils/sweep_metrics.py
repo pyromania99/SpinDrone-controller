@@ -153,6 +153,34 @@ METRIC_DEFAULTS: dict = {
     "stable":        0,
     # RMS of ‖(p, q)‖ over the settled tail [rad/s] — yaw deliberately excluded
     "oscillation":   np.nan,
+    # ── Score decomposition ──────────────────────────────────────────────────
+    # Which phase of the flight the score actually came from. Measured over the
+    # archives: for Eigen and Cascaded PD 70-88 % of `score` is the takeoff and
+    # translation transient, and the settled tail contributes 0.016-0.025
+    # because the vehicle converges to ~0.02 m laterally with 0.0000 m of
+    # altitude error. The LPV-MPC is the opposite — only ~32 % transient, with
+    # a standing tail error of 0.24 m lateral and 0.23 m altitude.
+    #
+    # That distinction was invisible while `score` was a single number, and it
+    # is the whole reason the attitude gains show almost no gradient: the
+    # quantity being optimised is dominated by a transient the OUTER position
+    # loop governs, and the outer loop is pinned in every sweep. These are
+    # recorded, never optimised — `score` stays exactly as it was so old and
+    # new archives remain comparable.
+    "score_transient": np.nan,  # unweighted mean ‖ep‖ over t < TRANSIENT_WINDOW
+    "score_tail":      np.nan,  # unweighted mean ‖ep‖ over the settled tail
+    "ep_lat_tail":     np.nan,  # mean ‖ep_xy‖ over that tail  [m]
+    "ep_z_tail":       np.nan,  # mean |ep_z|  over that tail  [m]
+    # ── Flight-phase diagnostics ─────────────────────────────────────────────
+    # Written into the npz by every sweep's backend and, until now, dropped at
+    # the CSV boundary — after which the genetic sweep deletes the npz, so the
+    # numbers were computed and destroyed. They are what distinguishes "gains
+    # too weak to take off" from "gains too hot, crashed at 9 s", which matters
+    # far more once the outer loop is swept and failures become common.
+    "takeoff_time":  np.nan,
+    "min_altitude":  np.nan,
+    "max_excursion": np.nan,
+    "failure":       "",        # "", "crash" or "no_takeoff"
     # Populated only on validation passes (step response to an offset target)
     "step_score":    np.nan,
     "step_effort":   np.nan,
@@ -162,6 +190,93 @@ METRIC_KEYS: list = list(METRIC_DEFAULTS.keys())
 
 # Keys whose value is an integer flag rather than a float (CSV formatting).
 INT_METRIC_KEYS: frozenset = frozenset({"stable"})
+
+# Keys whose value is a free-text label rather than a number.
+STR_METRIC_KEYS: frozenset = frozenset({"failure"})
+
+# Seconds from the start of a run treated as the manoeuvre transient. 5.0 s
+# covers the takeoff plus the lateral translation: a healthy run reaches 1.47 m
+# of a 1.5 m target within 0.5 s and has closed a 2 m lateral error to ~0.01 m
+# by t = 6 s, so this splits "getting there" from "staying there".
+TRANSIENT_WINDOW: float = 5.0
+
+# ── Configuration vocabulary ─────────────────────────────────────────────────
+#
+# The outer position loop, named once. These are the parameters every sweep has
+# always held fixed and none has ever recorded, so the operating point of every
+# archived run is recoverable only from the source defaults at the commit that
+# produced it.
+#
+# One canonical spelling per physical quantity: CascadedPDController calls the
+# lateral gains Kp_xy/Kd_xy while EigenController and LPVMPCController call the
+# same thing kp_pos/kd_pos. Each controller's apply-function maps these names
+# onto its own attributes, so an archive column means one thing regardless of
+# which controller wrote it.
+#
+# Not every controller has every key — only the LPV-MPC has integral action,
+# only Cascaded PD has a tilt limit — and a controller writes the value it
+# actually applied, leaving the rest blank. `kp_rate` is the LPV-MPC's
+# outer→inner rate gain, which was a hardcoded 4.0 until it was exposed.
+CONFIG_KEYS: list = [
+    "kp_xy", "kd_xy", "ki_xy",
+    "kp_z", "kd_z", "ki_z",
+    "int_max_xy", "int_max_z",
+    "max_tilt_deg", "kp_rate",
+]
+
+
+# How each controller spells the canonical CONFIG_KEYS on its own instance.
+# CascadedPDController stores the lateral gains as the 2-vectors Kp_xy/Kd_xy;
+# EigenController and LPVMPCController store the same quantity as the scalars
+# kp_pos/kd_pos. Anything a controller does not have is simply absent.
+_CONFIG_ATTRS: dict = {
+    "kp_xy":        ("kp_pos", "Kp_xy"),
+    "kd_xy":        ("kd_pos", "Kd_xy"),
+    "ki_xy":        ("ki_pos",),
+    "kp_z":         ("kp_z", "Kp_z"),
+    "kd_z":         ("kd_z", "Kd_z"),
+    "ki_z":         ("ki_z",),
+    "int_max_xy":   ("int_max_xy",),
+    "int_max_z":    ("int_max_z",),
+    "max_tilt_deg": ("max_tilt",),      # stored in radians, converted below
+    "kp_rate":      ("kp_rate",),
+}
+
+
+def controller_config(controller) -> dict:
+    """The outer-loop configuration a controller instance is actually flying.
+
+    Read off the live object rather than from whatever the caller believes it
+    passed, so the record cannot drift from the run. Returns only the keys the
+    controller has; a missing key means "this controller has no such term",
+    which is itself information (only the LPV-MPC has integral action, only
+    Cascaded PD has a tilt limit).
+
+    Sweeps write this into the npz so telemetry is self-describing. Until now
+    the outer-loop operating point of every archived run was recoverable only
+    from the source defaults at the commit that produced it — and the genetic
+    sweep deletes its npz files after scoring, so for those runs it was not
+    recoverable at all.
+    """
+    out = {}
+    for key, attrs in _CONFIG_ATTRS.items():
+        for attr in attrs:
+            if not hasattr(controller, attr):
+                continue
+            value = getattr(controller, attr)
+            try:
+                # The lateral gains are per-axis pairs on Cascaded PD. The
+                # sweeps always set both axes equal, so the first component is
+                # the value; recording a scalar keeps the column comparable
+                # across controllers.
+                value = float(np.asarray(value).ravel()[0])
+            except (TypeError, ValueError, IndexError):
+                continue
+            if attr == "max_tilt":
+                value = float(np.degrees(value))
+            out[key] = value
+            break
+    return out
 
 
 def bounds_diagonal(bounds) -> float:
@@ -326,7 +441,46 @@ def compute_metrics(npz_path: str, T_total: float, bounds_diag: float) -> dict:
         metrics.update(spin_metrics(
             d["yaw_rate"] if "yaw_rate" in keys else None, time=t))
 
+        # ── Attitude settling, recorded before the motor_thrusts guard below ──
+        # This used to sit after that guard, so a run with a perfectly good
+        # angular_velocity trace but missing or malformed motor_thrusts scored
+        # NaN here. `oscillation` is the only attitude-quality metric that is
+        # the same physical quantity for all three controllers (Eigen logs a
+        # Euler-error triple, Cascaded PD an SO(3) vee vector, and the LPV-MPC
+        # logs no eR at all), so losing it to an unrelated failure is expensive.
+        if "angular_velocity" in keys:
+            metrics["oscillation"] = pq_settling(d["angular_velocity"])
+
+        # ── Flight-phase diagnostics, straight through from the backend ──────
+        for key in ("takeoff_time", "min_altitude", "max_excursion"):
+            if key in keys:
+                try:
+                    metrics[key] = float(d[key])
+                except (TypeError, ValueError):
+                    pass
+        if "failure" in keys:
+            try:
+                metrics["failure"] = str(d["failure"])
+            except Exception:
+                pass
+
         errors = np.linalg.norm(ep, axis=1)
+
+        # ── Score decomposition — which phase the error actually lived in ────
+        # Unweighted means, deliberately: the future-biased weighting exists to
+        # stop an early crash looking cheap, and applying it again here would
+        # make the two parts not add up to anything interpretable. The tail
+        # window is SPIN_TAIL_FRAC, reused so "settled" means one thing in this
+        # module. Padding is not applied either — these describe the flight that
+        # actually happened, not the penalty charged for the part that did not.
+        transient = t < TRANSIENT_WINDOW
+        if transient.any():
+            metrics["score_transient"] = float(np.mean(errors[transient]))
+        n_tail = max(2, int(round(len(t) * SPIN_TAIL_FRAC)))
+        tail = slice(len(t) - n_tail, None)
+        metrics["score_tail"] = float(np.mean(errors[tail]))
+        metrics["ep_lat_tail"] = float(np.mean(np.linalg.norm(ep[tail, :2], axis=1)))
+        metrics["ep_z_tail"] = float(np.mean(np.abs(ep[tail, 2])))
 
         # ── Descriptive metrics, measured pre-padding on the real trajectory ──
         e0_thresh = max(errors[0] if errors.size else 0.0, 1.0)
@@ -357,8 +511,7 @@ def compute_metrics(npz_path: str, T_total: float, bounds_diag: float) -> dict:
         dt_arr = np.diff(t, prepend=t[0])
         metrics["total_energy"] = float(np.sum(e_total * dt_arr))
 
-        if "angular_velocity" in keys:
-            metrics["oscillation"] = pq_settling(d["angular_velocity"])
+        # `oscillation` is computed above, before the motor_thrusts guard.
 
         if not (np.all(np.isfinite(errors)) and np.all(np.isfinite(e_total))):
             return metrics
@@ -427,6 +580,8 @@ def format_metric(key: str, value) -> str:
     Readers are unaffected: every consumer parses with float()/pd.read_csv and
     filters on isfinite, all of which treat 'nan' and 'inf' alike.
     """
+    if key in STR_METRIC_KEYS:
+        return "" if value is None else str(value)
     if key in INT_METRIC_KEYS:
         return str(int(value))
     if np.isfinite(value):

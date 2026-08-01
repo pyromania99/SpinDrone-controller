@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 import sys
 from pathlib import Path
@@ -74,8 +75,8 @@ _FILE_PATTERNS = [
     ("mpc_q",   re.compile(r"^q_?([-+0-9.eE]+)_statistics")),
 ]
 
-PARAM_COLUMNS = ["motor_moment", "wn_mdyn", "b_mdyn", "Kp_att", "Kd_att",
-                 "zeta", "alpha", "mpc_q", "mpc_r"]
+PARAM_COLUMNS = (["motor_moment", "wn_mdyn", "b_mdyn", "Kp_att", "Kd_att",
+                  "zeta", "alpha", "mpc_q", "mpc_r"] + sm.CONFIG_KEYS)
 
 
 def _as_float(text: str):
@@ -110,7 +111,24 @@ def parse_params(npz_path: Path, root: Path) -> dict:
             value = _as_float(match.group(1))
             if value is not None:
                 params[column] = value
+    # The outer-loop configuration, when the run recorded it. Path parsing
+    # cannot reach these: grid sweeps encode only their swept axes in the
+    # directory names, so an outer gain has nowhere to appear. Runs written
+    # before config_json existed simply leave the columns blank.
+    params.update(config_from_npz(npz_path))
     return params
+
+
+def config_from_npz(npz_path: Path) -> dict:
+    """Outer-loop configuration recorded in the npz by the sweep that flew it."""
+    try:
+        with np.load(npz_path, allow_pickle=True) as d:
+            if "config_json" not in d.files:
+                return {}
+            raw = json.loads(str(d["config_json"]))
+    except Exception:
+        return {}
+    return {k: v for k, v in raw.items() if k in sm.CONFIG_KEYS}
 
 
 def logged_duration(npz_path: Path) -> float:

@@ -262,31 +262,108 @@ def load_configs() -> list:
     return pooled
 
 
+# Gain keys each controller understands. Anything outside its set is an error,
+# not a default — see make_controller.
+#
+# Outer-loop keys use the canonical CONFIG_KEYS spelling and are mapped onto
+# each controller's own attribute names below, since CascadedPDController calls
+# the lateral gains Kp_xy/Kd_xy while the other two call the same quantity
+# kp_pos/kd_pos.
+_INNER_KEYS = {
+    "eigen": {"wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "alpha"},
+    "pd":    {"Kp_att", "Kd_att", "Kd_yaw_rate"},
+    "mpc":   {"mpc_q", "mpc_r", "mpc_N", "q_weight", "r_weight", "N"},
+}
+_OUTER_KEYS = {
+    "eigen": {"kp_xy", "kd_xy", "kp_z", "kd_z"},
+    "pd":    {"kp_xy", "kd_xy", "kp_z", "kd_z", "max_tilt_deg"},
+    "mpc":   {"kp_xy", "kd_xy", "ki_xy", "kp_z", "kd_z", "ki_z",
+              "int_max_xy", "int_max_z", "kp_rate"},
+}
+# Bookkeeping columns that ride along in a config dict without being gains.
+_IGNORED_KEYS = {"_score", "_source", "rank", "source", "score", "motor_moment"}
+
+
+def _check_gain_keys(gains: dict, controller: str) -> None:
+    """Refuse a configuration carrying gains this controller cannot apply.
+
+    Why this raises instead of ignoring
+    ───────────────────────────────────
+    This function used to be a chain of ``g.get(key, default)`` calls, which
+    silently discarded every key it did not recognise. That is safe only while
+    the configs happen to contain nothing extra. The moment pareto_top.json
+    carries outer-loop gains, an unchanged replay would fly every configuration
+    at the DEFAULT outer loop while reporting it as the tuned one — and nothing
+    in the archive, the breakdown or the plots would reveal it, because the
+    gains column would faithfully record what was *requested*.
+
+    A robustness number attached to the wrong operating point is worse than no
+    number, so an unknown key stops the run.
+    """
+    known = _INNER_KEYS[controller] | _OUTER_KEYS[controller] | _IGNORED_KEYS
+    unknown = sorted(set(gains) - known)
+    if unknown:
+        raise ValueError(
+            f"[robustness] configuration carries gains the '{controller}' "
+            f"controller cannot apply: {unknown}. Known inner gains "
+            f"{sorted(_INNER_KEYS[controller])}, outer gains "
+            f"{sorted(_OUTER_KEYS[controller])}. Refusing to fly it at the "
+            f"defaults and report it as tuned."
+        )
+
+
 def make_controller(gains: dict, results_file: str, target, km: float):
-    """Construct the inner controller for --controller with these gains."""
+    """Construct the inner controller for --controller with these gains.
+
+    Outer-loop gains are applied when present and left at the controller's own
+    defaults when absent, so archives written before the outer loop was swept
+    still replay exactly as they did.
+    """
     g = dict(gains)
+    _check_gain_keys(g, ARGS.controller)
+
+    def outer(name, default):
+        value = g.get(name)
+        return default if value in (None, "") else float(value)
+
     if ARGS.controller == "eigen":
+        # beta is deliberately not accepted: it appears identically in M_dyn
+        # and A_r so M_eff[2,2] = 0, and corrections[2] is discarded when tau
+        # is built — it cannot affect the vehicle, and advertising it as a
+        # tunable invites tuning against a parameter with no effect.
         return EigenController(
             results_file=results_file, target_position=target, km=km,
             wn_mdyn=g.get("wn_mdyn", 18.0), b_mdyn=g.get("b_mdyn", 10.2),
             Kp_att=g.get("Kp_att", 7.0), Kd_att=g.get("Kd_att", 1.0),
-            alpha=g.get("alpha", 0.5), beta=g.get("beta", 0.6))
+            alpha=g.get("alpha", 0.5),
+            kp_pos=outer("kp_xy", 0.50), kd_pos=outer("kd_xy", 1.0),
+            kp_z=outer("kp_z", 15.0), kd_z=outer("kd_z", 8.0))
     if ARGS.controller == "pd":
         # Kp_att/Kd_att are per-axis pairs here, and are a thrust differential
         # [N/rad] rather than the commanded rate they are in the Eigen
         # controller. See examples/utils/gain_seed.py.
         kp = g.get("Kp_att", 1.6)
         kd = g.get("Kd_att", 1.8)
+        kp_xy, kd_xy = outer("kp_xy", 0.50), outer("kd_xy", 1.0)
         return CascadedPDController(
             results_file=results_file, target_position=target,
             Kp_att=(kp, kp) if np.isscalar(kp) else tuple(kp),
             Kd_att=(kd, kd) if np.isscalar(kd) else tuple(kd),
-            Kd_yaw_rate=g.get("Kd_yaw_rate", 0.0))
+            Kd_yaw_rate=g.get("Kd_yaw_rate", 0.0),
+            Kp_xy=(kp_xy, kp_xy), Kd_xy=(kd_xy, kd_xy),
+            Kp_z=outer("kp_z", 15.0), Kd_z=outer("kd_z", 8.0),
+            max_tilt_deg=outer("max_tilt_deg", 30.0))
     return LPVMPCController(
         results_file=results_file, target_position=target, km=km,
         q_weight=g.get("mpc_q", g.get("q_weight", 10.0)),
         r_weight=g.get("mpc_r", g.get("r_weight", 0.01)),
-        N=int(g.get("N", 12)))
+        N=int(g.get("mpc_N", g.get("N", 12))),
+        kp_pos=outer("kp_xy", 0.50), kd_pos=outer("kd_xy", 1.0),
+        ki_pos=outer("ki_xy", 0.05),
+        kp_z=outer("kp_z", 15.0), kd_z=outer("kd_z", 8.0),
+        ki_z=outer("ki_z", 2.0),
+        int_max_xy=outer("int_max_xy", 2.0), int_max_z=outer("int_max_z", 4.0),
+        kp_rate=outer("kp_rate", 4.0))
 
 
 def perturbation_for(magnitude: float, seed: int) -> dict:
@@ -321,8 +398,10 @@ def perturbation_for(magnitude: float, seed: int) -> dict:
 
 # ── Output ───────────────────────────────────────────────────────────────────
 
-GAIN_COLUMNS = ["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
-                "mpc_q", "mpc_r"]
+# Inner gains stay listed here; the outer loop comes from the single shared
+# vocabulary in sweep_metrics so this file and rebuild_breakdown.py cannot drift.
+GAIN_COLUMNS = (["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
+                 "mpc_q", "mpc_r", "mpc_N"] + sm.CONFIG_KEYS)
 ARCHIVE_COLUMNS = (["controller", "axis", "magnitude", "achieved_scale",
                     "motor_moment", "config_id", "config_rank", "config_source",
                     "seed"]

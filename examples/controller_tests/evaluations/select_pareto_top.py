@@ -99,7 +99,7 @@ SOURCES = {
     ],
 }
 
-GENES = {
+INNER_GENES = {
     "eigen": ["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att"],
     "pd": ["Kp_att", "Kd_att", "Kd_yaw_rate"],
     # The MPC's cost weights, not attitude gains. Named with the mpc_ prefix
@@ -107,6 +107,38 @@ GENES = {
     # controllers' Kp_att/Kd_att, which are three different physical
     # quantities across the three controllers (see examples/utils/gain_seed.py).
     "mpc": ["mpc_q", "mpc_r"],
+}
+
+# Outer position-loop gains, in the canonical CONFIG_KEYS spelling. Only the
+# ones each controller actually has: integral action is the LPV-MPC's alone,
+# the tilt limit is Cascaded PD's alone, and kp_rate is the MPC's outer→inner
+# rate gain.
+OUTER_GENES = {
+    "eigen": ["kp_xy", "kd_xy", "kp_z", "kd_z"],
+    "pd": ["kp_xy", "kd_xy", "kp_z", "kd_z", "max_tilt_deg"],
+    "mpc": ["kp_xy", "kd_xy", "ki_xy", "kp_z", "kd_z", "ki_z", "kp_rate"],
+}
+
+# What identifies a distinct configuration. This MUST include the outer gains.
+#
+# `dedup()` keys on this tuple, so with the outer gains excluded, two runs that
+# share their inner gains and differ only in the outer loop collapse into one —
+# and whichever happened to be seen second is silently discarded, along with
+# any advantage it had. That is harmless only while the outer loop is pinned
+# everywhere, which is exactly what is about to stop being true.
+GENES = {c: INNER_GENES[c] + OUTER_GENES[c] for c in INNER_GENES}
+
+# Outer-loop values every archive written before the outer loop was swept was
+# flown at. They are absent from those CSVs, so without this fill each such row
+# would dedup on a tuple of NaNs and collapse the entire population into one
+# point. Same pattern as SEEDED_ATT_GAINS above: reconstruct what was actually
+# flown so every emitted config stays directly replayable.
+DEFAULT_OUTER = {
+    "eigen": {"kp_xy": 0.50, "kd_xy": 1.0, "kp_z": 15.0, "kd_z": 8.0},
+    "pd": {"kp_xy": 0.50, "kd_xy": 1.0, "kp_z": 15.0, "kd_z": 8.0,
+           "max_tilt_deg": 30.0},
+    "mpc": {"kp_xy": 0.50, "kd_xy": 1.0, "ki_xy": 0.05, "kp_z": 15.0,
+            "kd_z": 8.0, "ki_z": 2.0, "kp_rate": 4.0},
 }
 
 
@@ -162,6 +194,14 @@ def load_rows(controller: str, mm: float) -> list[dict]:
                     gains["Kp_att"], gains["Kd_att"] = EIGEN_DEFAULT_ATT
                 if controller == "pd" and not math.isfinite(gains["Kd_yaw_rate"]):
                     gains["Kd_yaw_rate"] = 0.0
+
+                # Archives written before the outer loop was swept have no
+                # column for it; fill in what they were actually flown at, so
+                # they stay loadable and dedup on a real configuration rather
+                # than on a tuple of NaNs.
+                for key, value in DEFAULT_OUTER[controller].items():
+                    if not math.isfinite(gains.get(key, math.nan)):
+                        gains[key] = value
 
                 if any(not math.isfinite(v) for v in gains.values()):
                     continue

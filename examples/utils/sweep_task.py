@@ -179,8 +179,104 @@ def slice_max_dx(spacing: float, clearance: float = SLICE_CLEARANCE) -> float:
     Returns 0.0 when the drones are packed too tightly for any X offset to be
     safe; ``offset_target`` then produces a pure ±Y offset, which is still the
     full radius and still never collides.
+
+    **Zero is not a harmless degradation** — see ``require_lateral_freedom``.
+    Any caller that packs a population densely enough to hit it must call that
+    guard rather than silently accept a different task.
     """
     return max(0.0, 0.5 * float(spacing) - float(clearance))
+
+
+def min_spacing_for_lateral_freedom(clearance: float = SLICE_CLEARANCE) -> float:
+    """Spacing below which ``slice_max_dx`` returns 0 and the task degenerates."""
+    return 2.0 * float(clearance)
+
+
+def require_lateral_freedom(spacing: float, label: str = "sweep",
+                            clearance: float = SLICE_CLEARANCE) -> float:
+    """Return ``slice_max_dx(spacing)``, refusing to continue when it is 0.
+
+    What this catches
+    ─────────────────
+    ``slice_max_dx`` clamps at 0 with ``max(0.0, ...)``, which looks defensive
+    and is in fact a silent change of experiment: at ``max_dx = 0``
+    ``offset_target`` clamps the X component to ±0 and puts the entire goal
+    radius into Y, so every drone flies the *same* pure ±Y translation instead
+    of the uniform-on-the-circle direction this module advertises.
+
+    That is not hypothetical. At ``pop_size = 16`` in the default 24 m arena the
+    genetic sweep computed ``spacing = 21/15 = 1.40 m`` and therefore
+    ``max_dx = max(0, 0.70 - 0.75) = 0.0`` — so **every genetic run ever
+    performed flew a pure ±Y translation**, while ``pd_sweep`` at 7 drones
+    (spacing 3.50, max_dx 1.00) and the robustness sweeps (spacing 3.00,
+    max_dx 0.75) got real directional diversity. Both populations were then
+    pooled into the same Pareto front by ``select_pareto_top``, which is only
+    valid if they flew the same task.
+
+    Raising is the point: a sweep that cannot give its drones lateral freedom
+    should be reconfigured — fewer drones per row, a wider arena, or a 2D
+    layout — not quietly run against a different manoeuvre.
+    """
+    max_dx = slice_max_dx(spacing, clearance)
+    if max_dx > 0.0:
+        return max_dx
+    raise ValueError(
+        f"[{label}] spawn spacing {float(spacing):.3f} m leaves no lateral "
+        f"freedom: max_dx = max(0, {0.5 * float(spacing):.3f} - "
+        f"{float(clearance):.3f}) = 0, so every goal collapses to a pure ±Y "
+        f"translation and the drones no longer fly the task this sweep claims. "
+        f"Need spacing > {min_spacing_for_lateral_freedom(clearance):.2f} m — "
+        f"use fewer drones per row, a wider --bounds, or a 2D spawn layout."
+    )
+
+
+def grid_layout(count: int, bounds, pitch_x: float = 3.5, pitch_y: float = 6.0,
+                margin: float = 1.5, label: str = "sweep") -> dict:
+    """Lay ``count`` drones out in rows so each keeps a usable X pitch.
+
+    A single row is what collapses the spacing: fitting N drones across the
+    arena divides the usable width by N-1, and past ~15 drones in a 24 m box
+    that falls under ``2 × SLICE_CLEARANCE`` and the task degenerates. Wrapping
+    into rows keeps the X pitch fixed at ``pitch_x`` regardless of population,
+    which is what actually preserves the manoeuvre.
+
+    Returns ``{"spacing", "max_dx", "columns", "rows", "positions"}`` where
+    ``positions`` is a list of ``(x, y)`` spawn centres, and ``spacing`` is the
+    X pitch actually used — the quantity that governs lateral freedom, since
+    the slice being protected is the drone's own X slot.
+
+    Raises via ``require_lateral_freedom`` if the requested pitch is too tight,
+    and if the population needs more rows than the arena's Y extent allows.
+    """
+    x_min, x_max, y_min, y_max = (float(bounds[0]), float(bounds[1]),
+                                  float(bounds[2]), float(bounds[3]))
+    usable_x = (x_max - x_min) - 2.0 * margin
+    usable_y = (y_max - y_min) - 2.0 * margin
+
+    columns = max(1, min(int(count), int(usable_x // pitch_x) + 1))
+    rows = int(np.ceil(count / columns))
+    needed_y = (rows - 1) * pitch_y
+    if needed_y > usable_y:
+        raise ValueError(
+            f"[{label}] {count} drones need {rows} rows at {pitch_y:g} m pitch "
+            f"= {needed_y:.1f} m of Y, but only {usable_y:.1f} m is usable "
+            f"inside {bounds[2]:g}..{bounds[3]:g}. Reduce the population, the "
+            f"pitch, or widen --bounds."
+        )
+
+    max_dx = require_lateral_freedom(pitch_x, label=label)
+
+    x_start = x_min + margin
+    y_centre = 0.5 * (y_min + y_max)
+    y_start = y_centre - 0.5 * (rows - 1) * pitch_y
+
+    positions = []
+    for i in range(int(count)):
+        row, col = divmod(i, columns)
+        positions.append((x_start + col * pitch_x, y_start + row * pitch_y))
+
+    return {"spacing": float(pitch_x), "max_dx": float(max_dx),
+            "columns": columns, "rows": rows, "positions": positions}
 
 
 def check_goal_reachable(spawn_y: float, radius: float, bounds, label: str = "sweep") -> None:

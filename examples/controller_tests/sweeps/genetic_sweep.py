@@ -18,7 +18,7 @@ Usage:
       --pop-size 20 --generations 50 --headless
 """
 from __future__ import annotations
-import argparse, csv, math, os, sys
+import argparse, csv, json, math, os, sys
 from pathlib import Path
 import carb
 from isaacsim import SimulationApp
@@ -34,7 +34,18 @@ def parse_args():
     p.add_argument("--duration", type=float, default=25.0,
                    help="Simulation seconds per run (default: 25.0 to ensure >20s of stable hover)")
     p.add_argument("--target-altitude", type=float, default=1.5)
-    p.add_argument("--spacing", type=float, default=4.0)
+    # X pitch between neighbouring drones. 3.5 m matches what pd_sweep has
+    # always used at 7 drones, and is the pitch the goal geometry was designed
+    # around: it leaves max_dx = 1.0 m of lateral freedom. Held FIXED rather
+    # than divided across the population — dividing is what collapsed it to
+    # 1.40 m at pop 16 and silently changed the task. Populations that no
+    # longer fit in one row wrap into additional rows; see task.grid_layout.
+    p.add_argument("--spacing", type=float, default=3.5,
+                   help="X pitch between drones [m]. Fixed, not divided across "
+                        "the population; the layout adds rows instead.")
+    p.add_argument("--row-pitch", type=float, default=6.0,
+                   help="Y pitch between spawn rows [m]. Must exceed twice the "
+                        "goal radius so neighbouring rows cannot collide.")
     p.add_argument("--bounds", nargs=6, type=float,
                    default=[-12., 12., -12., 12., 0., 20.])
     p.add_argument("--seed", type=int, default=42)
@@ -224,6 +235,12 @@ class BoundedBackend(Backend):
                 data["min_altitude"]  = np.array(self.monitor.min_altitude)
                 data["max_excursion"] = np.array(self.monitor.max_excursion)
                 data["failure"]       = np.array(self.monitor.failure)
+                # The outer-loop configuration actually flown, read off the
+                # live controller. This sweep DELETES the npz after scoring,
+                # so without it the operating point of a genetic run is not
+                # recoverable from anywhere once the run is over.
+                data["config_json"] = np.array(
+                    json.dumps(sm.controller_config(self.inner)))
                 np.savez(self.results_file, **data)
             except Exception: pass
 
@@ -453,7 +470,7 @@ def _apply_genes_pd(backend, genes_vec):
     backend.inner.Kd_yaw_rate = genes_vec[2]
 
 # ── CSV output ───────────────────────────────────────────────────────────────
-def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float):
+def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict = None):
     s_path = out_dir / "scores.csv"
     e_path = out_dir / "effort.csv"
     gene_names = [g[0] for g in genes_def]
@@ -478,11 +495,21 @@ def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float):
     # split and the r_ss/r_drift spin-rate columns.
     metric_keys = ["motor_moment"] + sm.METRIC_KEYS
 
+    # The outer-loop configuration every row was flown at, written whether it
+    # was swept or pinned. This sweep DELETES its npz after scoring, so the
+    # config_json embedded in the telemetry does not survive — the CSV is the
+    # only place a genetic run's operating point can be recovered from. A
+    # pinned sweep writing its defaults here is what makes the archive
+    # self-describing rather than dependent on the source at that commit.
+    config = config or {}
+    config_row = [sm.format_metric(k, config[k]) if k in config else ""
+                  for k in sm.CONFIG_KEYS]
+
     with open(str(detail_path), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["gen"] + gene_names + metric_keys)
+        w.writerow(["gen"] + gene_names + sm.CONFIG_KEYS + metric_keys)
         for gen, genes, metrics in archive:
-            row = [str(gen)] + [f"{g:.6f}" for g in genes]
+            row = [str(gen)] + [f"{g:.6f}" for g in genes] + config_row
             for k in metric_keys:
                 if k == "motor_moment":
                     # Raw repr, NOT "%.6f" — motor moments live in the 1e-7-ish
@@ -522,28 +549,50 @@ def main():
     for _ in range(20):
         world.step(render=render_sim)
 
-    # Spacing
-    x_min, x_max = bounds[0], bounds[1]
-    x_margin = 1.5
-    x_usable = x_max - x_min - 2.0 * x_margin
-    auto_spacing = x_usable / (pop_size - 1) if pop_size > 1 else 0.0
-    spacing = min(ARGS.spacing, auto_spacing)
-    x_start = x_min + x_margin
-    # Ground start: every run begins on the floor and has to take off. The air
-    # start this replaced put the vehicle exactly on its target, so initial
-    # position error was zero and the gains being searched could not affect the
-    # score at all. See examples/utils/sweep_task.py.
-    spawn_y, spawn_z = -1.5, float(ARGS.spawn_altitude)
-    half = spacing / 2.0
-    y_min, y_max = bounds[2], bounds[3]
+    # ── Spawn layout: rows, not one long line ───────────────────────────────
+    #
+    # A single row divides the usable width by pop_size-1, and past ~15 drones
+    # in the default 24 m arena that falls below 2 x SLICE_CLEARANCE. At
+    # pop_size=16 it produced spacing = 21/15 = 1.40 m and therefore
+    # max_dx = max(0, 0.70 - 0.75) = 0 — so offset_target put the whole goal
+    # radius into Y and EVERY genetic run ever performed flew a pure +/-Y
+    # translation, while pd_sweep (7 drones, spacing 3.50) and the robustness
+    # sweeps (8 drones, spacing 3.00) flew the uniform-on-the-circle task this
+    # sweep advertises. select_pareto_top pools all of them into one front.
+    #
+    # A grid keeps the X pitch fixed regardless of population, so the task no
+    # longer depends on how many drones were packed in, and grid_layout raises
+    # rather than degrading if the pitch is ever too tight to be safe.
     z_min, z_max = bounds[4], bounds[5]
+    spawn_z = float(ARGS.spawn_altitude)
+    layout = task.grid_layout(pop_size, bounds, pitch_x=ARGS.spacing,
+                              pitch_y=ARGS.row_pitch, label="genetic")
+    spacing, max_dx = layout["spacing"], layout["max_dx"]
+    half = spacing / 2.0
+    half_y = 0.5 * ARGS.row_pitch
+    carb.log_warn(f"[genetic] spawn layout: {layout['rows']} rows x "
+                  f"{layout['columns']} cols, X pitch {spacing:.2f} m, "
+                  f"max_dx {max_dx:.2f} m")
+
+    # Rows must clear each other in Y for the same reason slices clear in X.
+    # offset_target puts the WHOLE radius into Y whenever the X component is
+    # clamped, so a row pitch below 2x the goal radius lets two rows be sent
+    # into each other — the collision test slice_max_dx exists to prevent,
+    # reintroduced along the other axis.
+    if layout["rows"] > 1 and ARGS.row_pitch < 2.0 * ARGS.goal_radius:
+        raise ValueError(
+            f"[genetic] row pitch {ARGS.row_pitch:g} m is below 2x the goal "
+            f"radius ({2.0 * ARGS.goal_radius:g} m), so drones in adjacent rows "
+            f"can be sent to the same point. Raise --row-pitch, lower "
+            f"--goal-radius, or reduce the population to a single row.")
 
     # Random goal direction per drone, bounded in X so a drone's target stays
     # inside its own slice of the arena and neighbours cannot be sent into each
     # other. Seeded, so the same --goal-seed reproduces the same task.
     goal_rng = np.random.default_rng(ARGS.goal_seed)
-    max_dx   = task.slice_max_dx(spacing)
-    task.check_goal_reachable(spawn_y, ARGS.goal_radius, bounds, label="genetic")
+    # Checked at the outermost row, which is the one closest to the wall.
+    extreme_y = max(abs(y) for _, y in layout["positions"])
+    task.check_goal_reachable(extreme_y, ARGS.goal_radius, bounds, label="genetic")
 
     results_base = task.results_root(base_dir)
     tmp_files = [str(results_base / f"_genetic_tmp_{i}.npz") for i in range(pop_size)]
@@ -557,12 +606,15 @@ def main():
         init_dummy[j] = (lo + hi) / 2.0
         
     for i in range(pop_size):
-        spawn_x = x_start + i * spacing
+        spawn_x, spawn_y = layout["positions"][i]
         spawn_pos = [spawn_x, spawn_y, spawn_z]
         target = task.offset_target(spawn_pos, ARGS.target_altitude,
                                     ARGS.goal_radius, goal_rng,
                                     max_dx=max_dx)
-        drone_bounds = [spawn_x-half, spawn_x+half, y_min, y_max, z_min, z_max]
+        # Each drone owns its own cell now, in Y as well as X — with rows, the
+        # full arena height is no longer one drone's slice.
+        drone_bounds = [spawn_x - half, spawn_x + half,
+                        spawn_y - half_y, spawn_y + half_y, z_min, z_max]
 
         if is_mpc:
             inner = _make_mpc(init_dummy, target, tmp_files[i], mm_init)
@@ -804,7 +856,10 @@ def main():
                 carb.log_warn(f"  ★ Gen {gen} best: score={pop_scores[best_i]:.4f} effort={pop_efforts[best_i]:.4f}")
 
         # Save results
-        _save_pareto_csv(archive, genes_def, out_dir, mm)
+        # Read off a live controller, so the record is what was flown
+        # rather than what the caller believes it configured.
+        _save_pareto_csv(archive, genes_def, out_dir, mm,
+                         config=sm.controller_config(drones[0][1].inner))
 
         arc_sc = np.array([a[2]["score"] for a in archive])
         arc_ef = np.array([a[2]["effort"] for a in archive])

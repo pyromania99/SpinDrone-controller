@@ -56,12 +56,21 @@ class LPVMPCController(Backend):
         Iyy=0.01,
         Izz=0.02,
         
+        # Outer→inner rate gain: attitude error [rad] → commanded body rate
+        # [rad/s]. This is functionally what Kp_att is for the other two
+        # controllers, and it was hardcoded as a bare 4.0 at the two use sites
+        # — so it was invisible to every sweep and absent from every archive,
+        # while being the literal interface between the position loop and the
+        # MPC. Exposed with its original value, so nothing changes until it is
+        # deliberately swept.
+        kp_rate=4.0,
+
         # --- MPC Hyperparameters ---
-        N=12,         
-        q_weight=10.0, 
-        r_weight=0.01, 
-        s_weight=0.1,  
-        
+        N=12,
+        q_weight=10.0,
+        r_weight=0.01,
+        s_weight=0.1,
+
         max_total_thrust=80.0,
         max_torque=5.0, 
     ):
@@ -90,6 +99,7 @@ class LPVMPCController(Backend):
         
         self.int_max_xy = float(int_max_xy)
         self.int_max_z = float(int_max_z)
+        self.kp_rate = float(kp_rate)
 
         self.alpha = float(alpha)
         self.beta = float(beta)
@@ -335,8 +345,8 @@ class LPVMPCController(Backend):
         desired_pitch = ((np.cos(yaw) * acc_world_x_desired) + (np.sin(yaw) * acc_world_y_desired)) / self.g
 
         # Kinematic references for the inner loop MPC
-        p_ref = 4.0 * (desired_roll - roll)
-        q_ref = 4.0 * (desired_pitch - pitch)
+        p_ref = self.kp_rate * (desired_roll - roll)
+        q_ref = self.kp_rate * (desired_pitch - pitch)
 
         # ---- Altitude PID Loop Allocation ----
         z_error = pos_error_world[2]

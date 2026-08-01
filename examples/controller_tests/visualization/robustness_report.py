@@ -228,12 +228,27 @@ def panel_svg(group_set: list, metric: str, title: str, threshold: float,
     if not xs or not ys:
         return ""
 
-    x_lo, x_hi = log_scale(xs)
+    # X scale follows the axis, not a house style. The scale axes (inertia,
+    # mass) are multiplicative about a matched value of 1.0, so log spacing is
+    # what makes 0.5x and 2x read as equally far from matched. The additive
+    # axes (lag, wind) start at 0 — which has no logarithm at all — and their
+    # magnitudes are already evenly spaced, so they get a linear scale.
+    origin = ORIGINS.get(axis.split("-")[0], 0.0)
+    x_log = origin > 0 and min(xs) > 0
+    if x_log:
+        x_lo, x_hi = log_scale(xs)
+
+        def sx(v):
+            return pad_l + (math.log10(v) - x_lo) / max(x_hi - x_lo, 1e-9) * plot_w
+    else:
+        x_lo, x_hi = min(xs), max(xs)
+        span = max(x_hi - x_lo, 1e-9)
+
+        def sx(v):
+            return pad_l + (v - x_lo) / span * plot_w
+
     y_lo, y_hi = log_scale(ys)
     y_lo, y_hi = y_lo - 0.08, y_hi + 0.12
-
-    def sx(v):
-        return pad_l + (math.log10(v) - x_lo) / max(x_hi - x_lo, 1e-9) * plot_w
 
     def sy(v):
         v = max(v, 10 ** y_lo)
@@ -254,7 +269,6 @@ def panel_svg(group_set: list, metric: str, title: str, threshold: float,
         out.append(f'<text x="{x:.1f}" y="{height-pad_b+14:.1f}" class="tick tick-x">{v:g}</text>')
 
     # Matched-condition marker and the breakdown threshold
-    origin = ORIGINS.get(axis.split("-")[0], 0.0)
     if origin > 0 and min(xs) <= origin <= max(xs):
         out.append(f'<line x1="{sx(origin):.1f}" y1="{pad_t}" x2="{sx(origin):.1f}" '
                    f'y2="{pad_t+plot_h}" class="origin-line"/>')

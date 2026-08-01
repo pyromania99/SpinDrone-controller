@@ -36,13 +36,14 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 import robustness as rb  # noqa: E402
+import sweep_metrics as sm  # noqa: E402
 
 RESULTS = Path(__file__).resolve().parents[1] / "results"
 
 # Gain columns that, together, identify a configuration. Only those present in
 # a given archive are used.
-GAIN_COLUMNS = ["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
-                "mpc_q", "mpc_r"]
+GAIN_COLUMNS = (["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
+                 "mpc_q", "mpc_r", "mpc_N"] + sm.CONFIG_KEYS)
 
 # Unperturbed magnitude per axis: the scale axes are matched at 1.0, the
 # additive ones at 0.
