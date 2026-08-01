@@ -49,6 +49,11 @@ def parse_args():
     p.add_argument("--bounds", nargs=6, type=float,
                    default=[-12., 12., -12., 12., 0., 20.])
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--sweep-outer", action="store_true", default=False,
+                   help="Also search the outer position loop (kp_xy, kd_xy, "
+                        "and for the MPC its integral gains). Off by default, "
+                        "so a run without it reproduces the pinned-outer "
+                        "searches exactly.")
     # ── Step-response validation (proves position control, not just hover) ──
     p.add_argument("--validate-every", type=int, default=3,
                    help="Run a step-response validation pass every N generations "
@@ -124,8 +129,9 @@ if getattr(ARGS, "goal_radius", None) is None:
 _BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 
 # ── Gene definitions ─────────────────────────────────────────────────────────
-# Only INNER-LOOP gains are swept. Outer position loop (kp_pos, Kd_pos,
-# Kp_xy, Kd_xy, Kp_z, Kd_z) is kept fixed for strict cross-controller fairness.
+# Inner-loop gains, always swept. The outer position loop is appended by
+# --sweep-outer (see OUTER_GENES); without that flag these lists are the whole
+# gene set and a run reproduces the pinned-outer searches exactly.
 # Each gene: (name, low, high)
 #
 # Box sizing note: the earlier boxes (wn ≤ 20, b ≤ 15) were too small and the
@@ -184,6 +190,79 @@ MPC_GENES = [
     ("mpc_r", 0.05, 2.0),
     ("mpc_N", 5.0, 25.0),
 ]
+
+
+# ── Outer position-loop genes, appended by --sweep-outer ────────────────────
+#
+# Why these exist: measured over 2135 archived runs, 99-100 % of the Eigen and
+# Cascaded PD score is the takeoff-and-translate transient (median
+# score_transient 1.10 and 1.03 against settled tails of 0.0076 and 0.0041),
+# and that transient is governed by the outer loop — which no sweep had ever
+# varied. The inner gains show almost no gradient as a direct result: Spearman
+# rho of wn_mdyn against score is -0.001 across a 45x range, and none of PD's
+# three genes exceeds |rho| = 0.13.
+#
+# Box sizing, from the second-order reading of the position loop
+# (wn = sqrt(kp), zeta = kd / (2*sqrt(kp))): the pinned values kp=0.50,
+# kd=1.0 give wn = 0.71 rad/s and zeta = 0.71. The ranges below span
+# wn = 0.5-2.83 rad/s, i.e. up to 4x the current bandwidth. The upper end is
+# where the outer loop starts to approach the inner loop's own bandwidth and
+# the cascade separation (currently 30-50x) stops holding — which is exactly
+# the region worth mapping.
+#
+# kp_z/kd_z are NOT included by default. Altitude is 0.15 m of a 0.97 m
+# transient and 0.0000 m of the settled tail for Eigen and PD, so sweeping it
+# doubles the dimensionality to chase ~2 % of the objective. The LPV-MPC is the
+# exception — it carries a 0.23 m altitude standing error — so its list adds
+# the integral terms that exist to remove exactly that.
+# Parameterised as (natural frequency, damping ratio), not (kp, kd).
+#
+# kp and kd are not independent: the loop they define has wn = sqrt(kp) and
+# zeta = kd / (2*sqrt(kp)), so sampling them independently varies damping as a
+# side effect of varying bandwidth. Measured on an 8-point LHS over
+# kp in [0.25, 8], kd in [0.5, 8]: kp=6.83, kd=1.19 lands at zeta=0.23 and
+# kp=6.43, kd=0.95 at zeta=0.19 — badly underdamped loops that are not "faster",
+# just worse, and every sampled point scored 1.3-32.8 against 0.13 for the
+# pinned default. The good region is a curved ridge in (kp, kd), and SBX
+# crossover and polynomial mutation are axis-aligned operators that search a
+# box well and a ridge badly.
+#
+# In (wn, zeta) the good region IS a box, so the same operators become
+# effective and the two effects can be attributed separately. kp = wn**2 and
+# kd = 2*zeta*wn are derived at apply time, and both the genes and the derived
+# gains are recorded in the archive.
+#
+# The pinned default sits at wn = 0.707 rad/s, zeta = 0.707. The box spans
+# 0.5x to 2.8x that bandwidth; the upper end is where the outer loop starts to
+# approach the inner loop's own, which is the region worth mapping.
+OUTER_GENES = {
+    "eigen": [
+        ("wn_xy", 0.35, 2.0),
+        ("zeta_xy", 0.5, 1.3),
+    ],
+    "pd": [
+        ("wn_xy", 0.35, 2.0),
+        ("zeta_xy", 0.5, 1.3),
+    ],
+    "mpc": [
+        ("wn_xy", 0.35, 2.0),
+        ("zeta_xy", 0.5, 1.3),
+        ("ki_xy", 0.0, 1.0),
+        ("ki_z", 0.0, 8.0),
+    ],
+}
+
+# The pinned operating point in gene coordinates. Generation 0 is seeded with
+# it so the population always contains one individual known to fly. With the
+# outer loop free the failure rate is far higher than in the inner-only search,
+# and a generation 0 where everything crashes gives NSGA-II nothing to select
+# on — the search then wanders instead of converging.
+OUTER_SEED = {
+    "wn_xy": math.sqrt(0.50),                     # 0.7071, from kp = 0.50
+    "zeta_xy": 1.0 / (2.0 * math.sqrt(0.50)),     # 0.7071, from kd = 1.00
+    "ki_xy": 0.05,
+    "ki_z": 2.0,
+}
 
 # ── OOB Backend (shared) ────────────────────────────────────────────────────
 class BoundedBackend(Backend):
@@ -422,52 +501,143 @@ def _lhs_population(genes_def, n, seed):
     return lo + unit * (hi - lo)
 
 # ── Controller factories ─────────────────────────────────────────────────────
-# Outer-loop gains are FIXED at the same defaults used by all sweep scripts.
-def _make_eigen(genes_vec, target, results_file, mm):
+#
+# Genes are looked up BY NAME rather than by position. The gene list is no
+# longer fixed per controller — --sweep-outer appends the outer position gains
+# — and positional indexing silently reinterprets every gene the moment the
+# list changes length. A name lookup either finds the gene or falls back to the
+# documented default, and cannot quietly apply b_mdyn as a Kp_att.
+
+def _gene_map(genes_def, genes_vec) -> dict:
+    """{gene name: value} for one individual."""
+    return {g[0]: float(v) for g, v in zip(genes_def, genes_vec)}
+
+
+def _outer_gains(g: dict) -> dict:
+    """Derive the physical outer gains from whichever genes are present.
+
+    (wn_xy, zeta_xy) -> kp = wn**2, kd = 2*zeta*wn. Passing kp_xy/kd_xy
+    directly is still honoured, so an explicit box in physical coordinates
+    remains usable without touching this code.
+    """
+    out = {k: v for k, v in g.items()
+           if k in ("kp_xy", "kd_xy", "kp_z", "kd_z", "ki_xy", "ki_z",
+                    "int_max_xy", "int_max_z", "max_tilt_deg", "kp_rate")}
+    if "wn_xy" in g:
+        wn = g["wn_xy"]
+        out["kp_xy"] = wn * wn
+        out["kd_xy"] = 2.0 * g.get("zeta_xy", 0.7071) * wn
+    return out
+
+
+def _outer_kwargs(g: dict, controller: str) -> dict:
+    """Outer-loop constructor arguments for whichever outer genes are present.
+
+    Absent genes are simply omitted, so each controller keeps its own defaults
+    and a run with --sweep-outer off is byte-identical to one before this
+    existed. Names are translated from the canonical CONFIG_KEYS spelling to
+    each controller's own (CascadedPDController says Kp_xy where the others
+    say kp_pos).
+    """
+    g = _outer_gains(g)
+    if controller == "pd":
+        out = {}
+        if "kp_xy" in g:
+            out["Kp_xy"] = (g["kp_xy"], g["kp_xy"])
+        if "kd_xy" in g:
+            out["Kd_xy"] = (g["kd_xy"], g["kd_xy"])
+        if "kp_z" in g:
+            out["Kp_z"] = g["kp_z"]
+        if "kd_z" in g:
+            out["Kd_z"] = g["kd_z"]
+        if "max_tilt_deg" in g:
+            out["max_tilt_deg"] = g["max_tilt_deg"]
+        return out
+    out = {}
+    for gene, arg in (("kp_xy", "kp_pos"), ("kd_xy", "kd_pos"),
+                      ("kp_z", "kp_z"), ("kd_z", "kd_z")):
+        if gene in g:
+            out[arg] = g[gene]
+    if controller == "mpc":
+        for gene, arg in (("ki_xy", "ki_pos"), ("ki_z", "ki_z"),
+                          ("kp_rate", "kp_rate")):
+            if gene in g:
+                out[arg] = g[gene]
+    return out
+
+
+def _make_eigen(g, target, results_file, mm):
     return EigenController(
         target_position=target, results_file=results_file,
-        wn_mdyn=genes_vec[0], b_mdyn=genes_vec[1],
-        Kp_att=genes_vec[2], Kd_att=genes_vec[3],
-        km=mm,
+        wn_mdyn=g["wn_mdyn"], b_mdyn=g["b_mdyn"],
+        Kp_att=g["Kp_att"], Kd_att=g["Kd_att"],
+        km=mm, **_outer_kwargs(g, "eigen"),
     )
 
-def _make_pd(genes_vec, target, results_file):
+def _make_pd(g, target, results_file):
     return CascadedPDController(
         target_position=target, results_file=results_file,
-        Kp_att=(genes_vec[0], genes_vec[0]),
-        Kd_att=(genes_vec[1], genes_vec[1]),
-        Kd_yaw_rate=genes_vec[2],
+        Kp_att=(g["Kp_att"], g["Kp_att"]),
+        Kd_att=(g["Kd_att"], g["Kd_att"]),
+        Kd_yaw_rate=g["Kd_yaw_rate"],
+        **_outer_kwargs(g, "pd"),
     )
 
-def _make_mpc(genes_vec, target, results_file, mm):
+def _make_mpc(g, target, results_file, mm):
     return LPVMPCController(
         target_position=target, results_file=results_file,
-        q_weight=genes_vec[0], r_weight=genes_vec[1],
-        N=int(round(genes_vec[2])), km=mm,
+        q_weight=g["mpc_q"], r_weight=g["mpc_r"],
+        N=int(round(g["mpc_N"])), km=mm, **_outer_kwargs(g, "mpc"),
     )
 
 
-def _apply_genes_mpc(backend, genes_vec, mm):
+def _apply_outer(inner, g: dict, controller: str) -> None:
+    """Set whichever outer gains are being swept, in place."""
+    g = _outer_gains(g)
+    if controller == "pd":
+        if "kp_xy" in g:
+            inner.Kp_xy = np.array([g["kp_xy"], g["kp_xy"]], dtype=float)
+        if "kd_xy" in g:
+            inner.Kd_xy = np.array([g["kd_xy"], g["kd_xy"]], dtype=float)
+        if "kp_z" in g:
+            inner.Kp_z = g["kp_z"]
+        if "kd_z" in g:
+            inner.Kd_z = g["kd_z"]
+        if "max_tilt_deg" in g:
+            inner.max_tilt = np.deg2rad(g["max_tilt_deg"])
+        return
+    for gene, attr in (("kp_xy", "kp_pos"), ("kd_xy", "kd_pos"),
+                       ("kp_z", "kp_z"), ("kd_z", "kd_z"),
+                       ("ki_xy", "ki_pos"), ("ki_z", "ki_z"),
+                       ("kp_rate", "kp_rate")):
+        if gene in g and hasattr(inner, attr):
+            setattr(inner, attr, g[gene])
+
+
+def _apply_genes_mpc(backend, g, mm):
     # Safe to set in place: LPVMPCController rebuilds its OSQP problem from
     # self.N/q_weight/r_weight on every update() call, so a changed horizon
     # takes effect on the next step with no reconstruction.
-    backend.inner.q_weight = float(genes_vec[0])
-    backend.inner.r_weight = float(genes_vec[1])
-    backend.inner.N        = int(round(genes_vec[2]))
+    backend.inner.q_weight = g["mpc_q"]
+    backend.inner.r_weight = g["mpc_r"]
+    backend.inner.N        = int(round(g["mpc_N"]))
     backend.inner.km       = mm
+    _apply_outer(backend.inner, g, "mpc")
 
 
-def _apply_genes_eigen(backend, genes_vec, mm):
-    backend.inner.wn_mdyn = genes_vec[0]
-    backend.inner.b_mdyn  = genes_vec[1]
-    backend.inner.Kp_att  = genes_vec[2]
-    backend.inner.Kd_att  = genes_vec[3]
+def _apply_genes_eigen(backend, g, mm):
+    backend.inner.wn_mdyn = g["wn_mdyn"]
+    backend.inner.b_mdyn  = g["b_mdyn"]
+    backend.inner.Kp_att  = g["Kp_att"]
+    backend.inner.Kd_att  = g["Kd_att"]
     backend.inner.km      = mm
+    _apply_outer(backend.inner, g, "eigen")
 
-def _apply_genes_pd(backend, genes_vec):
-    backend.inner.Kp_att = np.array([genes_vec[0], genes_vec[0]], dtype=float)
-    backend.inner.Kd_att = np.array([genes_vec[1], genes_vec[1]], dtype=float)
-    backend.inner.Kd_yaw_rate = genes_vec[2]
+def _apply_genes_pd(backend, g):
+    backend.inner.Kp_att = np.array([g["Kp_att"], g["Kp_att"]], dtype=float)
+    backend.inner.Kd_att = np.array([g["Kd_att"], g["Kd_att"]], dtype=float)
+    backend.inner.Kd_yaw_rate = g["Kd_yaw_rate"]
+    _apply_outer(backend.inner, g, "pd")
 
 # ── CSV output ───────────────────────────────────────────────────────────────
 def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict = None):
@@ -501,14 +671,25 @@ def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict 
     # only place a genetic run's operating point can be recovered from. A
     # pinned sweep writing its defaults here is what makes the archive
     # self-describing rather than dependent on the source at that commit.
+    # Pinned values come from a live controller; swept ones are derived from
+    # each row's own genes and OVERRIDE the snapshot.
+    #
+    # The snapshot alone is only correct while the outer loop is pinned. Once
+    # it is swept, one controller's state at archive-writing time is whatever
+    # the last-evaluated individual left behind — so every row would record the
+    # same wrong gains. Measured before this fix: the individual seeded at
+    # exactly kp_xy=0.50, kd_xy=1.00 was archived as 0.4348 / 1.6343.
     config = config or {}
-    config_row = [sm.format_metric(k, config[k]) if k in config else ""
-                  for k in sm.CONFIG_KEYS]
+    base = {k: config[k] for k in sm.CONFIG_KEYS if k in config}
 
     with open(str(detail_path), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["gen"] + gene_names + sm.CONFIG_KEYS + metric_keys)
         for gen, genes, metrics in archive:
+            per_row = dict(base)
+            per_row.update(_outer_gains(_gene_map(genes_def, genes)))
+            config_row = [sm.format_metric(k, per_row[k]) if k in per_row else ""
+                          for k in sm.CONFIG_KEYS]
             row = [str(gen)] + [f"{g:.6f}" for g in genes] + config_row
             for k in metric_keys:
                 if k == "motor_moment":
@@ -533,6 +714,8 @@ def main():
     is_eigen = ARGS.controller == "eigen"
     is_mpc = ARGS.controller == "mpc"
     genes_def = MPC_GENES if is_mpc else (EIGEN_GENES if is_eigen else PD_GENES)
+    if ARGS.sweep_outer:
+        genes_def = genes_def + OUTER_GENES[ARGS.controller]
     n_genes = len(genes_def)
     pop_size = ARGS.pop_size
     n_gen = ARGS.generations
@@ -617,11 +800,14 @@ def main():
                         spawn_y - half_y, spawn_y + half_y, z_min, z_max]
 
         if is_mpc:
-            inner = _make_mpc(init_dummy, target, tmp_files[i], mm_init)
+            inner = _make_mpc(_gene_map(genes_def, init_dummy), target,
+                              tmp_files[i], mm_init)
         elif is_eigen:
-            inner = _make_eigen(init_dummy, target, tmp_files[i], mm_init)
+            inner = _make_eigen(_gene_map(genes_def, init_dummy), target,
+                                tmp_files[i], mm_init)
         else:
-            inner = _make_pd(init_dummy, target, tmp_files[i])
+            inner = _make_pd(_gene_map(genes_def, init_dummy), target,
+                             tmp_files[i])
 
         backend = BoundedBackend(inner, tmp_files[i])
         cfg = MultirotorConfig()
@@ -653,11 +839,13 @@ def main():
             vehicle, backend, spawn_pos, _ = drones[i]
             vehicle._thrusters = QuadraticThrustCurve(config={"motor_moment": motor_moment})
             if is_mpc:
-                _apply_genes_mpc(backend, pop_array[i], motor_moment)
+                _apply_genes_mpc(backend, _gene_map(genes_def, pop_array[i]),
+                                 motor_moment)
             elif is_eigen:
-                _apply_genes_eigen(backend, pop_array[i], motor_moment)
+                _apply_genes_eigen(backend, _gene_map(genes_def, pop_array[i]),
+                                   motor_moment)
             else:
-                _apply_genes_pd(backend, pop_array[i])
+                _apply_genes_pd(backend, _gene_map(genes_def, pop_array[i]))
             backend.inner.hover_target = np.asarray(targets[i], dtype=float)
 
             vehicle.set_world_pose(position=spawn_pos, orientation=[0.,0.,0.,1.])
@@ -726,6 +914,20 @@ def main():
     # evolutionary RNG (crossover/mutation/selection) still flows continuously,
     # so the search diverges per mm after gen 0 as it adapts to each landscape.
     init_population = _lhs_population(genes_def, pop_size, ARGS.seed)
+    if ARGS.sweep_outer:
+        # Overwrite one individual with the pinned outer loop, keeping its
+        # LHS-sampled inner genes. Without an anchor a generation-0 population
+        # can be entirely infeasible once the outer loop is free — measured on
+        # an 8-point sample, every individual scored 1.3-32.8 against 0.13 for
+        # the pinned default — and NSGA-II selecting among all-crashed
+        # individuals has no gradient to follow.
+        gene_index = {g[0]: i for i, g in enumerate(genes_def)}
+        for name, value in OUTER_SEED.items():
+            if name in gene_index:
+                init_population[0, gene_index[name]] = value
+        carb.log_warn("[genetic] seeded individual 0 with the pinned outer loop "
+                      + ", ".join(f"{k}={v:.4f}" for k, v in OUTER_SEED.items()
+                                  if k in gene_index))
 
     # ── Outer loop: motor moments ────────────────────────────────────────────
     for mm in ARGS.motor_moments:
