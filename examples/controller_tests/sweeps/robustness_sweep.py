@@ -176,6 +176,7 @@ from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorCo
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve                 # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
+import controller_factory as cf  # noqa: E402
 import robustness as rb          # noqa: E402
 import sim_clock                 # noqa: E402
 import sweep_metrics as sm       # noqa: E402
@@ -207,8 +208,20 @@ def load_configs() -> list:
         configs = json.loads(ARGS.gains)
         if not isinstance(configs, list) or not configs:
             raise ValueError("--gains must be a non-empty JSON list of gain dicts")
-        return [{"rank": i + 1, "source": "explicit", "gains": g}
-                for i, g in enumerate(configs[:ARGS.top])]
+        # Taken WHOLE, not truncated to --top. An explicit list is an exact
+        # request; --top exists to thin a ranked pool from pareto_top.json and
+        # applying it here silently discarded everything past the third entry
+        # (its default) with no message. An ablation study feeding 13 configs
+        # would have measured 3 and said nothing.
+        #
+        # `id` is assigned here as well as in the pooled branch below. Without
+        # it main() raises KeyError on the first pass, so this path was dead:
+        # config['id'] is read for the pass label, for the output directory
+        # name, and for the config_id archive column — which is also
+        # breakdown_rows' default grouping key, where a missing or non-unique
+        # id silently merges distinct configurations into one row.
+        return [{"id": i, "rank": i + 1, "source": "explicit", "gains": g}
+                for i, g in enumerate(configs)]
 
     path = Path(ARGS.configs_from) if ARGS.configs_from else PARETO_JSON
     if not path.is_file():
@@ -262,108 +275,20 @@ def load_configs() -> list:
     return pooled
 
 
-# Gain keys each controller understands. Anything outside its set is an error,
-# not a default — see make_controller.
-#
-# Outer-loop keys use the canonical CONFIG_KEYS spelling and are mapped onto
-# each controller's own attribute names below, since CascadedPDController calls
-# the lateral gains Kp_xy/Kd_xy while the other two call the same quantity
-# kp_pos/kd_pos.
-_INNER_KEYS = {
-    "eigen": {"wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "alpha"},
-    "pd":    {"Kp_att", "Kd_att", "Kd_yaw_rate"},
-    "mpc":   {"mpc_q", "mpc_r", "mpc_N", "q_weight", "r_weight", "N"},
-}
-_OUTER_KEYS = {
-    "eigen": {"kp_xy", "kd_xy", "kp_z", "kd_z"},
-    "pd":    {"kp_xy", "kd_xy", "kp_z", "kd_z", "max_tilt_deg"},
-    "mpc":   {"kp_xy", "kd_xy", "ki_xy", "kp_z", "kd_z", "ki_z",
-              "int_max_xy", "int_max_z", "kp_rate"},
-}
-# Bookkeeping columns that ride along in a config dict without being gains.
-_IGNORED_KEYS = {"_score", "_source", "rank", "source", "score", "motor_moment"}
-
-
-def _check_gain_keys(gains: dict, controller: str) -> None:
-    """Refuse a configuration carrying gains this controller cannot apply.
-
-    Why this raises instead of ignoring
-    ───────────────────────────────────
-    This function used to be a chain of ``g.get(key, default)`` calls, which
-    silently discarded every key it did not recognise. That is safe only while
-    the configs happen to contain nothing extra. The moment pareto_top.json
-    carries outer-loop gains, an unchanged replay would fly every configuration
-    at the DEFAULT outer loop while reporting it as the tuned one — and nothing
-    in the archive, the breakdown or the plots would reveal it, because the
-    gains column would faithfully record what was *requested*.
-
-    A robustness number attached to the wrong operating point is worse than no
-    number, so an unknown key stops the run.
-    """
-    known = _INNER_KEYS[controller] | _OUTER_KEYS[controller] | _IGNORED_KEYS
-    unknown = sorted(set(gains) - known)
-    if unknown:
-        raise ValueError(
-            f"[robustness] configuration carries gains the '{controller}' "
-            f"controller cannot apply: {unknown}. Known inner gains "
-            f"{sorted(_INNER_KEYS[controller])}, outer gains "
-            f"{sorted(_OUTER_KEYS[controller])}. Refusing to fly it at the "
-            f"defaults and report it as tuned."
-        )
-
-
 def make_controller(gains: dict, results_file: str, target, km: float):
     """Construct the inner controller for --controller with these gains.
 
-    Outer-loop gains are applied when present and left at the controller's own
-    defaults when absent, so archives written before the outer loop was swept
-    still replay exactly as they did.
+    Delegates to examples/utils/controller_factory.py, which is the single
+    place a gain dict becomes a configured controller. This file used to carry
+    its own copy of that mapping and genetic_sweep.py carried another, and the
+    two had drifted apart — robustness_sweep accepted `alpha`, `int_max_*`,
+    `kp_rate` and `max_tilt_deg` while genetic_sweep accepted none of them, so
+    a configuration the search could express was not necessarily one the replay
+    could fly, and nothing checked.
+
+    Unknown keys still raise; see controller_factory.check_gain_keys.
     """
-    g = dict(gains)
-    _check_gain_keys(g, ARGS.controller)
-
-    def outer(name, default):
-        value = g.get(name)
-        return default if value in (None, "") else float(value)
-
-    if ARGS.controller == "eigen":
-        # beta is deliberately not accepted: it appears identically in M_dyn
-        # and A_r so M_eff[2,2] = 0, and corrections[2] is discarded when tau
-        # is built — it cannot affect the vehicle, and advertising it as a
-        # tunable invites tuning against a parameter with no effect.
-        return EigenController(
-            results_file=results_file, target_position=target, km=km,
-            wn_mdyn=g.get("wn_mdyn", 18.0), b_mdyn=g.get("b_mdyn", 10.2),
-            Kp_att=g.get("Kp_att", 7.0), Kd_att=g.get("Kd_att", 1.0),
-            alpha=g.get("alpha", 0.5),
-            kp_pos=outer("kp_xy", 0.50), kd_pos=outer("kd_xy", 1.0),
-            kp_z=outer("kp_z", 15.0), kd_z=outer("kd_z", 8.0))
-    if ARGS.controller == "pd":
-        # Kp_att/Kd_att are per-axis pairs here, and are a thrust differential
-        # [N/rad] rather than the commanded rate they are in the Eigen
-        # controller. See examples/utils/gain_seed.py.
-        kp = g.get("Kp_att", 1.6)
-        kd = g.get("Kd_att", 1.8)
-        kp_xy, kd_xy = outer("kp_xy", 0.50), outer("kd_xy", 1.0)
-        return CascadedPDController(
-            results_file=results_file, target_position=target,
-            Kp_att=(kp, kp) if np.isscalar(kp) else tuple(kp),
-            Kd_att=(kd, kd) if np.isscalar(kd) else tuple(kd),
-            Kd_yaw_rate=g.get("Kd_yaw_rate", 0.0),
-            Kp_xy=(kp_xy, kp_xy), Kd_xy=(kd_xy, kd_xy),
-            Kp_z=outer("kp_z", 15.0), Kd_z=outer("kd_z", 8.0),
-            max_tilt_deg=outer("max_tilt_deg", 30.0))
-    return LPVMPCController(
-        results_file=results_file, target_position=target, km=km,
-        q_weight=g.get("mpc_q", g.get("q_weight", 10.0)),
-        r_weight=g.get("mpc_r", g.get("r_weight", 0.01)),
-        N=int(g.get("mpc_N", g.get("N", 12))),
-        kp_pos=outer("kp_xy", 0.50), kd_pos=outer("kd_xy", 1.0),
-        ki_pos=outer("ki_xy", 0.05),
-        kp_z=outer("kp_z", 15.0), kd_z=outer("kd_z", 8.0),
-        ki_z=outer("ki_z", 2.0),
-        int_max_xy=outer("int_max_xy", 2.0), int_max_z=outer("int_max_z", 4.0),
-        kp_rate=outer("kp_rate", 4.0))
+    return cf.make_controller(ARGS.controller, gains, results_file, target, km)
 
 
 def perturbation_for(magnitude: float, seed: int) -> dict:
@@ -512,7 +437,11 @@ def main():
     y_min, y_max, z_min, z_max = bounds[2], bounds[3], bounds[4], bounds[5]
 
     goal_rng = np.random.default_rng(ARGS.goal_seed)
-    max_dx = task.slice_max_dx(spacing)
+    # Raise rather than degrade: slice_max_dx clamps to 0 with max(0, ...),
+    # which silently collapses every goal to a pure +/-Y translation instead of
+    # the uniform-on-the-circle task. n_drones is len(magnitudes), so any
+    # magnitude list past ~15 entries would cross that line unnoticed.
+    max_dx = task.require_lateral_freedom(spacing, label="robustness")
     task.check_goal_reachable(spawn_y, ARGS.goal_radius, bounds, label="robustness")
 
     tmp_files = [str(out_dir / f"_tmp_{i}.npz") for i in range(n_drones)]
