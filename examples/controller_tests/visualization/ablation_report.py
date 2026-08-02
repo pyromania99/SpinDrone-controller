@@ -53,12 +53,26 @@ RESULTS = Path(__file__).resolve().parents[1] / "results"
 # archive; these are the ones that carry the argument.
 PANEL_METRICS = [
     ("score",           "stability score [m]"),
-    ("effort_ac",       "differential effort [N²]"),
     ("score_transient", "transient error [m]"),
-    ("score_tail",      "settled error [m]"),
-    ("oscillation",     "roll/pitch rate RMS [rad/s]"),
     ("max_excursion",   "peak excursion [m]"),
+    ("score_tail",      "settled error [m]"),
+    ("effort_ac",       "differential effort [N²]"),
+    ("oscillation",     "roll/pitch rate RMS [rad/s]"),
 ]
+
+# A metric whose replicate band exceeds this cannot resolve a gradient smaller
+# than itself, so it is excluded from the sensitivity ranking and marked in the
+# report rather than quietly producing a number.
+#
+# Measured over the interleaved replicates of all six cases: max_excursion
+# 0.00-0.06 %, score_transient 0.17-0.81 %, score 0.14-2.65 %, score_tail
+# 0.20-13.3 % — all usable. But oscillation runs 47.8-173.8 % and effort_ac
+# 1.8-318.5 %, because the differential effort depends on where in its limit
+# cycle the attitude loop happens to sit. Ranking on those would rank noise.
+#
+# The 5x effort criterion that defines a breakdown is unaffected: it is far
+# outside even the widest of those bands.
+NOISE_BAND_USABLE_MAX: float = 0.25
 
 # Categorical slots 1-3 of the reference palette, unchanged and in documented
 # order; that file records this subset as clearing the all-pairs CVD and
@@ -166,7 +180,7 @@ def sensitivity(case: dict, gene: str) -> dict:
     elasticity = {}
     for metric, _ in PANEL_METRICS:
         band = case["band"].get(metric)
-        if not band:
+        if not band or band["rel"] > NOISE_BAND_USABLE_MAX:
             continue
         pts = [(x, y) for x, y, _ in curves(case, gene, metric)]
         if len(pts) < 3:
