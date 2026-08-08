@@ -357,9 +357,50 @@ class EigenController(Backend):
 
         M = np.hstack([M_dyn, M_des])
 
+        # A_r is the plant's own rate dynamics, which M_eff = M - A_r cancels so
+        # that what remains is the designed M_dyn. Its off-diagonal block is the
+        # gyroscopic (Euler) coupling, and it must carry the sign of the real
+        # inertia difference:
+        #
+        #     Ixx p_dot = tau_x + (Iyy - Izz) q r
+        #     Iyy q_dot = tau_y + (Izz - Ixx) r p
+        #
+        # It used to be hardcoded as [[., +r], [-r, .]], which is the sign for
+        # Izz < Ixx — a rod. Every planar multirotor has Izz ~ Ixx + Iyy, so the
+        # coefficient (Iyy - Izz)/Ixx is negative (-0.91 on the Iris) and the
+        # hardcoded block had it backwards. Subtracting a term of the wrong sign
+        # does not cancel the gyroscopic coupling, it applies it a second time,
+        # so the closed loop kept ~2x the coupling instead of none.
+        #
+        # The error is proportional to r, so it is invisible at hover and grows
+        # without bound under spin. Pushing the resulting torque back through
+        # rigid-body dynamics, against the M_dyn(w - w_cmd) this block is
+        # supposed to deliver:
+        #
+        #     r [rad/s]      intended        as written      with this fix
+        #        0        +2.070  -4.740   +2.120  -4.765   +2.120  -4.765
+        #       20        +2.070  -4.740   +4.029  -0.947   +2.120  -4.765
+        #       60        +2.070  -4.740   +7.847  +6.690   +2.120  -4.765
+        #
+        # By r = 60 rad/s the pitch channel had the wrong sign outright. The
+        # rate loop's delivered-to-commanded gain, unity at hover, fell to 0.40
+        # at r = 20 and 0.16 at r = 60; with the fix it is flat in r. What is
+        # left over is the -alpha drag model, which is the only thing A_r is
+        # still meant to add.
+        #
+        # Taken from the synced inertia rather than hardcoding the ratio, which
+        # cancels exactly for any Ixx, Iyy, Izz — an airframe with a different
+        # mass distribution, or the pre-sync constructor defaults, both stay
+        # correct, and the residual above is unchanged by Ixx != Iyy. The yaw row
+        # has no equivalent entry: its coupling (Ixx - Iyy) p q is bilinear in
+        # the state and cannot be written in this linear-in-w form, and it
+        # vanishes for the symmetric Ixx = Iyy case anyway.
+        gyro_pq = (self.Iyy - self.Izz) / self.Ixx * r
+        gyro_qp = (self.Izz - self.Ixx) / self.Iyy * r
+
         A_r = np.array([
-            [-self.alpha, r, 0.0, 0.0],
-            [-r, -self.alpha, 0.0, 0.0],
+            [-self.alpha, gyro_pq, 0.0, 0.0],
+            [gyro_qp, -self.alpha, 0.0, 0.0],
             [0.0, 0.0, -self.beta, 0.0],
         ])
 
