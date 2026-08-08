@@ -202,6 +202,7 @@ class PX4MavlinkBackendConfig(BackendConfig):
             >>>  "px4_autolaunch": True,
             >>>  "px4_dir": "PegasusInterface().px4_path",
             >>>  "px4_vehicle_model": "gazebo-classic_iris",
+            >>>  "px4_rootfs_dir": None,
             >>>  "enable_lockstep": True,
             >>>  "num_rotors": 4,
             >>>  "input_offset": [0.0, 0.0, 0.0, 0.0],
@@ -223,6 +224,9 @@ class PX4MavlinkBackendConfig(BackendConfig):
         self.px4_autolaunch: bool = self.config.get("px4_autolaunch", True)
         self.px4_dir: str = self.config.get("px4_dir", PegasusInterface().px4_path)
         self.px4_vehicle_model: str = self.config.get("px4_vehicle_model", "gazebo-classic_iris")
+        # PX4's working directory. None keeps the stock behaviour (a temp dir, deleted on
+        # teardown along with the ulog); a path keeps the log. See PX4LaunchTool.
+        self.px4_rootfs_dir: str = self.config.get("px4_rootfs_dir", None)
 
         # Configurations to interpret the rotors control messages coming from mavlink
         self.enable_lockstep: bool = self.config.get("enable_lockstep", True)
@@ -240,6 +244,20 @@ class PX4MavlinkBackend(Backend):
     """ The Mavlink Backend used to receive the vehicle's state and sensor data in order to send to PX4 through mavlink. It also
     receives via mavlink the thruster commands to apply to each vehicle rotor.
     """
+
+    # Upper bound on the lockstep wait for HIL_ACTUATOR_CONTROLS, in seconds.
+    #
+    # PX4 does not promise one actuator message per HIL_SENSOR. Any cycle whose control
+    # chain publishes nothing produces no reply - a mode transition, or simply feeding
+    # sensors faster than PX4's SITL output stage answers (measured at 250 Hz for
+    # px4_sitl_default). Waiting for that reply forever deadlocks the pair, because
+    # PX4's clock advances only on the sensor message this method is withholding. PX4
+    # then prints "ERROR [simulator_mavlink] poll timeout" once a second and, its clock
+    # frozen, stops emitting the heartbeats QGroundControl needs to connect.
+    #
+    # Giving up on the step instead costs one stale actuator command and keeps both
+    # sides moving. Long enough that a healthy but jittery link never hits it.
+    LOCKSTEP_TIMEOUT: float = 0.1  # [s]
 
     def __init__(self, config: PX4MavlinkBackendConfig = PX4MavlinkBackendConfig()):
         """Initialize the PX4MavlinkBackend
@@ -269,6 +287,7 @@ class PX4MavlinkBackend(Backend):
         self.px4_vehicle_model: str = self.config.px4_vehicle_model  # only needed if px4_autolaunch == True
         self.px4_tool: PX4LaunchTool = None
         self.px4_dir: str = self.config.px4_dir
+        self.px4_rootfs_dir: str = self.config.px4_rootfs_dir
 
         # Set the update rate used for sending the messages (TODO - remove this hardcoded value from here)
         self._update_rate: float = self.config.update_rate
@@ -299,6 +318,10 @@ class PX4MavlinkBackend(Backend):
         self._received_first_actuator: bool = False
 
         self._received_actuator: bool = False
+
+        # How many steps gave up on the lockstep wait, and when we last said so
+        self._lockstep_timeouts: int = 0
+        self._last_lockstep_warn_time: float = 0.0
 
         # Auxiliar variables to check if we have already received an hearbeat from the software in the loop simulation
         self._received_first_hearbeat: bool = False
@@ -509,7 +532,10 @@ class PX4MavlinkBackend(Backend):
         # Launch the PX4 in the background if needed
         if self.px4_autolaunch and self.px4_tool is None:
             carb.log_info("Attempting to launch PX4 in background process")
-            self.px4_tool = PX4LaunchTool(self.px4_dir, self._vehicle_id, self.px4_vehicle_model)
+            self.px4_tool = PX4LaunchTool(self.px4_dir, self._vehicle_id, self.px4_vehicle_model,
+                                          rootfs_dir=self.px4_rootfs_dir)
+            carb.log_warn(f"[PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL="
+                          f"{self.px4_vehicle_model}, rootfs={self.px4_tool.root_fs_path}")
             self.px4_tool.launch_px4()
 
     def stop(self):
@@ -555,6 +581,9 @@ class PX4MavlinkBackend(Backend):
         # Auxiliar variables to handle the lockstep between receiving sensor data and actuator control
         self._received_first_actuator: bool = False
         self._received_actuator: bool = False
+
+        self._lockstep_timeouts = 0
+        self._last_lockstep_warn_time = 0.0
 
         # Auxiliar variables to check if we have already received an hearbeat from the software in the loop simulation
         self._received_first_hearbeat: bool = False
@@ -615,6 +644,17 @@ class PX4MavlinkBackend(Backend):
         # Send the GPS messages
         self.send_gps_msgs(self._current_utime)
 
+        # Ground truth. send_ground_truth() has always existed here but was never called,
+        # so PX4 published no *_groundtruth topics and every Pegasus ulog has been blind to
+        # its own estimator: there was no way to ask whether the ESTIMATE degrades under
+        # spin, only what the estimate said. HIL_STATE_QUATERNION is what SimulatorMavlink
+        # turns into vehicle_attitude_groundtruth / vehicle_angular_velocity_groundtruth.
+        #
+        # It is a diagnostic stream, not part of the control path - PX4 does not fuse it -
+        # so it costs bandwidth and nothing else. Logged only when SDLOG_PROFILE has bit 2
+        # (the airframe sets 27).
+        self.send_ground_truth(self._current_utime)
+
     def poll_mavlink_messages(self):
         """
         Method that is used to check if new mavlink messages were received
@@ -630,11 +670,14 @@ class PX4MavlinkBackend(Backend):
         # Start by assuming that we have not received data for the actuators for the current step
         self._received_actuator = False
 
+        # Deadline for the lockstep wait - see LOCKSTEP_TIMEOUT
+        deadline = time.time() + self.LOCKSTEP_TIMEOUT
+
         # Use this loop to emulate a do-while loop (make sure this runs at least once)
         while True:
 
             # Try to get a message
-            msg = self._connection.recv_match(blocking=needs_to_wait_for_actuator)
+            msg = self._connection.recv_match(blocking=needs_to_wait_for_actuator, timeout=0.005)
 
             # If a message was received
             if msg is not None:
@@ -651,6 +694,26 @@ class PX4MavlinkBackend(Backend):
             # Check if we do not need to wait for an actuator message or we just received actuator input
             # If so, break out of the infinite loop
             if not needs_to_wait_for_actuator or self._received_actuator:
+                break
+
+            # PX4 owes us nothing for this step. Stop waiting so the next sensor message
+            # goes out and PX4's clock - and therefore its whole control chain - keeps
+            # moving. The rotors hold the previous command for one step.
+            if time.time() >= deadline:
+
+                self._lockstep_timeouts += 1
+
+                # This fires at the simulation rate when the mismatch is systematic, so
+                # report at most once a second
+                if (time.time() - self._last_lockstep_warn_time) > 1.0:
+                    self._last_lockstep_warn_time = time.time()
+                    carb.log_warn(
+                        f"No HIL_ACTUATOR_CONTROLS from PX4 within {self.LOCKSTEP_TIMEOUT}s "
+                        f"({self._lockstep_timeouts} steps so far); continuing without it. If "
+                        "this repeats, the simulation is feeding PX4 sensor data faster than "
+                        "PX4 replies - lower the physics rate."
+                    )
+
                 break
 
     def send_heartbeat(self, mav_type=mavutil.mavlink.MAV_TYPE_GENERIC):
@@ -801,26 +864,42 @@ class PX4MavlinkBackend(Backend):
         self._sensor_data.new_sim_state = False
 
         try:
+            # Every scaled-integer field is cast here rather than trusted. HIL_STATE_QUATERNION
+            # carries lat/lon as degE7, alt as mm, velocities as cm/s (int16), airspeeds as
+            # cm/s (uint16) and accelerations as mG (int16) - pymavlink packs them with struct
+            # and raises "required argument is not an integer" on a float, refusing the WHOLE
+            # message.
+            #
+            # sim_ind_airspeed is the one that actually bit: it is declared as 0.0 and then
+            # never assigned anywhere in this file, so it stays a float forever and every
+            # ground-truth send failed. The bare `except` below hid the reason for it.
+            data = self._sensor_data
             self._connection.mav.hil_state_quaternion_send(
-                time_usec,
-                self._sensor_data.sim_attitude,
-                self._sensor_data.sim_angular_vel[0],
-                self._sensor_data.sim_angular_vel[1],
-                self._sensor_data.sim_angular_vel[2],
-                self._sensor_data.sim_lat,
-                self._sensor_data.sim_lon,
-                self._sensor_data.sim_alt,
-                self._sensor_data.sim_velocity_inertial[0],
-                self._sensor_data.sim_velocity_inertial[1],
-                self._sensor_data.sim_velocity_inertial[2],
-                self._sensor_data.sim_ind_airspeed,
-                self._sensor_data.sim_true_airspeed,
-                self._sensor_data.sim_acceleration[0],
-                self._sensor_data.sim_acceleration[1],
-                self._sensor_data.sim_acceleration[2],
+                int(time_usec),
+                data.sim_attitude,                      # float[4], no cast
+                data.sim_angular_vel[0],                # float rad/s, no cast
+                data.sim_angular_vel[1],
+                data.sim_angular_vel[2],
+                int(data.sim_lat),
+                int(data.sim_lon),
+                int(data.sim_alt),
+                int(data.sim_velocity_inertial[0]),
+                int(data.sim_velocity_inertial[1]),
+                int(data.sim_velocity_inertial[2]),
+                # uint16: negative would raise a different error, so clamp rather than
+                # trade one silent failure for another.
+                max(0, int(data.sim_ind_airspeed)),
+                max(0, int(data.sim_true_airspeed)),
+                int(data.sim_acceleration[0]),
+                int(data.sim_acceleration[1]),
+                int(data.sim_acceleration[2]),
             )
-        except:
-            carb.log_warn("Could not send groundtruth through mavlink")
+        except Exception as exc:
+            # Name the exception. The bare `except` this replaces turned a one-line type
+            # bug into a warning with no cause, and it had been failing silently for as
+            # long as the method existed - it was never called until 2026-08-08.
+            carb.log_warn(f"Could not send groundtruth through mavlink: "
+                          f"{type(exc).__name__}: {exc}")
 
     def handle_control(self, time_usec, controls, mode, flags):
         """

@@ -17,13 +17,17 @@ class PX4LaunchTool:
     PX4 was already built with 'make px4_sitl_default none'), the vehicle id and the vehicle model. 
     """
 
-    def __init__(self, px4_dir, vehicle_id: int = 0, px4_model: str = "gazebo-classic_iris"):
+    def __init__(self, px4_dir, vehicle_id: int = 0, px4_model: str = "gazebo-classic_iris",
+                 rootfs_dir: str = None):
         """Construct the PX4LaunchTool object
 
         Args:
             px4_dir (str): A string with the path to the PX4-Autopilot directory
             vehicle_id (int): The ID of the vehicle. Defaults to 0.
             px4_model (str): The vehicle model. Defaults to "iris".
+            rootfs_dir (str): Directory to use as PX4's working directory. When None (the
+                default) a temporary one is created and deleted on teardown, taking the
+                ulog with it. Pass a path to keep the log.
         """
 
         # Attribute that will hold the px4 process once it is running
@@ -37,12 +41,34 @@ class PX4LaunchTool:
         self.px4_dir = px4_dir
         self.rc_script = self.px4_dir + "/ROMFS/px4fmu_common/init.d-posix/rcS"
 
-        # Create a temporary filesystem for px4 to write data to/from (and modify the origin rcS files)
-        self.root_fs = tempfile.TemporaryDirectory()
+        # PX4's working directory. The logger writes to ./log relative to it, so a temporary
+        # one means the ulog is deleted with the run - which is why no PX4+Pegasus flight
+        # left an inspectable log. `rootfs_dir` opts out of that.
+        #
+        # Note this is NOT the same as launching px4 by hand from
+        # build/px4_sitl_default/rootfs: launch_px4() passes the SOURCE ROMFS as argv[1], so
+        # PX4 symlinks <cwd>/etc to the checkout and airframe edits apply with no rebuild.
+        # The build rootfs has etc -> build/px4_sitl_default/etc, a build artifact that only
+        # refreshes on `make`.
+        if rootfs_dir is None:
+            self._temp_root_fs = tempfile.TemporaryDirectory()
+            self.root_fs_path = self._temp_root_fs.name
+        else:
+            self._temp_root_fs = None
+            self.root_fs_path = os.path.abspath(os.path.expanduser(rootfs_dir))
+            os.makedirs(self.root_fs_path, exist_ok=True)
 
-        # Set the environement variables that let PX4 know which vehicle model to use internally
-        self.environment = os.environ
+        # A COPY, not os.environ itself. Aliasing it leaked PX4_SIM_MODEL into the Isaac
+        # process, so spawning a second vehicle overwrote the first vehicle's model for
+        # anything else that reads the environment.
+        self.environment = dict(os.environ)
         self.environment["PX4_SIM_MODEL"] = px4_model
+
+        # rcS:41 checks PX4_SYS_AUTOSTART BEFORE PX4_SIM_MODEL, so an exported value (a
+        # normal leftover from any gz_x500 workflow) silently wins and PX4 boots a different
+        # airframe entirely - which is exactly how every log in the build rootfs ended up as
+        # SYS_AUTOSTART=4001 while the model asked for was none_iris.
+        self.environment.pop("PX4_SYS_AUTOSTART", None)
 
     def launch_px4(self):
         """
@@ -58,7 +84,7 @@ class PX4LaunchTool:
                 str(self.vehicle_id),
                 "-d",
             ],
-            cwd=self.root_fs.name,
+            cwd=self.root_fs_path,
             shell=False,
             env=self.environment,
         )
@@ -81,8 +107,10 @@ class PX4LaunchTool:
         if self.px4_process:
             self.kill_px4()
 
-        # Make sure we clean the temporary filesystem used for the simulation
-        self.root_fs.cleanup()
+        # Only a temporary filesystem is ours to delete. A caller-supplied rootfs is kept -
+        # that is the whole point of passing one.
+        if self._temp_root_fs is not None:
+            self._temp_root_fs.cleanup()
 
 
 # ---- Code used for debugging the px4 tool ----
