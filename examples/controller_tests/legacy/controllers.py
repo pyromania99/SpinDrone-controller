@@ -46,6 +46,10 @@ from cascaded_pd_controller import CascadedPDController
 from nonlinear_controller import NonlinearController
 from eigen_controller import EigenController
 from lpv_mpc_controller import LPVMPCController
+import rotor_failure
+import sweep_task as task
+
+import numpy as np
 
 # Auxiliary scipy module
 from scipy.spatial.transform import Rotation
@@ -60,9 +64,16 @@ class PegasusApp:
     A Template class that serves as an example on how to build a simple Isaac Sim standalone App.
     """
 
-    def __init__(self, selected_controller: str, motor_moment: float = None):
+    def __init__(self, selected_controller: str, motor_moment: float = None,
+                 failure_mode: str = "manual", failure_rotor: int = None,
+                 failure_seed: int = None):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
+
+        failure_mode: "manual" waits for the FAIL ROTOR button, "auto" stops a
+            rotor the moment the vehicle settles, "off" disables it entirely.
+        failure_rotor: which rotor to stop, or None to pick at random.
+        failure_seed: seeds that random choice so a run reproduces.
         """
 
         # Acquire the timeline that will be used to start/stop the simulation
@@ -89,8 +100,31 @@ class PegasusApp:
         self.curr_dir = str(Path(os.path.dirname(os.path.realpath(__file__))).resolve())
 
         # Build selected backend from the controller registry
-        self.backend = build_controller(selected_controller, self.curr_dir)
+        self.controller = build_controller(selected_controller, self.curr_dir)
         carb.log_warn(f"Using controller: {selected_controller}")
+
+        # Wrap it so one rotor can be stopped mid-flight. The wrapper forwards
+        # every unknown attribute to the controller, so self.backend.w and the
+        # rest of this file keep working unchanged.
+        #
+        # A FlightMonitor is attached only to gate the settle test on "actually
+        # airborne" — this app has no bounds checking and does not end the run
+        # on a crash, because the whole point is to watch what happens after.
+        self.failure_mode = failure_mode
+        if failure_mode == "off":
+            self.backend = self.controller
+        else:
+            monitor = task.FlightMonitor(1.5, label="rotor-failure",
+                                         log=carb.log_warn)
+            self.backend = rotor_failure.RotorFailureBackend(
+                self.controller,
+                results_file=None,          # the controller writes its own npz
+                rotor=failure_rotor,
+                rng=np.random.default_rng(failure_seed),
+                auto_fail=(failure_mode == "auto"),
+                monitor=monitor,
+                log=carb.log_warn,
+            )
 
         # Create the vehicle 1
         # Try to spawn the selected robot in the world to the specified namespace
@@ -108,16 +142,49 @@ class PegasusApp:
             config=config_multirotor1,
         )
 
+        # Arena the flight monitor judges takeoff against. Generous, since
+        # nothing here terminates on leaving it.
+        self._bounds = [-50., 50., -50., 50., 0., 50.]
+
         # Reset the simulation environment so that all articulations (aka robots) are initialized
+        # backend.start() is NOT called here: Vehicle's timeline callback invokes
+        # it on play, after initialize() has attached the vehicle. Calling it
+        # here would run before that and then be immediately redone.
         self.world.reset()
         self._setup_yaw_rate_overlay()
 
     def _setup_yaw_rate_overlay(self):
-        self._yaw_window = ui.Window("Telemetry", width=280, height=84)
+        has_failure = self.failure_mode != "off"
+        self._yaw_window = ui.Window("Telemetry", width=300,
+                                     height=210 if has_failure else 84)
         with self._yaw_window.frame:
             with ui.VStack(spacing=6):
                 ui.Label("Yaw Rate", alignment=ui.Alignment.CENTER)
                 self._yaw_label = ui.Label("w_z: -- rad/s", alignment=ui.Alignment.CENTER)
+
+                if not has_failure:
+                    return
+
+                ui.Separator(height=4)
+                ui.Label("Rotor Failure", alignment=ui.Alignment.CENTER)
+                self._settle_label = ui.Label("settling: --",
+                                              alignment=ui.Alignment.CENTER)
+                self._failure_label = ui.Label("no failure",
+                                               alignment=ui.Alignment.CENTER)
+
+                # Fires through the backend rather than mutating state here, so
+                # the manual and automatic paths are the same one-shot code and
+                # a press while the sim is paused is latched, not lost.
+                self._fail_button = ui.Button(
+                    "FAIL ROTOR", height=28,
+                    clicked_fn=lambda: self.backend.trigger())
+
+                with ui.HStack(spacing=4, height=24):
+                    ui.Label("auto on settle:", width=100)
+                    self._auto_check = ui.CheckBox(width=24)
+                    self._auto_check.model.set_value(self.failure_mode == "auto")
+                    self._auto_check.model.add_value_changed_fn(
+                        lambda m: setattr(self.backend, "auto_fail", m.get_value_as_bool()))
 
     def _update_yaw_rate_overlay(self):
         if not hasattr(self, "_yaw_label"):
@@ -132,6 +199,23 @@ class PegasusApp:
         else:
             self._yaw_label.text = f"w_z: {yaw_rate:+7.4f} rad/s"
 
+        if not hasattr(self, "_failure_label"):
+            return
+
+        b = self.backend
+        if b.has_failed:
+            self._failure_label.text = (f"ROTOR {b.failed_rotor} STOPPED "
+                                        f"@ t={b.failure_time:.2f}s")
+            self._settle_label.text = (
+                f"settled @ t={b.settle_time:.2f}s" if b.settle_time is not None
+                else "failed before settling")
+            self._fail_button.text = "FAILED"
+            self._fail_button.enabled = False
+        else:
+            self._settle_label.text = ("SETTLED — ready" if b.is_settled
+                                       else f"settling: |v|={np.linalg.norm(b.velocity):.2f} m/s")
+            self._failure_label.text = "no failure"
+
     def run(self):
         """
         Method that implements the application main loop, where the physics steps are executed.
@@ -145,6 +229,16 @@ class PegasusApp:
 
             # Update the UI of the app and perform the physics step
             self.world.step(render=True)
+
+            # Advance the flight monitor. Its return value is deliberately
+            # ignored: it reports a crash, and this app exists to watch what
+            # happens after the rotor stops rather than to end the run there.
+            # Without this call the monitor never sees a position, `airborne`
+            # stays False, and the settle test — and so auto-fail — can never
+            # fire.
+            if self.failure_mode != "off":
+                self.backend.check_oob(self._bounds)
+
             self._update_yaw_rate_overlay()
         
         # Cleanup and stop
@@ -194,8 +288,27 @@ def main():
     motor_moment_str = input("Enter motor_moment (leave empty for default): ").strip()
     motor_moment = float(motor_moment_str) if motor_moment_str else None
 
+    print("\nRotor failure: 'manual' = FAIL ROTOR button, 'auto' = stop one the")
+    print("moment the vehicle settles, 'off' = disable. The button is present in")
+    print("both manual and auto, and the auto checkbox can be toggled in flight.")
+    failure_mode = input("Failure mode [manual/auto/off] (default manual): ").strip().lower()
+    if failure_mode not in ("manual", "auto", "off"):
+        failure_mode = "manual"
+
+    failure_rotor = None
+    failure_seed = None
+    if failure_mode != "off":
+        rotor_str = input("Rotor to stop 0-3 (leave empty for random): ").strip()
+        failure_rotor = int(rotor_str) if rotor_str else None
+        if failure_rotor is None:
+            seed_str = input("Seed for the random choice (leave empty for none): ").strip()
+            failure_seed = int(seed_str) if seed_str else None
+
     # Instantiate the template app
-    pg_app = PegasusApp(selected_controller, motor_moment)
+    pg_app = PegasusApp(selected_controller, motor_moment,
+                        failure_mode=failure_mode,
+                        failure_rotor=failure_rotor,
+                        failure_seed=failure_seed)
 
     # Run the application loop
     pg_app.run()

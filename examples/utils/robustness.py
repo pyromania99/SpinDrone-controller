@@ -197,6 +197,62 @@ def apply_plant_scale(vehicle, mass_scale: float = 1.0,
             "mass_scale": float(mass_scale), "inertia_scale": float(inertia_scale)}
 
 
+def freeze_model_at_nominal(controller, nominal: dict) -> dict:
+    """Restore a controller's internal mass/inertia model to the UNPERTURBED
+    vehicle, after it has synced itself to the perturbed one.
+
+    Why this has to exist
+    ─────────────────────
+    The whole point of the inertia and mass axes is that "the vehicle is not
+    what the controller thinks" — the controller computes a torque from its own
+    nominal model while the plant is gamma x that, so the commanded torque
+    produces gamma^-1 x the intended angular acceleration.
+
+    But ``EigenController.start()`` calls
+    ``_sync_physical_params_from_vehicle()``, which reads the LIVE physics
+    interface — and the driver applies ``apply_plant_scale`` and resets BEFORE
+    the run starts. So the controller synced to the already-scaled plant and
+    its model tracked the perturbation exactly. Measured on the Iris, nominal
+    composite inertia (0.034853, 0.031256, 0.062659):
+
+        inertia_scale   model believed          ratio
+             1.00       (0.034853, ..., ...)    1.00x
+             0.50       (0.017426, ..., ...)    0.50x
+             0.25       (0.008713, ..., ...)    0.25x
+             4.00       (0.139412, ..., ...)    4.00x
+
+    There was no mismatch at any magnitude. The axis was measuring "can it fly
+    a vehicle of a different inertia that it models perfectly" — a real
+    question, but not the one the magnitude column claims, and not one that can
+    break a controller the way model error does.
+
+    Call this AFTER ``controller.start()`` — the sync happens there, so
+    anything applied earlier is overwritten by it.
+
+    Only attributes the controller actually has are touched, so this is safe
+    across all three: EigenController carries m and Ixx/Iyy/Izz,
+    CascadedPDController carries mass alone (no inertia term), and
+    LPVMPCController syncs nothing and is left untouched. Returns what was
+    restored, for logging.
+    """
+    if nominal is None:
+        raise ValueError("freeze_model_at_nominal needs a nominal decomposition")
+
+    inertia = np.asarray(nominal["composite_inertia"], dtype=float)
+    restored = {}
+
+    for attr, value in (("m", float(nominal["composite_mass"])),
+                        ("mass", float(nominal["composite_mass"])),
+                        ("Ixx", float(inertia[0])),
+                        ("Iyy", float(inertia[1])),
+                        ("Izz", float(inertia[2]))):
+        if hasattr(controller, attr):
+            setattr(controller, attr, value)
+            restored[attr] = value
+
+    return restored
+
+
 def verify_plant_scale(vehicle, nominal: dict, mass_scale: float,
                        inertia_scale: float, tol: float = 0.01) -> dict:
     """Measure the scale actually achieved, after ``world.reset()``.

@@ -80,9 +80,34 @@ def parse_args():
                    help="Lateral distance [m] from spawn XY to the goal. Every run "
                         "is a takeoff followed by a translation of this distance in "
                         "a random direction; see examples/utils/sweep_task.py.")
+    # ── Robust tuning: search under inertia MISMATCH, not at nominal ────────
+    #
+    # Off by default, so a run without it reproduces the nominal searches
+    # exactly. With it, every individual is flown once per scale and its
+    # fitness is the WORST of those, so the search optimises the failure end
+    # rather than the typical case.
+    #
+    # The scales are the destabilising side of robustness_sweep's own inertia
+    # ladder. Its note explains why: the controller computes a torque from its
+    # nominal model while the plant has gamma x that, so gamma > 1 makes the
+    # commanded torque produce LESS angular acceleration than intended —
+    # sluggish but self-limiting — while gamma < 1 produces MORE and the
+    # attitude error compounds. gamma = 1.0 is kept as the matched control so a
+    # robust run is still directly comparable to a nominal one.
+    p.add_argument("--robust-inertia", nargs="*", type=float, default=None,
+                   metavar="SCALE",
+                   help="Evaluate each individual at these inertia scale "
+                        "factors and take the worst as its fitness. The plant "
+                        "is scaled while the controller's model is held at "
+                        "nominal, so this is genuine model mismatch. Pass with "
+                        "no values for the default ladder 1.0 0.5 0.25.")
     p.add_argument("--headless", action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
     return p.parse_args()
+
+
+# Default ladder for --robust-inertia when given no explicit values.
+DEFAULT_ROBUST_SCALES = [1.0, 0.5, 0.25]
 
 ARGS = parse_args()
 
@@ -119,6 +144,18 @@ from lpv_mpc_controller import LPVMPCController
 import sweep_metrics as sm
 import sim_clock
 import sweep_task as task
+import robustness as rb
+
+# Resolved once so every code path sees a list (empty == nominal search).
+ROBUST_SCALES: list = []
+if ARGS.robust_inertia is not None:
+    ROBUST_SCALES = [float(g) for g in ARGS.robust_inertia] or list(DEFAULT_ROBUST_SCALES)
+    if any(g <= 0.0 for g in ROBUST_SCALES):
+        raise ValueError(f"--robust-inertia scales must be positive: {ROBUST_SCALES}")
+
+# Per-scale score columns appended to the archive when searching robustly, so
+# the worst-case fitness can always be decomposed back into what produced it.
+ROBUST_KEYS: list = [f"score_g{g:g}" for g in ROBUST_SCALES]
 
 # Resolved after the late imports so every code path below sees numbers. The
 # task is a ground start followed by a translation to a laterally offset goal.
@@ -140,11 +177,30 @@ _BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 # b_mdyn is conjectured to track the spin rate and the logged spin rate reaches
 # ~30 rad/s, outside the old b range entirely. Both upper bounds now clear the
 # observed spin rate with room to spare.
+#
+# Kd_att's LOWER bound was the next wall to fall. Unlike the two above it had
+# no sizing rationale — it arrived at 1.0 in a general "save, reordered all the
+# sweeps" commit — and the outer-loop searches ran straight into it at every
+# motor moment. Measured on the km=4e-7 and 6e-7 archives (496 evals each,
+# 6-gene --sweep-outer): median Kd_att 1.0202 and 1.0461 against a floor of
+# 1.0, with 53 % and 59 % of stable individuals sitting within 1 % of it, and
+# 6/6 and 14/21 of the Pareto-front points ON it. The pre-fix runs pin the same
+# way (76.5 % at km=0, 47.7 % at 2.7e-7), so this is not an artefact of the A_r
+# sign fix. Best score by Kd_att bin at km=4e-7 is monotone toward the floor:
+#
+#     [1.0, 1.5)  0.0202     [3, 6)    0.1551
+#     [1.5, 3)    0.0219     [6, 12)   0.1228
+#                            [12, 30)  0.1116
+#
+# so 1.0000 was the edge of the box, not an optimum. There is no physical floor
+# either: Kd_att multiplies a 250 Hz finite-difference attitude-error rate, and
+# small is the well-behaved end of that — the noise-amplifying end is the top.
+# 0.05 leaves 20x of headroom below where the search kept pressing.
 EIGEN_GENES = [
     ("wn_mdyn", 0.5, 60.0),
     ("b_mdyn",  0.0, 40.0),
     ("Kp_att",  0.1, 5.0),
-    ("Kd_att",  1.0, 30.0),
+    ("Kd_att",  0.05, 30.0),
 ]
 
 PD_GENES = [
@@ -235,9 +291,28 @@ MPC_GENES = [
 # The pinned default sits at wn = 0.707 rad/s, zeta = 0.707. The box spans
 # 0.5x to 2.8x that bandwidth; the upper end is where the outer loop starts to
 # approach the inner loop's own, which is the region worth mapping.
+#
+# The eigen row's wn_xy ceiling went 2.0 -> 3.0 for the same reason: it was a
+# wall the search was pressing against, not a bound it respected. At km=6e-7
+# the knee sits at exactly 2.0000 and 7/21 Pareto points are on the ceiling
+# (pre-fix: 6/8 at km=0 and 5/9 at 2.7e-7). It is NOT pinned at km=4e-7 post-fix
+# — knee 1.6284, 2/6 on the wall — which is the interesting part: the faster the
+# spin, the more outer bandwidth the search wants, so the ceiling was censoring
+# exactly the high-spin end this study is about.
+#
+# The original comment below sized the top of the box as "where the outer loop
+# starts to approach the inner loop's own bandwidth and the cascade separation
+# stops holding". That reasoning still bounds it, just not at 2.0: the searched
+# wn_mdyn lands near 27 at both moments, so wn_xy = 3.0 is a 9x separation —
+# comfortably inside the 5-10x a cascade needs, where 2.0 was a 13x that gave
+# the outer loop no room to be the thing that moves the score.
+#
+# Only the eigen row moves. The pd and mpc boxes have no equivalent evidence
+# behind them — no wall-pinning measurement of their own — and widening them on
+# the strength of an eigen archive would change their searches for no reason.
 OUTER_GENES = {
     "eigen": [
-        ("wn_xy", 0.35, 2.0),
+        ("wn_xy", 0.35, 3.0),
         ("zeta_xy", 0.5, 1.3),
     ],
     "pd": [
@@ -354,6 +429,43 @@ class BoundedBackend(Backend):
 # apart. See that module for the effort DC/AC split and the spin-rate metrics.
 def _score_from_npz(path, T):
     return sm.compute_metrics(path, T, _BOUNDS_DIAG)
+
+
+def _as_cost(x) -> float:
+    """A non-finite objective is a failure, and a failure is the worst case.
+
+    max() over a list containing NaN returns NaN in Python, which would let a
+    crashed pass silently dominate selection as an unordered value rather than
+    as the worst one. Mapping non-finite to +inf keeps the ordering total.
+    """
+    try:
+        v = float(x)
+    except (TypeError, ValueError):
+        return float("inf")
+    return v if np.isfinite(v) else float("inf")
+
+
+def _worst_case(per_scale: list, scales: list) -> dict:
+    """Collapse one individual's per-scale metrics into a single fitness.
+
+    score and effort are each taken as the worst over the scales — the standard
+    robust-optimisation objective, and a conservative bound even when the two
+    worsts occur at different scales. Every OTHER metric column is carried from
+    the worst-SCORING pass, so the row describes one real flight rather than a
+    per-column mixture that never happened.
+
+    The per-scale scores are kept alongside as score_g<scale>, so a worst-case
+    number can always be traced back to which mismatch produced it.
+    """
+    costs = [_as_cost(m["score"]) for m in per_scale]
+    worst_i = int(np.argmax(costs))
+
+    out = dict(per_scale[worst_i])
+    out["score"] = max(costs)
+    out["effort"] = max(_as_cost(m["effort"]) for m in per_scale)
+    for g, m in zip(scales, per_scale):
+        out[f"score_g{g:g}"] = m["score"]
+    return out
 
 
 # ── Step-response validation target ──────────────────────────────────────────
@@ -663,7 +775,11 @@ def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict 
     # Column set comes from sweep_metrics.METRIC_KEYS so every sweep's archive
     # carries the same metrics in the same order — including the effort DC/AC
     # split and the r_ss/r_drift spin-rate columns.
-    metric_keys = ["motor_moment"] + sm.METRIC_KEYS
+    # ROBUST_KEYS is empty for a nominal search, so the column set is unchanged
+    # there; in a robust search it appends score_g<scale> per scale, which is
+    # what lets a worst-case fitness be decomposed back into the mismatch that
+    # produced it.
+    metric_keys = ["motor_moment"] + sm.METRIC_KEYS + ROBUST_KEYS
 
     # The outer-loop configuration every row was flown at, written whether it
     # was swept or pinned. This sweep DELETES its npz after scoring, so the
@@ -700,7 +816,10 @@ def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict 
                     # sweeps' save_grid_archive() already write this column.
                     row.append(str(mm))
                     continue
-                row.append(sm.format_metric(k, metrics[k]))
+                # .get, not [k]: step_score/step_effort only exist on rows that
+                # went through a validation generation, and the per-scale keys
+                # only on rows from a robust search.
+                row.append(sm.format_metric(k, metrics.get(k, float("nan"))))
             w.writerow(row)
     carb.log_warn(f"[genetic] archive CSV → {detail_path}")
 
@@ -829,12 +948,48 @@ def main():
     world.reset()
     for _ in range(10):
         world.step(render=render_sim)
-        
-    def evaluate_pop(pop_array, motor_moment, targets):
-        """targets: list of length pop_size, one (x, y, z) hover/step target per
-        drone slot for this pass — always set explicitly (never left over from
-        a previous call) so a validation pass's offset target can never leak
-        into the next generation's hover evaluation."""
+
+    # Nominal mass/inertia per vehicle, read ONCE while the plant is still
+    # unperturbed. Every later scale is expressed relative to these, and the
+    # controller's model is restored to them after each start(), so a long run
+    # cannot drift by compounding one pass's scale onto the next's.
+    nominals = {}
+    if ROBUST_SCALES:
+        for vehicle, _, _, _ in drones:
+            nom = rb.nominal_decomposition(vehicle)
+            if nom is None:
+                raise RuntimeError(
+                    "[genetic] --robust-inertia needs the vehicle's nominal mass "
+                    "properties and they could not be read; refusing to run a "
+                    "search that would silently be nominal.")
+            nominals[id(vehicle)] = nom
+        ref = nominals[id(drones[0][0])]
+        carb.log_warn(
+            f"[genetic] robust search over inertia scales {ROBUST_SCALES} "
+            f"(worst case); nominal composite inertia "
+            f"{np.array2string(ref['composite_inertia'], precision=6)}, "
+            f"mass {ref['composite_mass']:.4f} kg")
+
+    def _run_pass(pop_array, motor_moment, targets, gamma=None):
+        """One batched evaluation of the whole population at one plant scale.
+
+        gamma is None for the nominal search, which leaves this byte-identical
+        to the pre-robustness code path — no scaling, no extra reset, and no
+        model freeze.
+        """
+        if gamma is not None:
+            # The vehicles persist across generations, so the previous pass's
+            # scale is still on them: every pass sets its own explicitly rather
+            # than assuming it starts from nominal. apply_plant_scale's write
+            # is ignored until the next reset, hence the reset here.
+            for vehicle, _, _, _ in drones:
+                rb.apply_plant_scale(vehicle, mass_scale=1.0,
+                                     inertia_scale=gamma,
+                                     decomposition=nominals[id(vehicle)])
+            world.reset()
+            for _ in range(10):
+                world.step(render=render_sim)
+
         for i in range(pop_size):
             vehicle, backend, spawn_pos, _ = drones[i]
             vehicle._thrusters = QuadraticThrustCurve(config={"motor_moment": motor_moment})
@@ -853,10 +1008,18 @@ def main():
             vehicle.set_angular_velocity([0.,0.,0.])
             backend.reset()
             backend.start()
-            
+
+            # AFTER start(): that is where the controller syncs its model from
+            # the live vehicle, which is the SCALED one by this point. Without
+            # this the model tracks the perturbation exactly and there is no
+            # mismatch left to be robust to — see
+            # robustness.freeze_model_at_nominal for the measurement.
+            if gamma is not None:
+                rb.freeze_model_at_nominal(backend.inner, nominals[id(vehicle)])
+
         for _ in range(5):
             world.step(render=render_sim)
-            
+
         timeline.play()
         # world.step() advances ONE physics step (physics_dt = 1/250),
         # not 1/60. Counting iterations at 1/60 delivered 6 s for a 25 s
@@ -887,6 +1050,25 @@ def main():
             except: pass
         return metrics_list
 
+    def evaluate_pop(pop_array, motor_moment, targets, scales=None):
+        """targets: list of length pop_size, one (x, y, z) hover/step target per
+        drone slot for this pass — always set explicitly (never left over from
+        a previous call) so a validation pass's offset target can never leak
+        into the next generation's hover evaluation.
+
+        scales: inertia scale factors to fly each individual at, worst case
+        taken as its fitness. Defaults to ROBUST_SCALES; pass [] to force a
+        single nominal pass regardless (the validation gate does this).
+        """
+        scales = ROBUST_SCALES if scales is None else scales
+        if not scales:
+            return _run_pass(pop_array, motor_moment, targets, None)
+
+        per_scale = [_run_pass(pop_array, motor_moment, targets, g)
+                     for g in scales]
+        return [_worst_case([p[i] for p in per_scale], scales)
+                for i in range(pop_size)]
+
     def validate_subset(idx_list, combined_pop, motor_moment, targets):
         """Run the step-response pass for exactly the individuals at idx_list
         (indices into combined_pop — the 2N parents+offspring pool), batching
@@ -903,7 +1085,12 @@ def main():
                 batch[slot] = combined_pop[gi]
             for slot in range(len(chunk), pop_size):
                 batch[slot] = combined_pop[chunk[0]]  # harmless filler; discarded below
-            batch_metrics = evaluate_pop(batch, motor_moment, targets)
+            # Nominal only (scales=[]), even in a robust search. This gate asks
+            # "does this individual still hold position toward a different
+            # heading", which is a question about the controller, not about
+            # mismatch — and running it at every scale would triple the cost of
+            # a check whose threshold was calibrated on unperturbed runs.
+            batch_metrics = evaluate_pop(batch, motor_moment, targets, scales=[])
             for slot, gi in enumerate(chunk):
                 results[gi] = batch_metrics[slot]
         return results
@@ -1026,6 +1213,18 @@ def main():
 
             for i in range(pop_size):
                 archive.append((gen, offspring[i].copy(), off_metrics[i]))
+
+            # Flush the archive every generation, not only at the end of the
+            # motor moment. The CSV is a pure function of `archive`, so this is
+            # a rewrite costing milliseconds against generations costing
+            # minutes — and a robust search is 3x longer again.
+            #
+            # Written because a 3-hour run was killed externally at generation
+            # 9/30 and left NOTHING behind: 26 minutes of simulation existed
+            # only in memory. The search itself is unchanged; this only affects
+            # when results become durable.
+            _save_pareto_csv(archive, genes_def, out_dir, mm,
+                             config=sm.controller_config(drones[0][1].inner))
 
             comb_fronts = _fast_nondominated_sort(comb_scores, comb_efforts, comb_violation)
             

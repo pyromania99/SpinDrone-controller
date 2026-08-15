@@ -28,6 +28,45 @@ import vehicle_params
 class EigenController(Backend):
     """Eigen-dynamics-based position and attitude-rate backend controller."""
 
+    # ── Default gains: the km = 6e-7 robust-tuned operating point ────────────
+    #
+    # Source: results/outer_robust/genetic_eigen_sweep/mm_6.0e-07, the knee of
+    # the (score, effort_ac_ses) Pareto front. NSGA-II, pop 16 x 30 generations,
+    # 496 evaluations, 6 genes (inner + outer position loop), 395/496 stable.
+    #
+    # Fitness was the WORST case over an inertia mismatch ladder — the plant
+    # scaled to 1.0x, 0.5x and 0.25x of composite while the controller's model
+    # was held at nominal — so these are gains that keep flying when the inertia
+    # model is wrong, not gains that only look good on a perfectly known plant.
+    # This configuration's per-scale scores were:
+    #
+    #     gamma = 1.00   score 0.0507
+    #     gamma = 0.50   score 0.2156
+    #     gamma = 0.25   score 0.3856   <- the reported worst case
+    #
+    # km stays 6.0e-7, which is what these were tuned at: on this airframe the
+    # steady spin is r_ss ~ 5.16e7 * km, so km = 6e-7 is ~31 rad/s of yaw.
+    #
+    # Two of these sit where the PREVIOUS gene box could not reach. Kd_att's old
+    # lower bound was 1.0 and the search jammed against it (95.9 % of stable
+    # individuals now land below that old floor); wn_xy's old ceiling was 2.0.
+    # Any archived Eigen gain set reading Kd_att = 1.0000 exactly is a wall
+    # value, not an optimum.
+    #
+    # The nominal-tuned alternative from the same motor moment, if a run is
+    # known to have a well-identified inertia and only nominal performance
+    # matters (results/outer/genetic_eigen_sweep/mm_6.0e-07, score 0.0227):
+    #
+    #     kp_pos=4.0000, kd_pos=3.0985, Kp_att=3.8045, Kd_att=1.0000,
+    #     wn_mdyn=26.6421, b_mdyn=0.0
+    #
+    # It scores better at gamma = 1 (0.0227 vs 0.0507) and worse everywhere
+    # else, and its Kd_att is one of the wall values described above.
+    #
+    # mass/Ixx/Iyy/Izz below are pre-sync placeholders only —
+    # _sync_physical_params_from_vehicle() overwrites all four from the vehicle
+    # at start(). The real Iris composite is m = 1.6186 kg,
+    # I = (0.034853, 0.031256, 0.062659).
     def __init__(
         self,
         trajectory_file: str = None,
@@ -37,20 +76,20 @@ class EigenController(Backend):
         km=6.0e-7,
         mass=1.2,
         gravity=9.81,
-        kp_pos=0.50,
-        kd_pos=1.0,
-        kp_z=15.0,
-        kd_z=8.0,
+        kp_pos=3.1469,      # from wn_xy   = 1.7740  (kp = wn^2)
+        kd_pos=3.8199,      # from zeta_xy = 1.0766  (kd = 2*zeta*wn)
+        kp_z=15.0,          # not swept
+        kd_z=8.0,           # not swept
         alpha=0.5,
         beta=0.6,
         Ixx=0.01,
         Iyy=0.01,
         Izz=0.02,
-        Kp_att=7,
-        Kd_att=1.0,
+        Kp_att=1.1333,
+        Kd_att=0.1202,      # below the old box floor of 1.0
         max_total_thrust=80.0,
-        wn_mdyn=18,
-        b_mdyn=10.2,
+        wn_mdyn=37.5706,
+        b_mdyn=0.0,         # at the physical floor: no M_dyn cross-coupling
     ):
         super().__init__(config=None)
 

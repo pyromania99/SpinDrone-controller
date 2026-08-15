@@ -563,6 +563,16 @@ def main():
                     backend.reset()
                     backend.start()
 
+                    # AFTER start(), because start() is where the controller
+                    # syncs its model from the live vehicle — which by this
+                    # point is the SCALED one. Without this the model tracked
+                    # the perturbation exactly and the mismatch axes had no
+                    # mismatch in them at any magnitude; see
+                    # robustness.freeze_model_at_nominal for the measurement.
+                    if ARGS.axis in ("inertia", "mass"):
+                        rb.freeze_model_at_nominal(
+                            backend.inner, nominals[id(drone["vehicle"])])
+
                 for _ in range(5):
                     world.step(render=render_sim)
 
