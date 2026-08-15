@@ -8,6 +8,24 @@ import numpy as np
 from pegasus.simulator.logic.state import State
 from pegasus.simulator.logic.thrusters.thrust_curve import ThrustCurve
 
+# ── Rotor/ESC spin-up time constant ──────────────────────────────────────────
+#
+# PLACEHOLDER. 0.020 s is the midpoint of the 10-30 ms range FINDINGS section 6 cites for
+# hardware generally; it is NOT a measurement of this vehicle's motors. Replace it with the
+# number examples/px4_tuning/measure_motor_lag.py fits from esc_status.esc_rpm.
+#
+# It lives here, as one constant, because the entry points that must AGREE are in different
+# files: single_vehicle.py flies PX4 and genetic_sweep.py flies the Python controller, and
+# a gain found on one is compared against the other. When those two defaults drifted apart
+# the stacks silently modelled different vehicles - the same class of error as the Gazebo
+# x500 airframe and the lag-free GA front, both of which produced confident wrong answers.
+#
+# The CLASS default below stays 0.0 deliberately: the ~16 other construction sites include
+# archived-sweep reproducers, and changing the plant under them would invalidate results
+# that are still on disk. Only the two active tuning entry points reference this.
+ROTOR_TAU_PLACEHOLDER = 0.020
+
+
 class QuadraticThrustCurve(ThrustCurve):
     """Class that implements the dynamics of rotors that can be described by a quadratic thrust curve
     """
@@ -59,6 +77,21 @@ class QuadraticThrustCurve(ThrustCurve):
         self.max_rotor_velocity = config.get("max_rotor_velocity", [1100, 1100, 1100, 1100])
         assert len(self.max_rotor_velocity) == self._num_rotors
 
+        # First-order rotor/ESC spin-up time constant [s]. 0.0 keeps the original
+        # instantaneous model, so every existing script is bit-identical unless it opts in.
+        #
+        # This exists because the instantaneous model omits what is probably the LARGEST
+        # lag in the real loop. Measured budget on the sim side is ~12 ms (mostly HIL
+        # transport, an artifact hardware does not have) against 10-30 ms of ESC/motor
+        # spin-up that hardware does have and this did not model at all. Gains tuned
+        # against tau_eff = 12 ms do not transfer to a board running tau_eff ~ 23 ms.
+        #
+        # Note this lags ROTOR VELOCITY, not thrust: force is rotor_constant*omega^2 below,
+        # so squaring a lagged omega gives the correct (non-first-order) thrust response
+        # for free. Measure it with examples/px4_tuning/measure_motor_lag.py, which fits
+        # esc_status.esc_rpm against a commanded step and reports exactly this constant.
+        self._rotor_tau = float(config.get("rotor_tau", 0.0))
+
         # The actual speed references to apply to the vehicle rotor joints
         self._input_reference = [0.0 for i in range(self._num_rotors)]
 
@@ -81,7 +114,7 @@ class QuadraticThrustCurve(ThrustCurve):
 
     def update(self, state: State, dt: float):
         """
-        Note: the state and dt variables are not used in this implementation, but left
+        Note: the state variable is not used in this implementation, but left
         to add support to other rotor models where the total thrust is dependent on
         states such as vehicle linear velocity
 
@@ -95,11 +128,24 @@ class QuadraticThrustCurve(ThrustCurve):
         # Compute the actual force to apply to the rotors and the rolling moment contribution
         for i in range(self._num_rotors):
 
-            # Set the actual velocity that each rotor is spinning at (instanenous model - no delay introduced)
-            # Only apply clipping of the input reference
-            self._velocity[i] = np.maximum(
+            # Clip the command first, then approach it. Clipping after the filter would
+            # let the internal state wind up past the rail and take extra time to come
+            # back - a slow-release saturation the real ESC does not have.
+            target = np.maximum(
                 self.min_rotor_velocity[i], np.minimum(self._input_reference[i], self.max_rotor_velocity[i])
             )
+
+            if self._rotor_tau > 0.0 and dt > 0.0:
+                # EXACT zero-order-hold discretisation, not the dt/(tau+dt) approximation.
+                # At the 4 ms physics step and tau = 20 ms the approximate form yields an
+                # effective 21.9 ms - a 10% bias in the one parameter this whole exercise
+                # exists to get right, and it grows as dt/tau does. 1-exp(-dt/tau) is exact
+                # for a step-held input and, like the approximation, stays in [0,1) for any
+                # dt, so it keeps the stability the explicit dt/tau form lacks.
+                alpha = 1.0 - np.exp(-dt / self._rotor_tau)
+                self._velocity[i] += alpha * (target - self._velocity[i])
+            else:
+                self._velocity[i] = target
 
             # Set the force using a quadratic thrust curve
             self._force[i] = self._rotor_constant[i] * np.power(self._velocity[i], 2)
