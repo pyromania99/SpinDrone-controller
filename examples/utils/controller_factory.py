@@ -144,7 +144,10 @@ def make_controller(controller: str, gains: dict, results_file, target,
             Kp_att=g.get("Kp_att", 7.0), Kd_att=g.get("Kd_att", 1.0),
             alpha=g.get("alpha", 0.5),
             kp_pos=_outer(g, "kp_xy", 0.50), kd_pos=_outer(g, "kd_xy", 1.0),
-            kp_z=_outer(g, "kp_z", 15.0), kd_z=_outer(g, "kd_z", 8.0))
+            kp_z=_outer(g, "kp_z", 15.0), kd_z=_outer(g, "kd_z", 8.0),
+            # None keeps the historical unlimited torque; callers that want to match
+            # PX4's saturation pass MC_EIG_TRQ_MAX through the gains dict.
+            torque_max=g.get("torque_max"))
 
     if controller == "pd":
         # Kp_att/Kd_att are per-axis pairs here, and are a thrust differential

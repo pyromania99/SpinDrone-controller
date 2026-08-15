@@ -21,7 +21,7 @@ from pegasus.simulator.logic.state import State
 # before importing the controller; the insert keeps a direct import working too.
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-from applied_thrust import applied_rotor_forces
+from applied_thrust import applied_rotor_forces, max_rotor_force
 import vehicle_params
 
 
@@ -88,6 +88,7 @@ class EigenController(Backend):
         Kp_att=1.1333,
         Kd_att=0.1202,      # below the old box floor of 1.0
         max_total_thrust=80.0,
+        torque_max=None,
         wn_mdyn=37.5706,
         b_mdyn=0.0,         # at the physical floor: no M_dyn cross-coupling
     ):
@@ -122,6 +123,18 @@ class EigenController(Backend):
         self.b_mdyn  = float(b_mdyn)
 
         self.max_total_thrust = float(max_total_thrust)
+
+        # Per-axis torque ceiling [N.m], or None for the original unlimited behaviour.
+        #
+        # PX4 ALWAYS saturates here and this controller never did. EigenController.cpp
+        # divides by MC_EIG_TRQ_MAX and constrains the result to [-1, 1], so a command
+        # beyond +/-TRQ_MAX (3.843 N.m on this airframe) is simply not delivered. Every
+        # PX4 divergence analysed so far sat at exactly 1.0 - saturated - which means a
+        # search run without this ceiling is optimising against authority the real stack
+        # does not have, and will happily pick gains that only work unsaturated.
+        #
+        # Left None by default so archived sweeps reproduce; genetic_sweep.py sets it.
+        self.torque_max = None if torque_max is None else float(torque_max)
         self.hover_target = np.array(target_position, dtype=float)
 
         self.index = 0
@@ -463,8 +476,37 @@ class EigenController(Backend):
         u4 = base_thrust + altitude_correction - roll_correction - pitch_correction
 
         commanded_thrusts = np.maximum(np.array([u1, u2, u3, u4]), 0.0)
-        total_thrust = float(np.clip(np.sum(commanded_thrusts), 0.0, self.max_total_thrust))  # commanded
+
+        # Clip the collective to what the airframe can actually produce, not to
+        # the nominal max_total_thrust alone.
+        #
+        # max_total_thrust defaults to 80 N against an achievable 4 x 10.34 =
+        # 41.4 N, so it is 1.93x out of reach and never binds. Measured during a
+        # stopped-rotor run: the altitude PD wound up to a 52.8 N demand — 1.28x
+        # what the airframe can deliver — and the allocator then saturated hard
+        # trying to serve it. Asking for thrust that does not exist does not
+        # produce more lift, it produces more saturation.
+        #
+        # max_rotor_force() reads rotor_constant and max_rotor_velocity off the
+        # live thruster model, so a re-motored airframe stays correct; it falls
+        # back to the Iris defaults when there is no vehicle yet. The min keeps
+        # an explicitly configured lower ceiling honoured.
+        ceiling = self.max_total_thrust
+        if self.vehicle is not None:
+            thrusters = getattr(self.vehicle, "_thrusters", None)
+            n_rotors = getattr(thrusters, "_num_rotors", 4) if thrusters else 4
+            ceiling = min(ceiling, n_rotors * max_rotor_force(thrusters))
+
+        total_thrust = float(np.clip(np.sum(commanded_thrusts), 0.0, ceiling))  # commanded
         tau = np.array([roll_correction, pitch_correction, 0.0])
+
+        # Match PX4's saturation: per-axis clip, NOT a norm-preserving scale. PX4
+        # constrains each axis independently (EigenController.cpp), so a roll command over
+        # the ceiling is truncated while pitch passes through - which changes the direction
+        # of the applied torque, not just its size. Scaling the vector instead would be a
+        # different, gentler nonlinearity and would not reproduce the real behaviour.
+        if self.torque_max is not None:
+            tau = np.clip(tau, -self.torque_max, self.torque_max)
 
         # motor_thrusts logs what the vehicle ACTUALLY applies, not this
         # mixer's idealisation of it. The old code clipped each u_i at
