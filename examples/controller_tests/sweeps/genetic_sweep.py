@@ -101,6 +101,34 @@ def parse_args():
                         "is scaled while the controller's model is held at "
                         "nominal, so this is genuine model mismatch. Pass with "
                         "no values for the default ladder 1.0 0.5 0.25.")
+    # ── transport lag ────────────────────────────────────────────────────────
+    # Defaults 0 so every existing invocation reproduces exactly. Set them and the
+    # front means something for PX4; leave them and it is a lag-free front, which is
+    # what produced gains that limit-cycled on the real stack (FINDINGS section 5).
+    p.add_argument("--pos-delay-ms", type=float, default=0.0,
+                   help="Transport delay on position/velocity reaching the controller. "
+                        "PX4+Pegasus measures ~12-24 ms end to end; a real GPS-aided "
+                        "vehicle is 50-200 ms.")
+    p.add_argument("--att-delay-ms", type=float, default=0.0,
+                   help="Transport delay on attitude/rate. This is the channel the "
+                        "coning mode lives in, so it matters far more than position: "
+                        "the eigen law broke between 10 and 15 ms of it at 13 rad/s.")
+    p.add_argument("--pos-tau-ms", type=float, default=0.0,
+                   help="First-order lag on position, ON TOP of the pure delay. Delay "
+                        "adds phase without attenuation and is what destabilises; a lag "
+                        "attenuates. They are different failure modes, so separate knobs.")
+    p.add_argument("--att-tau-ms", type=float, default=0.0)
+    p.add_argument("--torque-max", type=float, default=3.843,
+                   help="Per-axis torque ceiling [N.m] the controller saturates at, "
+                        "matching PX4's MC_EIG_TRQ_MAX. PX4 clips normalized torque to "
+                        "+/-1 and this loop historically did not clip at all, so without "
+                        "it the search optimises against authority the real stack cannot "
+                        "deliver. 0 disables (the old unlimited behaviour).")
+    p.add_argument("--rotor-tau-ms", type=float, default=None,
+                   help="Rotor/ESC spin-up time constant, applied in the shared plant "
+                        "(quadratic_thrust_curve.py). Distinct from the delays above: "
+                        "this is a POLE in the actuator, not a delay on the state, and no "
+                        "gain choice removes it. Measure with measure_motor_lag.py.")
     p.add_argument("--headless", action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
     return p.parse_args()
@@ -134,6 +162,15 @@ from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
+from pegasus.simulator.logic.thrusters import quadratic_thrust_curve as rotor_curve
+
+# parse_args() ran above, before the Pegasus imports could exist (they require
+# SimulationApp first), so the default is resolved here. It tracks the SAME constant
+# single_vehicle.py uses: the GA searches the Python controller and gain_search.py
+# verifies on PX4, and if those two plants disagree the comparison is meaningless.
+# --rotor-tau-ms 0 stays 0 - an explicit request for the instantaneous model.
+if ARGS.rotor_tau_ms is None:
+    ARGS.rotor_tau_ms = 1000.0 * rotor_curve.ROTOR_TAU_PLACEHOLDER
 from pegasus.simulator.logic.backends import Backend
 from pegasus.simulator.logic.state import State
 
@@ -341,9 +378,13 @@ OUTER_SEED = {
 
 # ── OOB Backend (shared) ────────────────────────────────────────────────────
 class BoundedBackend(Backend):
-    def __init__(self, inner, results_file: str):
+    def __init__(self, inner, results_file: str, lag=None):
         super().__init__(config=None)
         self.inner = inner
+        # robustness.SensorLag, or None for the original lag-free behaviour. Separate
+        # position and attitude channels, because a real vehicle's are not remotely alike:
+        # GPS-like 50-200 ms against IMU-like 2-10 ms.
+        self.lag = lag
         self.results_file = results_file
         self.total_time = 0.0
         self._stopped = False
@@ -404,8 +445,19 @@ class BoundedBackend(Backend):
     def update_graphical_sensor(self, st, d):
         if not self.is_oob: self.inner.update_graphical_sensor(st, d)
     def update_state(self, state: State):
+        # Truth first and unconditionally - the monitor scores against it, and must not
+        # inherit whatever perturbation the controller is being fed.
         self.position = state.position.copy()
-        if not self.is_oob: self.inner.update_state(state)
+        if self.is_oob:
+            return
+        # SensorLag is the reason a front found here can mean anything for PX4. This loop
+        # reads exact state in-process; PX4 carries ~12-24 ms to the controller. FINDINGS
+        # section 5 measured a GA front point limit-cycling on PX4 from the instant of
+        # takeoff and concluded "either tune on the PX4 stack directly, or add a
+        # transport-delay model to the Pegasus sweeps so the fronts mean something".
+        # This is that second option; it was never implemented, and rank 3 of the front it
+        # produced departed in 12 s on the real stack.
+        self.inner.update_state(self.lag.apply(state) if self.lag is not None else state)
     def input_reference(self):
         return [0.,0.,0.,0.] if self.is_oob else self.inner.input_reference()
     def update(self, dt: float):
@@ -684,6 +736,9 @@ def _make_eigen(g, target, results_file, mm):
         wn_mdyn=g["wn_mdyn"], b_mdyn=g["b_mdyn"],
         Kp_att=g["Kp_att"], Kd_att=g["Kd_att"],
         km=mm, **_outer_kwargs(g, "eigen"),
+        # PX4 saturates every torque axis at MC_EIG_TRQ_MAX; this loop historically did
+        # not clip at all. 0 restores that, for reproducing archived fronts.
+        torque_max=(ARGS.torque_max if ARGS.torque_max > 0 else None),
     )
 
 def _make_pd(g, target, results_file):
@@ -928,10 +983,18 @@ def main():
             inner = _make_pd(_gene_map(genes_def, init_dummy), target,
                              tmp_files[i])
 
-        backend = BoundedBackend(inner, tmp_files[i])
+        lag = None
+        if any((ARGS.pos_delay_ms, ARGS.att_delay_ms, ARGS.pos_tau_ms, ARGS.att_tau_ms)):
+            lag = rb.SensorLag(sim_clock.DEFAULT_PHYSICS_DT,
+                               pos_delay=1e-3 * ARGS.pos_delay_ms,
+                               att_delay=1e-3 * ARGS.att_delay_ms,
+                               pos_tau=1e-3 * ARGS.pos_tau_ms,
+                               att_tau=1e-3 * ARGS.att_tau_ms)
+        backend = BoundedBackend(inner, tmp_files[i], lag=lag)
         cfg = MultirotorConfig()
         cfg.backends = [backend]
-        cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": mm_init})
+        cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": mm_init,
+                                            "rotor_tau": 1e-3 * ARGS.rotor_tau_ms})
 
         vehicle = Multirotor(
             f"/World/gen_{i}", ROBOTS["Iris"], i, spawn_pos,
@@ -992,7 +1055,8 @@ def main():
 
         for i in range(pop_size):
             vehicle, backend, spawn_pos, _ = drones[i]
-            vehicle._thrusters = QuadraticThrustCurve(config={"motor_moment": motor_moment})
+            vehicle._thrusters = QuadraticThrustCurve(config={"motor_moment": motor_moment,
+                                                    "rotor_tau": 1e-3 * ARGS.rotor_tau_ms})
             if is_mpc:
                 _apply_genes_mpc(backend, _gene_map(genes_def, pop_array[i]),
                                  motor_moment)

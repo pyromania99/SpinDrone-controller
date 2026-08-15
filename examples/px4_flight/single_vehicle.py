@@ -61,6 +61,13 @@ def parse_args() -> argparse.Namespace:
                         "no PX4+Pegasus flight has ever left an inspectable log. Bare "
                         "--keep-log uses ./px4_runs/<timestamp>; pass a directory to choose one. "
                         "The ulog lands in <DIR>/log/<date>/<time>.ulg.")
+    p.add_argument("--rotor-tau", type=float, default=None,
+                   help="Rotor/ESC spin-up time constant [s]. PLACEHOLDER 0.020 - the "
+                        "midpoint of the 10-30 ms range FINDINGS section 6 cites for "
+                        "hardware, NOT a measured value for this vehicle. Measure it with "
+                        "examples/px4_tuning/measure_motor_lag.py and replace this. "
+                        "0 restores the old instantaneous rotor model, which omits what is "
+                        "probably the largest lag in the real loop.")
     p.add_argument("--motor-moment", type=float, default=0.0,
                    help="Rotor rolling-moment coefficient km [N.m/(rad/s)^2]. All four rotors "
                         "turn the same way (rot_dir -1,-1,-1,-1), so reaction torques add and "
@@ -93,7 +100,15 @@ for _parent in Path(__file__).resolve().parents:
 
 from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.backends.px4_mavlink_backend import PX4MavlinkBackend, PX4MavlinkBackendConfig
-from pegasus.simulator.logic.thrusters.quadratic_thrust_curve import QuadraticThrustCurve
+from pegasus.simulator.logic.thrusters.quadratic_thrust_curve import (
+    QuadraticThrustCurve, ROTOR_TAU_PLACEHOLDER)
+
+# parse_args() runs before this import (it must, to build SimulationApp), so the default
+# is resolved here instead of in the parser. --rotor-tau 0 stays 0: an explicit request
+# for the old instantaneous model is not the same as "unset".
+ROTOR_TAU_IS_DEFAULT = ARGS.rotor_tau is None
+if ROTOR_TAU_IS_DEFAULT:
+    ARGS.rotor_tau = ROTOR_TAU_PLACEHOLDER
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 
@@ -131,6 +146,14 @@ def _write_run_config(rootfs: str) -> None:
     config = {
         "motor_moment": ARGS.motor_moment,
         "expected_spin_rad_s": 4.9e7 * ARGS.motor_moment,   # r_ss ~ 4.9e7*km, FINDINGS 7
+        # Simulator-side like motor_moment, so it appears nowhere in the ulog. A gain set
+        # is only meaningful against the rotor_tau it was found at - without this recorded,
+        # two runs with different plants are indistinguishable after the fact.
+        "rotor_tau": ARGS.rotor_tau,
+        # True only when the shared placeholder was used. Once measure_motor_lag.py gives
+        # a real number and ROTOR_TAU_PLACEHOLDER is updated, this still reads True - so
+        # treat it as "not explicitly chosen for this run", and trust the value itself.
+        "rotor_tau_is_placeholder": ROTOR_TAU_IS_DEFAULT,
         "px4_airframe": ARGS.px4_airframe,
         "physics_rate_hz": ARGS.physics_rate,
         "vehicle_id": ARGS.vehicle_id,
@@ -214,9 +237,18 @@ class PegasusApp:
         # quadratic_thrust_curve.py, which is how a "spinning vehicle" run could silently be
         # a non-spinning one. Same call the sweeps use (batch_compare.py:251).
         config_multirotor.thrust_curve = QuadraticThrustCurve(
-            config={"motor_moment": ARGS.motor_moment})
+            config={"motor_moment": ARGS.motor_moment, "rotor_tau": ARGS.rotor_tau})
         carb.log_warn(f"motor_moment = {ARGS.motor_moment:.3e} "
                       f"-> expected steady yaw spin ~ {4.9e7 * ARGS.motor_moment:.1f} rad/s")
+        if ARGS.rotor_tau > 0.0:
+            carb.log_warn(
+                f"rotor_tau = {1000 * ARGS.rotor_tau:.1f} ms"
+                + (" (PLACEHOLDER from ROTOR_TAU_PLACEHOLDER - measure it, see "
+                   "measure_motor_lag.py). Gains found against this value are only as "
+                   "right as it is." if ROTOR_TAU_IS_DEFAULT else " (explicit)"))
+        else:
+            carb.log_warn("rotor_tau = 0: INSTANTANEOUS rotor model. The plant is missing "
+                          "the ESC/motor lag hardware has; gains will not transfer.")
 
         # input_scaling/zero_position_armed are overridden from their 1000/100
         # defaults so the rotor map passes through the origin:
