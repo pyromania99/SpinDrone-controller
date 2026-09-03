@@ -8,8 +8,8 @@ The gyroscopic Euler cross-coupling terms (p*r, q*r) then perturb roll/pitch pro
 to yaw rate. A controller that ignores this coupling accumulates position error at high spin.
 
 Usage:
-  /usr/bin/python3 examples/controller_tests/compare_controllers.py
-  /usr/bin/python3 examples/controller_tests/compare_controllers.py --no-show
+  /usr/bin/python3 examples/controller_tests/archive/compare_controllers.py
+  /usr/bin/python3 examples/controller_tests/archive/compare_controllers.py --no-show
 """
 
 from __future__ import annotations

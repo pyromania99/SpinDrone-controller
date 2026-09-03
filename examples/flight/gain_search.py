@@ -59,7 +59,7 @@ from px4_driver import PX4Driver, log  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 ISAAC_PY = Path(os.environ.get("ISAACSIM_PATH", Path.home() / "isaacsim")) / "python.sh"
-SIM = REPO / "examples/px4_flight/single_vehicle.py"
+SIM = REPO / "examples/flight/single_vehicle.py"
 
 GAIN_KEYS = ("MC_EIG_ATT_P", "MC_EIG_ATT_D", "MC_EIG_WN", "MC_EIG_B")
 

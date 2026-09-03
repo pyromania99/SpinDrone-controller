@@ -13,7 +13,7 @@ Parallel structure: one drone per Kp_att value, all run simultaneously.
 Serial structure:   one pass per motor_moment.
 
 Usage:
-    isaac_run examples/controller_tests/eigen_kp_sweep.py \\
+    isaac_run examples/controller_tests/archive/eigen_kp_sweep.py \\
         --omega-n 8.0 \\
         --zeta 1.0 \\
         --motor-moments 1e-7 2.7e-7 4e-7 \\

@@ -12,7 +12,7 @@ flies the profile and scores the log. One candidate, one flight, visible.
 Usage
 -----
   # terminal 1 - launch headed, gains come from the airframe
-  isaac_run examples/px4_flight/single_vehicle.py --keep-log px4_runs/mytest \
+  isaac_run examples/flight/single_vehicle.py --keep-log px4_runs/mytest \
       --motor-moment 2.7e-7 --duration 400
 
   # terminal 2 - once Isaac is up

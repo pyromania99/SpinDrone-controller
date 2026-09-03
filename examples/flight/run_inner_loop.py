@@ -36,7 +36,7 @@ altitude while excluding it, PX4Driver.hold_stabilized() closes a deliberately s
 Usage
 ─────
   # in another terminal, with the spin you want:
-  isaac_run examples/px4_flight/single_vehicle.py --keep-log --motor-moment 1.6e-7 \
+  isaac_run examples/flight/single_vehicle.py --keep-log --motor-moment 1.6e-7 \
       --no-px4-autolaunch      # or let it autolaunch and just run this after
 
   python3 run_inner_loop.py --altitude 5 --hold 40

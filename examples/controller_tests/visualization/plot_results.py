@@ -2,14 +2,14 @@
 """Load controller .npz results, print summary metrics, and generate plots.
 
 Usage examples:
-  /usr/bin/python3 examples/controller_tests/plot_results.py \
+  /usr/bin/python3 examples/controller_tests/visualization/plot_results.py \
       --file examples/controller_tests/results/cascaded_pd_statistics.npz
 
-  /usr/bin/python3 examples/controller_tests/plot_results.py \
+  /usr/bin/python3 examples/controller_tests/visualization/plot_results.py \
       --file examples/controller_tests/results/nonlinear_statistics.npz \
       --save-prefix examples/controller_tests/results/nonlinear
 
-    /usr/bin/python3 examples/controller_tests/plot_results.py \
+    /usr/bin/python3 examples/controller_tests/visualization/plot_results.py \
             --batch-root examples/controller_tests/results \
             --no-show
 """

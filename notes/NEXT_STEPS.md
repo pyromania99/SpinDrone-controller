@@ -202,7 +202,7 @@ GA and dies at 90 s in PX4, that is a real finding and Stage 3 will show it.
 ### Stage 3 — PX4 with ground truth
 
 ```sh
-isaac_run examples/px4_flight/single_vehicle.py --keep-log --headless --motor-moment 2.7e-7
+isaac_run examples/flight/single_vehicle.py --keep-log --headless --motor-moment 2.7e-7
 gain_search.py --candidates top5.json --ground-truth --motor-moment 2.7e-7
 ```
 
@@ -250,7 +250,7 @@ destructive, so the sim's job was to have found the cliffs already.
 | `single_vehicle.py` | `--keep-log`, `--motor-moment`, `--rotor-tau`; writes `run_config.json` recording the simulator-side settings that appear nowhere in the ulog |
 | `genetic_sweep.py` | `--pos/att-delay-ms`, `--pos/att-tau-ms` → `SensorLag`; `--rotor-tau-ms`; `--torque-max` |
 | `eigen_controller.py` | `torque_max` — saturates per axis like PX4 |
-| `controller_tests/controllers.py` | now carries `rotor_tau` (was the only entry point without it) |
+| `flight/controllers.py` | now carries `rotor_tau` (was the only entry point without it) |
 
 ### New tools in `examples/px4_tuning/`
 
@@ -277,9 +277,9 @@ PegasusSimulator                        PX4-Autopilot
 ```
 
 **Since committed.** What this section listed as uncommitted — `desaturation.py`,
-`multirotor.py`, `test_rotor_failure.py`, `motor_failure.py` and `controller_tests/controllers.py` —
+`multirotor.py`, `test_rotor_failure.py`, `motor_failure.py` and `flight/controllers.py` —
 now lands as `5fbe368` (the mixer policy), `5077622` (its checks), `d92a267` (the policy on
-both rotor-failure entry points) and `39bc57a` (`rotor_tau` into `controller_tests/controllers.py`),
+both rotor-failure entry points) and `39bc57a` (`rotor_tau` into `flight/controllers.py`),
 keeping the one-mismatch-per-commit rule above. `593decc` (gyroscopic sign) and `175373b`
 predate this work.
 

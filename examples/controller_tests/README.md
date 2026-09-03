@@ -1,10 +1,13 @@
 # Controller tests
 
-Sweeps, evaluations and plots for the spinning-drone controllers. The controllers
-themselves live in `examples/utils/` (`eigen_controller.py`,
+Sweeps, evaluations and plots for the spinning-drone controllers — searching the
+gain space and turning the results into numbers and pictures.
+
+The controllers themselves live in `examples/utils/` (`eigen_controller.py`,
 `cascaded_pd_controller.py`, `lpv_mpc_controller.py`), and `controller_factory.py`
-is what turns a controller name plus a gain dict into an instance — start there
-rather than constructing one by hand.
+turns a controller name plus a gain dict into an instance — start there rather than
+constructing one by hand. To fly a single vehicle interactively rather than sweep
+anything, see `../flight/`.
 
 ## Running things
 
@@ -12,8 +15,7 @@ Two kinds of script, and the distinction matters because getting it wrong looks
 like an import error rather than a usage error:
 
 - **Anything that flies** needs Isaac Sim, so it is launched with `isaac_run`.
-  That is everything under `sweeps/`, both entry points at the top of this folder
-  (`controllers.py`, `motor_failure.py`), the two `probe_*` scripts and
+  That is everything under `sweeps/`, the two `probe_*` scripts and
   `batch_compare.py` in `evaluations/`, and `eigen_kp_sweep.py` in `archive/`.
 - **Anything that reads telemetry off disk** is plain Python, run with `python3`.
   That is all of `visualization/` and the rest of `evaluations/`.
@@ -63,23 +65,6 @@ prints summary metrics and writes per-run plots. The rest are specific to one st
 `eigen_plot_summary.py`, `eigen_plot_heatmap.py`, `interactive_dashboard.py` (Plotly),
 and `coning_plot.py` for the spin-axis and coning geometry of a spinning run.
 
-### Entry points, at the top of this folder
-
-Two scripts fly one vehicle interactively rather than sweeping anything, which is
-why they sit here rather than in a subfolder.
-
-`controllers.py` prompts for a controller, a motor moment and a failure mode, then
-flies it in the GUI. It is also the Pegasus-only half of every PX4 comparison,
-which is why it has to model the same plant the sweeps do — see the `rotor_tau`
-note in its thrust-curve setup.
-
-`motor_failure.py` kills one rotor once the vehicle has settled and watches what
-happens. Its `--desaturation` flag selects what the mixer gives up when a rotor
-saturates: `uniform` scales every rotor down together (the simulator's historical
-behaviour, which collapses the collective), `collective` holds lift and gives up
-moment. See
-`extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/desaturation.py`.
-
 ### `archive/`
 
 Superseded, kept for the record rather than because anything calls them.
@@ -88,13 +73,13 @@ Superseded, kept for the record rather than because anything calls them.
 Eigen-vs-CascadedPD harness.
 
 This folder was called `legacy/` and also held `controllers.py`, which is not
-legacy at all — it has been promoted to the top of this folder, where the other
-interactive entry point already lived.
+legacy at all — it now lives in `../flight/` with the other launchers.
 
 ## Output
 
-Everything is written under `examples/controller_tests/results/`, which is
-generated and gitignored — nothing in there is a source of truth, and any of it can
+Everything is written under `examples/controller_tests/results/`, including the
+telemetry from the two launchers in `../flight/` that fly this project's
+controllers. It is generated and gitignored — nothing in there is a source of truth, and any of it can
 be rebuilt from the scripts above. Raw per-run telemetry is `*_statistics.npz`
 (`time`, `p`, `desired_p`, `ep`, and further keys depending on the controller);
 sweeps additionally write CSV summaries and PNG plots alongside it.

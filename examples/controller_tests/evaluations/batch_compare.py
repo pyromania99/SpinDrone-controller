@@ -7,7 +7,7 @@ runs headless, and saves per-combination telemetry.  Drones that leave
 their bounding box are deleted mid-sim and their data is truncated.
 
 Usage (via isaac_run):
-    isaac_run examples/controller_tests/batch_compare.py \
+    isaac_run examples/controller_tests/evaluations/batch_compare.py \
         --motor-moments 1.0e-7 2.7e-7 4.0e-7 \
         --controllers pd eigen \
         --duration 15 \

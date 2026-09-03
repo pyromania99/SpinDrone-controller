@@ -476,7 +476,7 @@ of 1.0, zero saturation. Use this as the control when something regresses.
   that separates a plant mode from a loop mode — using the spectrum of the complex `p + jq`
   rather than of `hypot(p, q)`, which is rectified and reports double the true frequency.
 - [`loop_latency.py`](../examples/px4_tuning/loop_latency.py) — loop delay + `K_eff` from a ulog
-- [`px4_driver.py`](../examples/px4_tuning/px4_driver.py) — MAVLink arm/offboard/setpoint + live param set with
+- [`px4_driver.py`](../examples/flight/px4_driver.py) — MAVLink arm/offboard/setpoint + live param set with
   read-back. Encodes two SITL facts: headless refuses to arm without a GCS heartbeat, and
   `MAV_CMD_NAV_TAKEOFF` is ACKed but doesn't climb, so OFFBOARD must precede arming.
 - [`ulog_to_npz.py`](../examples/px4_tuning/ulog_to_npz.py) — ulog → the npz `sweep_metrics.compute_metrics`

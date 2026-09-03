@@ -11,11 +11,11 @@ connects.
 
 Usage
 ─────
-  isaac_run examples/px4_flight/single_vehicle.py
-  isaac_run examples/px4_flight/single_vehicle.py --px4-dir ~/PX4-Autopilot --headless --duration 30
+  isaac_run examples/flight/single_vehicle.py
+  isaac_run examples/flight/single_vehicle.py --px4-dir ~/PX4-Autopilot --headless --duration 30
 
   # keep the ulog, and spin the vehicle at ~9.8 rad/s
-  isaac_run examples/px4_flight/single_vehicle.py --keep-log --motor-moment 2.0e-7
+  isaac_run examples/flight/single_vehicle.py --keep-log --motor-moment 2.0e-7
 
 Check the ulog reports SYS_AUTOSTART=10016 before drawing any conclusion from it. Every
 log left in PX4-Autopilot/build/px4_sitl_default/rootfs/log/ is SYS_AUTOSTART=4001, a

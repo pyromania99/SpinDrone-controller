@@ -97,8 +97,9 @@ class PegasusApp:
         for _ in range(10):
             self.world.step(render=False)
 
-        # Get the current directory used to read trajectories and save results
-        self.curr_dir = str(Path(os.path.dirname(os.path.realpath(__file__))).resolve())
+        # Results go to the controller_tests tree with the rest of the L1 telemetry,
+        # not beside this script, so moving the script does not move the archive.
+        self.curr_dir = str((Path(__file__).resolve().parents[1] / "controller_tests").resolve())
 
         # Build selected backend from the controller registry
         self.controller = build_controller(selected_controller, self.curr_dir)

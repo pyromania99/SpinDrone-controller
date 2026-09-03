@@ -20,8 +20,8 @@ Outputs
 
 Usage
 -----
-  /usr/bin/python3.10 examples/controller_tests/benchmarks.py
-  /usr/bin/python3.10 examples/controller_tests/benchmarks.py --no-show --t-limit 60
+  /usr/bin/python3.10 examples/controller_tests/evaluations/benchmarks.py
+  /usr/bin/python3.10 examples/controller_tests/evaluations/benchmarks.py --no-show --t-limit 60
 """
 
 from __future__ import annotations

@@ -33,10 +33,10 @@ hardcoded 0), so the vehicle already spins up to r_ss ~ 5.16e7 * km. Losing a
 rotor removes a quarter of the lift and unbalances roll/pitch hard.
 
 Usage
-  isaac_run examples/controller_tests/motor_failure.py                 # watch it
-  isaac_run examples/controller_tests/motor_failure.py --headless
-  isaac_run examples/controller_tests/motor_failure.py --rotor 2       # pick one
-  isaac_run examples/controller_tests/motor_failure.py --seed 7
+  isaac_run examples/flight/motor_failure.py                 # watch it
+  isaac_run examples/flight/motor_failure.py --headless
+  isaac_run examples/flight/motor_failure.py --rotor 2       # pick one
+  isaac_run examples/flight/motor_failure.py --seed 7
 """
 from __future__ import annotations
 import argparse, sys
@@ -120,7 +120,9 @@ def main():
     render = not ARGS.headless
     rng = np.random.default_rng(ARGS.seed)
 
-    base = Path(__file__).resolve().parent
+    # Telemetry belongs with the other controller_tests output, not beside this
+    # script - the script is filed by what it does, the results by what they are.
+    base = Path(__file__).resolve().parents[1] / "controller_tests"
     out = (Path(ARGS.out) if ARGS.out
            else task.results_root(base) / "motor_failure" / "run.npz")
     out.parent.mkdir(parents=True, exist_ok=True)
