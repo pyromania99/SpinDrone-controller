@@ -67,7 +67,7 @@ class PegasusApp:
 
     def __init__(self, selected_controller: str, motor_moment: float = None,
                  failure_mode: str = "manual", failure_rotor: int = None,
-                 failure_seed: int = None):
+                 failure_seed: int = None, desaturation: str = "uniform"):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -140,6 +140,11 @@ class PegasusApp:
             "motor_moment": motor_moment if motor_moment is not None else 0.0,
             "rotor_tau": ROTOR_TAU_PLACEHOLDER,
         })
+        # Which quantity the mixer sacrifices when a rotor saturates. "uniform"
+        # is the default everywhere else; "collective" keeps lift and gives up
+        # moment, which is what lets the vehicle climb after a rotor stops.
+        self.desaturation = desaturation
+        config_multirotor1.desaturation = desaturation
 
         Multirotor(
             "/World/quadrotor1",
@@ -175,6 +180,11 @@ class PegasusApp:
 
                 ui.Separator(height=4)
                 ui.Label("Rotor Failure", alignment=ui.Alignment.CENTER)
+                # Which mixer is flying matters more than anything else on this
+                # panel once a rotor is stopped, so it is stated outright rather
+                # than left to whatever was typed at the prompt.
+                ui.Label(f"mixer: {self.desaturation}",
+                         alignment=ui.Alignment.CENTER)
                 self._settle_label = ui.Label("settling: --",
                                               alignment=ui.Alignment.CENTER)
                 self._failure_label = ui.Label("no failure",
@@ -312,11 +322,21 @@ def main():
             seed_str = input("Seed for the random choice (leave empty for none): ").strip()
             failure_seed = int(seed_str) if seed_str else None
 
+    print("\nMixer desaturation: when a rotor is asked for more than it can give,")
+    print("'uniform' scales every rotor down together and the collective collapses;")
+    print("'collective' holds lift and gives up moment instead. 'uniform' is the")
+    print("default everywhere else in this repo; 'collective' is what lets the")
+    print("vehicle climb after a rotor stops.")
+    desaturation = input("Desaturation [uniform/collective] (default uniform): ").strip().lower()
+    if desaturation not in ("uniform", "collective"):
+        desaturation = "uniform"
+
     # Instantiate the template app
     pg_app = PegasusApp(selected_controller, motor_moment,
                         failure_mode=failure_mode,
                         failure_rotor=failure_rotor,
-                        failure_seed=failure_seed)
+                        failure_seed=failure_seed,
+                        desaturation=desaturation)
 
     # Run the application loop
     pg_app.run()

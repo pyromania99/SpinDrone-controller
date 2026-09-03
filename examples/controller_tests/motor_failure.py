@@ -66,6 +66,15 @@ def parse_args():
                         "run with no failure in it.")
     p.add_argument("--km", type=float, default=None,
                    help="Motor moment. Default: the controller's own (6e-7).")
+    p.add_argument("--desaturation", choices=("uniform", "collective"),
+                   default="collective",
+                   help="What the mixer gives up when a rotor saturates. "
+                        "'uniform' scales every rotor down together (the "
+                        "simulator's historical behaviour) and collapses the "
+                        "collective; 'collective' holds the mean and shrinks "
+                        "only the moments. Defaults to 'collective' here "
+                        "because this script exists to study rotor loss — pass "
+                        "'uniform' to reproduce the untreated failure.")
     p.add_argument("--out", type=str, default=None,
                    help="npz path. Default: results/motor_failure/run.npz")
     p.add_argument("--headless", action="store_true", default=False)
@@ -142,6 +151,7 @@ def main():
     cfg = MultirotorConfig()
     cfg.backends = [backend]
     cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": km})
+    cfg.desaturation = ARGS.desaturation
 
     Multirotor("/World/failure_test", ROBOTS["Iris"], 0, spawn,
                Rotation.from_euler("XYZ", [0., 0., 0.], degrees=True).as_quat(),
@@ -155,7 +165,7 @@ def main():
     carb.log_warn(
         f"[motor-failure] km={km:.2e} (r_ss ~ {5.163e7 * km:.1f} rad/s), "
         f"target={target}, settle |e|<={ARGS.settle_radius} m for "
-        f"{ARGS.settle_hold} s, rotor="
+        f"{ARGS.settle_hold} s, desaturation={ARGS.desaturation}, rotor="
         + ("random" if ARGS.rotor is None else str(ARGS.rotor)))
 
     # Read once here rather than after the loop: the "never settled" branch
