@@ -20,8 +20,6 @@ Usage:
 from __future__ import annotations
 import argparse, csv, json, math, os, sys
 from pathlib import Path
-import carb
-from isaacsim import SimulationApp
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 def parse_args():
@@ -141,6 +139,11 @@ def parse_args():
 DEFAULT_ROBUST_SCALES = [1.0, 0.5, 0.25]
 
 ARGS = parse_args()
+
+# Isaac imports are deferred to here so --help works without a simulator:
+# argparse runs above, and booting Isaac to read a flag list is a bad trade.
+import carb                            # noqa: E402
+from isaacsim import SimulationApp     # noqa: E402
 
 simulation_app = SimulationApp({
     "headless": ARGS.headless,

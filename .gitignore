@@ -116,4 +116,7 @@ stage3_gt_runs/
 # Working state for the PX4 gain search: GA-derived candidate sets and the
 # per-candidate flight results. Regenerable from a genetic_archive.csv via
 # ga_to_candidates.py, so they are outputs, not inputs.
-examples/px4_tuning/*.json
+# Matched at any depth rather than by full path: pinning it to
+# examples/px4_tuning/ meant the rule silently stopped matching the day the
+# folder moved under examples/tools/, and three working files were committed.
+**/px4_tuning/*.json

@@ -63,8 +63,6 @@ from pathlib import Path
 
 import numpy as np
 
-import carb
-from isaacsim import SimulationApp
 
 
 def parse_args() -> argparse.Namespace:
@@ -151,6 +149,11 @@ DEFAULT_MAGNITUDES = {
 }
 if ARGS.magnitudes is None:
     ARGS.magnitudes = DEFAULT_MAGNITUDES[ARGS.axis]
+
+# Isaac imports are deferred to here so --help works without a simulator:
+# argparse runs above, and booting Isaac to read a flag list is a bad trade.
+import carb                            # noqa: E402
+from isaacsim import SimulationApp     # noqa: E402
 
 simulation_app = SimulationApp({
     "headless": ARGS.headless,

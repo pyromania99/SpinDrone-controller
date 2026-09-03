@@ -60,6 +60,10 @@ is the front door.
 | `px4_driver.py` | The shared `PX4Driver`: connect, arm, offboard setpoints, live parameter set, and `check_airframe()`, which refuses to fly the wrong airframe. Imported by everything here — keep it a sibling. |
 | `simlaunch.py` | Finds Isaac's interpreter, clears the lockstep port, kills the process tree afterwards. Shared by `fly.py` and `gain_search.py` so the cleanup has one implementation. |
 
+Every script here answers `--help` under a plain `python3`, including the three
+that need Isaac to actually run: their Isaac imports sit below argparse, so
+reading a flag list never boots a simulator.
+
 ## The other two entry points
 
 These fly, but they are not "pick a level and fly once", so they stay separate.

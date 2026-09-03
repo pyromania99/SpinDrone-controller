@@ -52,8 +52,6 @@ import sys
 from pathlib import Path
 import numpy as np
 
-import carb
-from isaacsim import SimulationApp
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="LPV-MPC q/r 2D sweep for Pareto analysis")
@@ -90,6 +88,11 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 ARGS = parse_args()
+
+# Isaac imports are deferred to here so --help works without a simulator:
+# argparse runs above, and booting Isaac to read a flag list is a bad trade.
+import carb                            # noqa: E402
+from isaacsim import SimulationApp     # noqa: E402
 
 simulation_app = SimulationApp({
     "headless": ARGS.headless,

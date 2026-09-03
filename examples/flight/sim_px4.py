@@ -28,8 +28,6 @@ import argparse
 import sys
 from pathlib import Path
 
-import carb
-from isaacsim import SimulationApp
 
 
 def parse_args() -> argparse.Namespace:
@@ -85,6 +83,11 @@ def parse_args() -> argparse.Namespace:
 
 
 ARGS = parse_args()
+
+# Isaac imports are deferred to here so --help works without a simulator:
+# argparse runs above, and booting Isaac to read a flag list is a bad trade.
+import carb                            # noqa: E402
+from isaacsim import SimulationApp     # noqa: E402
 
 simulation_app = SimulationApp({"headless": ARGS.headless})
 

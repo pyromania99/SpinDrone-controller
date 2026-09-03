@@ -1,21 +1,34 @@
 # Tools
 
-Everything that supports flight without doing it. Nothing in here puts a vehicle
-in the air except the two Isaac probes noted below — that is `../flight/` for one
-vehicle and `../sweeps/` for many.
+Everything that supports flight rather than being the point of it. Flying one
+vehicle is `../flight/`; flying a population to search a gain space is
+`../sweeps/`. Most of what is here reads results that those produced.
+
+A handful of scripts here do start a simulator — the probes that read values out
+of a running vehicle, a superseded sweep, and one comparison harness — but they
+exist to answer a question about the setup, not to produce flight results.
 
 | folder | what is in it |
 |---|---|
 | `evaluations/` | Turning runs into numbers: head-to-head benchmarks, Pareto selection, metric backfill, invariant checks. |
-| `visualization/` | Plots and reports: `plot_results.py` for any `.npz`, plus study-specific reports (Pareto, robustness, ablation, coning, an interactive Plotly dashboard). |
+| `visualization/` | Plots and reports: `plot_results.py` for any `.npz`, plus study-specific ones — `pareto_comparison.py`, `robustness_report.py`, `ablation_report.py`, `coning_plot.py`, `eigen_plot_summary.py`, `eigen_plot_heatmap.py` and the Plotly `interactive_dashboard.py`. |
 | `px4_tuning/` | The PX4 analysis toolkit — reads ulogs after the fact. Has its own README. |
 | `scripts/` | The bash drivers that chain the sweeps together. |
 | `archive/` | Superseded, kept for the record rather than because anything calls them. |
+| `trajectories/` | Reference trajectory CSVs (ellipses, relay steps, back-and-forth). Input data, not results — a controller is handed one by path, and nothing resolves this directory implicitly. |
 
-Most of it is plain `python3`. The exceptions, which need `isaac_run`:
-`evaluations/probe_reset.py`, `evaluations/probe_robustness.py`,
-`evaluations/batch_compare.py`, `archive/eigen_kp_sweep.py`, and the two probes
-in `px4_tuning/` that read values out of a running simulator.
+Most of it is plain `python3`. Two exceptions:
+
+- **Needs `isaac_run`** (it starts a simulator): `evaluations/probe_reset.py`,
+  `evaluations/probe_robustness.py`, `evaluations/batch_compare.py`,
+  `archive/eigen_kp_sweep.py`, and the two probes in `px4_tuning/`.
+- **Needs `scipy`**, which is in Isaac's interpreter but not necessarily in a
+  bare `python3`: `evaluations/tuning_equivalence.py`. Run it with
+  `~/isaacsim/python.sh` if `import scipy` fails.
+
+Every script here that takes arguments answers `--help` without starting a
+simulator, including the `isaac_run` ones — the Isaac imports are deferred past
+argparse precisely so you can read a flag list without booting anything.
 
 `evaluations/test_rotor_failure.py` is worth knowing about: it checks the
 rotor-failure injection and the mixer desaturation policies, and runs without

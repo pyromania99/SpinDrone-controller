@@ -3,10 +3,13 @@
 Searching the gain space. These fly too — that is what makes them slow — but they
 fly a population rather than one vehicle, so they sit apart from `../flight/`.
 
-All of them need Isaac Sim, so launch them with `isaac_run`:
+All of them need Isaac Sim to run, so launch them with `isaac_run`. Reading
+their flags does not: the Isaac imports are deferred past argparse, so `--help`
+works under a plain `python3` without booting a simulator.
 
 ```bash
-isaac_run examples/sweeps/genetic_sweep.py --help
+python3    examples/sweeps/genetic_sweep.py --help   # just the flags
+isaac_run  examples/sweeps/genetic_sweep.py ...      # actually fly it
 ```
 
 | script | what it does |
