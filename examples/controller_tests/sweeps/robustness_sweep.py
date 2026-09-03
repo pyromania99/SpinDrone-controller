@@ -287,6 +287,17 @@ def make_controller(gains: dict, results_file: str, target, km: float):
     return cf.make_controller(ARGS.controller, gains, results_file, target, km)
 
 
+def _att_delay_ms(magnitude: float) -> float:
+    """The attitude delay actually applied at this magnitude.
+
+    Single source of truth for both the SensorLag that flies and the archive column that
+    records it - if these were computed separately they would drift, and the column would
+    document a run that never happened.
+    """
+    return (ARGS.att_delay_ms if ARGS.att_delay_ms is not None
+            else ARGS.att_delay_frac * magnitude)
+
+
 def perturbation_for(magnitude: float, seed: int) -> dict:
     """Translate an axis magnitude into the objects that realise it."""
     dt = sim_clock.DEFAULT_PHYSICS_DT
@@ -298,8 +309,7 @@ def perturbation_for(magnitude: float, seed: int) -> dict:
     elif ARGS.axis == "mass":
         out["mass_scale"] = float(magnitude)
     elif ARGS.axis == "lag":
-        att_ms = (ARGS.att_delay_ms if ARGS.att_delay_ms is not None
-                  else ARGS.att_delay_frac * magnitude)
+        att_ms = _att_delay_ms(magnitude)
         out["lag"] = rb.SensorLag(dt,
                                   pos_delay=1e-3 * magnitude,
                                   att_delay=1e-3 * att_ms,
@@ -323,7 +333,16 @@ def perturbation_for(magnitude: float, seed: int) -> dict:
 # vocabulary in sweep_metrics so this file and rebuild_breakdown.py cannot drift.
 GAIN_COLUMNS = (["wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "Kd_yaw_rate",
                  "mpc_q", "mpc_r", "mpc_N"] + sm.CONFIG_KEYS)
+# pos_delay_ms/att_delay_ms are recorded EXPLICITLY rather than left implicit in
+# `magnitude`. On the lag axis `magnitude` is the position delay alone, and the attitude
+# delay is derived from --att-delay-frac (default 0.1) unless --att-delay-ms overrides it.
+# Without these two columns an archive swept along the default 10:1 ray is indistinguishable
+# from one that held attitude fixed and swept position - so a reader cannot tell which
+# channel a failure is attributable to, and the two runs would silently merge. That
+# ambiguity is exactly what makes the existing eigen/lag archive unable to settle whether
+# wn=60 broke on 5 ms of attitude delay or 50 ms of position delay.
 ARCHIVE_COLUMNS = (["controller", "axis", "magnitude", "achieved_scale",
+                    "pos_delay_ms", "att_delay_ms",
                     "motor_moment", "config_id", "config_rank", "config_source",
                     "seed"]
                    + GAIN_COLUMNS + ["failure"] + sm.METRIC_KEYS)
@@ -610,6 +629,12 @@ def main():
                             if ARGS.axis == "mass" and check else
                             f"{check['inertia_scale_achieved'][0]:.4f}"
                             if ARGS.axis == "inertia" and check else ""),
+                        # Blank off the lag axis, so a wind/inertia archive does not
+                        # imply a delay it never applied.
+                        "pos_delay_ms": (drone["magnitude"]
+                                         if ARGS.axis == "lag" else ""),
+                        "att_delay_ms": (_att_delay_ms(drone["magnitude"])
+                                         if ARGS.axis == "lag" else ""),
                         "motor_moment": mm,
                         "config_id": config["id"],
                         "config_rank": config["rank"],
