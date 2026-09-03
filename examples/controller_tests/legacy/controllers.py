@@ -38,6 +38,7 @@ from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
+from pegasus.simulator.logic.thrusters.quadratic_thrust_curve import ROTOR_TAU_PLACEHOLDER
 
 # Import the custom python control backend
 import sys, os
@@ -130,8 +131,15 @@ class PegasusApp:
         # Try to spawn the selected robot in the world to the specified namespace
         config_multirotor1 = MultirotorConfig()
         config_multirotor1.backends = [self.backend]
-        if motor_moment is not None:
-            config_multirotor1.thrust_curve = QuadraticThrustCurve(config={"motor_moment": motor_moment})
+        # rotor_tau is applied whether or not motor_moment was given: the ESC/motor
+        # spin-up is a property of the vehicle, not of the spin. Leaving it off here while
+        # single_vehicle.py and genetic_sweep.py both carry it is exactly the drift that
+        # made those two model different vehicles - and this script is the Pegasus-only
+        # half of every PX4 comparison, so it is the one that most needs to match.
+        config_multirotor1.thrust_curve = QuadraticThrustCurve(config={
+            "motor_moment": motor_moment if motor_moment is not None else 0.0,
+            "rotor_tau": ROTOR_TAU_PLACEHOLDER,
+        })
 
         Multirotor(
             "/World/quadrotor1",
