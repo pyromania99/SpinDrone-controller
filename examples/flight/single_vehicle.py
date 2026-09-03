@@ -61,6 +61,9 @@ def parse_args() -> argparse.Namespace:
                         "no PX4+Pegasus flight has ever left an inspectable log. Bare "
                         "--keep-log uses ./px4_runs/<timestamp>; pass a directory to choose one. "
                         "The ulog lands in <DIR>/log/<date>/<time>.ulg.")
+    p.add_argument("--desaturation", choices=("uniform", "collective"),
+                   default="uniform",
+                   help="What the mixer gives up when a rotor saturates. 'uniform' scales every rotor down together, preserving the thrust/torque ratio and collapsing the collective when one rotor pins; 'collective' holds the mean and shrinks only the moments. 'uniform' is the default and the historical behaviour - every archived sweep and tuned gain set was flown against it, so changing it moves the plant.")
     p.add_argument("--rotor-tau", type=float, default=None,
                    help="Rotor/ESC spin-up time constant [s]. PLACEHOLDER 0.020 - the "
                         "midpoint of the 10-30 ms range FINDINGS section 6 cites for "
@@ -231,6 +234,7 @@ class PegasusApp:
         _write_run_config(px4_rootfs)
 
         config_multirotor = MultirotorConfig()
+        config_multirotor.desaturation = ARGS.desaturation
 
         # Spin is an explicit run parameter, not a file edit. MultirotorConfig's default
         # QuadraticThrustCurve() picks up whatever motor_moment default happens to be in
@@ -240,6 +244,7 @@ class PegasusApp:
             config={"motor_moment": ARGS.motor_moment, "rotor_tau": ARGS.rotor_tau})
         carb.log_warn(f"motor_moment = {ARGS.motor_moment:.3e} "
                       f"-> expected steady yaw spin ~ {4.9e7 * ARGS.motor_moment:.1f} rad/s")
+        carb.log_warn(f"desaturation = {ARGS.desaturation}")
         if ARGS.rotor_tau > 0.0:
             carb.log_warn(
                 f"rotor_tau = {1000 * ARGS.rotor_tau:.1f} ms"

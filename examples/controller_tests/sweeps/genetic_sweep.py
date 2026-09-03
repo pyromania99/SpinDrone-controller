@@ -129,6 +129,9 @@ def parse_args():
                         "(quadratic_thrust_curve.py). Distinct from the delays above: "
                         "this is a POLE in the actuator, not a delay on the state, and no "
                         "gain choice removes it. Measure with measure_motor_lag.py.")
+    p.add_argument("--desaturation", choices=("uniform", "collective"),
+                   default="uniform",
+                   help="What the mixer gives up when a rotor saturates. 'uniform' scales every rotor down together, preserving the thrust/torque ratio and collapsing the collective when one rotor pins; 'collective' holds the mean and shrinks only the moments. 'uniform' is the default and the historical behaviour - every archived sweep and tuned gain set was flown against it, so changing it moves the plant.")
     p.add_argument("--headless", action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
     return p.parse_args()
@@ -1006,6 +1009,7 @@ def main():
         backend = BoundedBackend(inner, tmp_files[i], lag=lag)
         cfg = MultirotorConfig()
         cfg.backends = [backend]
+        cfg.desaturation = ARGS.desaturation
         cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": mm_init,
                                             "rotor_tau": 1e-3 * ARGS.rotor_tau_ms})
 
@@ -1197,6 +1201,9 @@ def main():
     for mm in ARGS.motor_moments:
         carb.log_warn(f"\n{'='*60}")
         carb.log_warn(f"[genetic] {ctrl_name} | mm={mm:.2e} | pop={pop_size} | gens={n_gen}")
+        # The mixer policy is part of the plant, so a front is only comparable to
+        # another front flown under the same one.
+        carb.log_warn(f"[genetic] desaturation={ARGS.desaturation}")
         carb.log_warn(f"{'='*60}")
 
         out_dir = results_base / sweep_name / f"mm_{mm:.1e}"

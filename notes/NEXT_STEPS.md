@@ -184,8 +184,12 @@ I proposed this stage; measuring it killed it. Two reasons, both found while wir
 
 1. **`controllers.py` cannot fly a chosen gain set.** It is fully interactive (stdin
    prompts) and takes no gain arguments — it uses hardcoded registry values. Using it as
-   the Stage 2 vehicle would have meant building a CLI onto a file that is uncommitted and
-   under active edit.
+   the Stage 2 vehicle would have meant building a CLI onto it first.
+
+   *(Update: it is now committed and lives in `examples/flight/` with the other
+   launchers, so the "uncommitted and under active edit" half of this reason has
+   expired. The blocker that remains is the real one — it still takes no gain
+   arguments. Reason 2 below is what actually settles it either way.)*
 2. **Stage 3 is cheap enough to absorb it.** A `--dry-run` puts 5 PX4 candidates at
    **~2.3 min each, ~12 min total**. Spending an hour building a Pegasus-only confirmation
    to protect a 12-minute PX4 step is backwards.
@@ -297,7 +301,7 @@ predate this work.
 | estimator | removable in PX4 | `MC_CTRL_GT` | 0 |
 | thrust/tilt limits | not modelled | — | collective/trajectory only |
 | hover-thrust normalisation | not modelled | — | collective only |
-| allocator desaturation | **modelled, selectable** | `--desaturation` | `uniform` (unchanged); binds 0.2% of samples |
+| allocator desaturation | **modelled, selectable** | `--desaturation` on `genetic_sweep.py` and `single_vehicle.py` | `uniform` (unchanged) on every rung; binds 0.2% of samples |
 | slew limit | not modelled | `CA_R*_SLEW` | 0 = off in PX4 too |
 
 **Only the top two are actually open.** The bottom four are deliberate: they touch the
