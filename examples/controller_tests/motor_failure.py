@@ -158,6 +158,10 @@ def main():
         f"{ARGS.settle_hold} s, rotor="
         + ("random" if ARGS.rotor is None else str(ARGS.rotor)))
 
+    # Read once here rather than after the loop: the "never settled" branch
+    # below reports the position error and runs before the summary does.
+    tgt = np.asarray(inner.hover_target, dtype=float)
+
     timeline.play()
     n_steps, step_dt = sim_clock.steps_for_duration(world, ARGS.duration)
     for _ in range(n_steps):
@@ -183,7 +187,6 @@ def main():
     # ── Summary ─────────────────────────────────────────────────────────────
     t = np.array(backend.t_hist)
     p = np.vstack(backend.pos_hist) if backend.pos_hist else np.zeros((0, 3))
-    tgt = np.asarray(inner.hover_target, dtype=float)
     e = (tgt - p) if len(p) else np.zeros((0, 3))
     w = np.vstack(backend.w_hist) if backend.w_hist else np.zeros((0, 3))
 
