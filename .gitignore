@@ -107,3 +107,13 @@ _build/
 **/.thumbs
 
 /px4_runs
+
+# Ground-truth SITL run archives (ulogs + telemetry), same class as /px4_runs.
+# Matched at any depth: these get written both at the repo root and next to
+# the tuning scripts that produced them.
+stage3_gt_runs/
+
+# Working state for the PX4 gain search: GA-derived candidate sets and the
+# per-candidate flight results. Regenerable from a genetic_archive.csv via
+# ga_to_candidates.py, so they are outputs, not inputs.
+examples/px4_tuning/*.json
