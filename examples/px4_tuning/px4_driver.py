@@ -142,6 +142,7 @@ class PX4Driver:
 
     # What 10016_none_iris must have put in place, and what it means if it did not.
     # Values are (expected, tolerance, why it matters).
+    # An expected value of None means "must EXIST", value unchecked.
     AIRFRAME_EXPECT = {
         "SYS_AUTOSTART": (10016, 0,
                           "wrong airframe entirely - none of the Pegasus tuning loaded"),
@@ -149,9 +150,31 @@ class PX4Driver:
                          "PX4's thrust model is wrong; torque lands 1.6-2.3x hot"),
         "IMU_GYRO_CUTOFF": (100.0, 1e-3,
                             "gyro low-pass at 40 Hz adds ~6 ms of phase to the rate loop"),
-        "MC_EIG_ATT_D": (0.025, 1e-3,
-                         "angle-error derivative self-excites at 1.0 (FINDINGS section 8)"),
+        # EXISTENCE ONLY, deliberately. This was pinned at 0.025 while the airframe set
+        # 0.1, so the check failed on value for a correctly loaded airframe. It cannot be
+        # a fingerprint in the first place: gain_search sweeps MC_EIG_ATT_D per candidate,
+        # so any fixed expectation here is wrong for most of a sweep by construction.
+        # What it usefully proves is that mc_controller started and registered its
+        # parameters - which is the last thing to happen during boot, and therefore the
+        # best single readiness signal we have.
+        "MC_EIG_ATT_D": (None, 0.0,
+                         "mc_controller never registered its params - module not started"),
     }
+
+    def wait_params(self, names, timeout: float = 90.0) -> bool:
+        """Block until every named parameter is readable.
+
+        PX4 registers parameters progressively as modules start, so a param read that
+        returns None early in boot means "not yet", not "wrong value". Reading once and
+        judging produced exactly that confusion: consecutive trials failed on three
+        params, then one, then none, purely as a function of how far boot had got.
+        """
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if all(self.param_get(n) is not None for n in names):
+                return True
+            time.sleep(2.0)
+        return False
 
     def check_airframe(self, strict: bool = True) -> dict:
         """Verify the Pegasus airframe actually loaded, before anything flies.
@@ -163,11 +186,26 @@ class PX4Driver:
         checkout. Both failures are silent: PX4 boots, arms and flies. This turns them
         into a refusal to arm instead of days of misattributed tuning.
         """
+        # Wait for the params to exist before judging their values, so a still-booting
+        # PX4 is not reported as a wrong airframe. Distinguishing the two matters: the
+        # fixes are unrelated, and the wrong-airframe wording sends you to SYS_AUTOSTART.
+        self.wait_params(list(self.AIRFRAME_EXPECT))
+
         got = {name: self.param_get(name) for name in self.AIRFRAME_EXPECT}
+        missing = [n for n, v in got.items() if v is None]
+        if missing:
+            raise RuntimeError(
+                "PX4 did not finish booting - these parameters never appeared: "
+                + ", ".join(missing)
+                + "\n  This is NOT an airframe mismatch. Check that PX4 actually started "
+                  "(TCP 4560 free? stale px4 process holding it?), not SYS_AUTOSTART.")
+
         bad = []
         for name, (want, tol, why) in self.AIRFRAME_EXPECT.items():
             have = got[name]
-            if have is None or abs(have - want) > tol:
+            if want is None:            # existence-only entry, already satisfied above
+                continue
+            if abs(have - want) > tol:
                 bad.append(f"  {name}: got {have}, expected {want} -> {why}")
 
         if not bad:

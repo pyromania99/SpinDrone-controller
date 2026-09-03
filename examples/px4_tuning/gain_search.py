@@ -271,13 +271,23 @@ def run_trial(cand: dict, run_dir: Path) -> dict:
     try:
         drv = PX4Driver()
         deadline = time.time() + ARGS.boot_timeout
+        ready = False
         while time.time() < deadline:                   # PX4 takes a while behind Isaac
             try:
                 drv.connect(timeout=15.0)
-                break
+                # connect() alone is NOT evidence PX4 exists. The endpoint is UDP, so the
+                # socket "connects" with nothing on the far end, and pymavlink then reports
+                # a phantom heartbeat from system 0. Breaking here is what made every trial
+                # fail in ~20 s - less than Isaac's own startup - with check_airframe
+                # reporting "wrong airframe" for what was really an absent autopilot.
+                # Requiring a real parameter read is the cheap, unambiguous liveness test.
+                if drv.param_get("SYS_AUTOSTART") is not None:
+                    ready = True
+                    break
             except Exception:
-                time.sleep(3.0)
-        else:
+                pass
+            time.sleep(3.0)
+        if not ready:
             return {"ok": False, "reason": "PX4 never appeared", "cost": float("inf")}
 
         drv.check_airframe()
