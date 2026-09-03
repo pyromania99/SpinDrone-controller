@@ -6,13 +6,26 @@ level and does the rest.
 Nothing here searches a gain space; that is `../sweeps/`. Nothing here reads a
 ulog after the fact; that is `../tools/px4_tuning/`.
 
-## `fly.py` — pick a level
+## Every script here
 
-```bash
-fly.py --level 1                                  # Pegasus + Python
-fly.py --level 2 --motor-moment 2.7e-7 --hold 90  # PX4, on ground truth
-fly.py --level 3 --motor-moment 2.7e-7 --hold 90  # same candidate, estimator in
-```
+| script | run with | what it does |
+|---|---|---|
+| **`fly.py`** | `python3` | **The front door.** `--level 1|2|3` picks a rung of the ladder below and dispatches to the right pair of scripts. Launches its own sim, or `--attach`es to one you started yourself. Start here. |
+| `sim_pegasus.py` | `isaac_run` | Isaac side of **level 1**. A pure-Python controller flying inside Isaac Sim directly — no PX4. Flags for controller, motor moment, failure mode and mixer policy; anything left unset is prompted for interactively when run directly, so its old interactive mode still works if you run it by hand. |
+| `sim_px4.py` | `isaac_run` | Isaac side of **levels 2 and 3**. Spawns the vehicle and boots a real PX4 SITL process talking MAVLink to it. Does **not** arm or fly anything — it just puts a flyable sim on the wire for `offboard.py` to fly. `--keep-log` keeps the ulog. |
+| `offboard.py` | `python3` | The actual flight profile for levels 2/3: arm, take off, hold, land, then point at the resulting ulog. Talks to an already-running PX4 over MAVLink. `fly.py` calls this automatically; run it directly if you launched `sim_px4.py` yourself and want to fly it without `fly.py` owning the process. |
+| `px4_driver.py` | *(library)* | The shared `PX4Driver` class every offboard script here imports: connect, arm, offboard setpoints, live parameter get/set, and `check_airframe()`, which refuses to fly the wrong airframe rather than fly it wrong. Not run on its own — keep it a sibling of whatever imports it. |
+| `simlaunch.py` | *(library)* | Shared plumbing for starting/stopping an Isaac + PX4 subprocess: finds Isaac's interpreter, clears the PX4 lockstep TCP port before launching, kills the whole process tree afterwards. Used by `fly.py` and `gain_search.py` so that cleanup logic exists once. Not run on its own. |
+| `gain_search.py` | `python3` | Batch version of levels 2/3: one **fresh** PX4 launch per gain candidate in a list, each flown and scored automatically. Use this instead of `fly.py` when you have many candidates rather than one flight to check by hand. |
+| `motor_failure.py` | `isaac_run` | Level-1 rotor-failure study: flies to a hover target, waits for it to settle, then kills one rotor and watches. `--desaturation` picks what the mixer sacrifices when a rotor saturates — defaults to `collective` here (**not** what the ladder flies elsewhere), so its results aren't directly comparable to a level-1 sweep. |
+| `run_inner_loop.py` | `python3` | Offboard diagnostic against a running sim: isolates which *stage* of the eigen controller (rate loop vs. attitude loop) loses stability under a given spin rate. |
+| `run_step_id.py` | `python3` | Offboard diagnostic against a running sim: flies a repeatable step-input sequence per axis, for system identification (measuring the plant's actual response rather than assuming it). |
+
+Every script here answers `--help` under a plain `python3` — including the
+three that need Isaac to actually *run* — because their Isaac imports sit
+below argparse. Reading a flag list never boots a simulator.
+
+## The three levels
 
 | level | what is in the loop |
 |---|---|
@@ -32,6 +45,12 @@ A figure from one level alone says very little. `notes/NEXT_STEPS.md` calls thes
 Stage 1, Stage 3 and Stage 4, and carries the mismatch ledger recording which
 plant differences are still open.
 
+```bash
+fly.py --level 1                                  # Pegasus + Python
+fly.py --level 2 --motor-moment 2.7e-7 --hold 90  # PX4, on ground truth
+fly.py --level 3 --motor-moment 2.7e-7 --hold 90  # same candidate, estimator in
+```
+
 Levels 2 and 3 launch their own sim by default. To fly one you started yourself —
 to watch it in the GUI, say — use `--attach`:
 
@@ -49,33 +68,7 @@ Levels 1 and 2/3 fly under **Isaac's** interpreter (`python.sh`); the offboard
 half of levels 2 and 3 drives PX4 over MAVLink and needs system `python3` with
 pymavlink. One process cannot be both. So `fly.py` stays plain `python3` and
 launches the Isaac side as a subprocess — the same thing `gain_search.py` has
-always done. The files below are those halves. They run standalone, but `fly.py`
-is the front door.
-
-| file | role |
-|---|---|
-| `sim_pegasus.py` | Isaac side of level 1. Flags for controller, motor moment, failure mode and mixer; anything omitted is prompted for when run directly, so it keeps its interactive mode. |
-| `sim_px4.py` | Isaac side of levels 2 and 3. Spawns the vehicle and runs PX4 SITL. It does **not** arm — it just puts a flyable sim on the wire. `--keep-log` keeps the ulog. |
-| `offboard.py` | The flight profile: arm, take off, hold, land, then point at the ulog. `fly.py` calls this for levels 2 and 3; runnable alone against a running sim. |
-| `px4_driver.py` | The shared `PX4Driver`: connect, arm, offboard setpoints, live parameter set, and `check_airframe()`, which refuses to fly the wrong airframe. Imported by everything here — keep it a sibling. |
-| `simlaunch.py` | Finds Isaac's interpreter, clears the lockstep port, kills the process tree afterwards. Shared by `fly.py` and `gain_search.py` so the cleanup has one implementation. |
-
-Every script here answers `--help` under a plain `python3`, including the three
-that need Isaac to actually run: their Isaac imports sit below argparse, so
-reading a flag list never boots a simulator.
-
-## The other two entry points
-
-These fly, but they are not "pick a level and fly once", so they stay separate.
-
-| script | what it does |
-|---|---|
-| `gain_search.py` | Stages 3–4 in batch: one fresh PX4 launch per candidate, flown and scored. Use it for a candidate list; use `fly.py` for one flight. |
-| `motor_failure.py` | Kills one rotor once the vehicle has settled and watches. `--desaturation` picks what the mixer gives up when a rotor saturates — it defaults to `collective` here, which is **not** what the ladder flies, so its results are not directly comparable to a level-1 sweep. |
-
-`run_inner_loop.py` and `run_step_id.py` are offboard diagnostics against a
-running sim: which stage of the eigen controller loses stability under spin, and
-a repeatable step sequence for per-axis system identification.
+always done.
 
 ## Output
 
