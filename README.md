@@ -2,7 +2,7 @@
 
 A custom dynamics analysis platform built to develop and evaluate a nonlinear controller for a strictly **Spinning Unmanned Aerial Vehicle (UAV)** dynamically configured with all core motors spinning in the identical rotational direction. 
 
-This repository leverages the [Pegasus Simulator](https://pegasussimulator.github.io/PegasusSimulator/)—a high-fidelity framework powered by NVIDIA Omniverse and Isaac Sim—to rapidly execute pure Python mathematics and rigid-body simulations without the bloat of PX4 or ROS.
+This repository leverages the [Pegasus Simulator](https://pegasussimulator.github.io/PegasusSimulator/)—a high-fidelity framework powered by NVIDIA Omniverse and Isaac Sim. Controller development happens against a pure-Python rigid-body path with no PX4 or ROS in the loop, which keeps the maths fast to iterate on; a separate PX4 SITL harness then flies the same gains on the real autopilot to check that what worked in the prototype survives an estimator and a transport delay.
 
 ---
 
@@ -28,11 +28,11 @@ Because Isaac Sim requires deep hardware rendering access, your host machine **m
 
 ## 🚀 Repository Structure Overview
 
-Because the goal of this repository is strictly spinning dynamics evaluation, irrelevant backend controllers (like PX4/Ardupilot variants) have been surgically removed.
-
 - `extensions/`: The core Pegasus Simulator extension logic. This gets automatically installed as an editable module (`-e`) into the container.
-- `examples/utils/nonlinear_controller.py`: The custom nonlinear analysis controller backend designed to process the spinning logic.
-- `examples/controller_tests/`: Eigenvalue and stability sweep mathematics frameworks used to empirically track physical tuning outputs.
+- `examples/utils/`: The controllers themselves — `eigen_controller.py`, `cascaded_pd_controller.py` and `lpv_mpc_controller.py` — plus the shared task, metric and vehicle-parameter definitions every sweep is built on.
+- `examples/controller_tests/`: Gain sweeps, evaluations and plots for those controllers, including the genetic Pareto search. See its own README.
+- `examples/px4_tuning/`: The PX4 SITL side — flying tuned gains on the real autopilot, scoring the ulogs, and the tuning findings written up in `FINDINGS.md` and `NEXT_STEPS.md`.
+- `examples/px4_flight/`: Launches a single vehicle against PX4 SITL.
 - `Dockerfile`: Found at the root of the project, executing environment configurations while wiring up `container_user` to seamlessly align with your host permissions.
 
 ---

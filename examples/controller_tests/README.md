@@ -1,181 +1,88 @@
-# Controller test scripts
+# Controller tests
 
-This folder contains scripts for running controller sweeps in Isaac Sim and post-processing the logged results.
+Sweeps, evaluations and plots for the spinning-drone controllers. The controllers
+themselves live in `examples/utils/` (`eigen_controller.py`,
+`cascaded_pd_controller.py`, `lpv_mpc_controller.py`), and `controller_factory.py`
+is what turns a controller name plus a gain dict into an instance — start there
+rather than constructing one by hand.
 
-The two most common steps are:
+## Running things
 
-1. Run an Eigen stability sweep with `eigen_stability_sweep.py` (generates raw `.npz` logs + sweep summaries)
-2. Visualize the logged trajectories with `plot_results.py` (generates per-run plots next to each `.npz`)
+Two kinds of script, and the distinction matters because getting it wrong looks
+like an import error rather than a usage error:
 
----
-Contropllers are stored in examples/utils
-
-## 1) Run the Eigen stability sweep
-
-Script: `examples/controller_tests/eigen_stability_sweep.py`
-
-Run from the repository root using `isaac_run`:
-
-### A. ωn / ζ sweep mode (default)
-
-Sweeps the controller’s *placed* eigenvalues by varying $\omega_n$ (and optionally $\zeta$). One drone is spawned per $\omega_n$ value (parallel), and the script runs serially over `--motor-moments`.
-
-Example (single ζ):
+- **Anything that flies** needs Isaac Sim, so it is launched with `isaac_run`.
+  That is everything under `sweeps/`, plus `motor_failure.py`, the two `probe_*`
+  scripts and `batch_compare.py` in `evaluations/`, and `controllers.py` and
+  `eigen_kp_sweep.py` in `legacy/`.
+- **Anything that reads telemetry off disk** is plain Python, run with `python3`.
+  That is all of `visualization/` and the rest of `evaluations/`.
 
 ```bash
-isaac_run examples/controller_tests/eigen_stability_sweep.py \
-  --motor-moments 6e-7 \
-  --omega-n-values 2 4 6 8 10 12 \
-  --zeta 1.0 \
-  --duration 20 \
-  --goal-mode random_xy \
-  --kp-att 7.0 --kd-att 9.0
+isaac_run examples/controller_tests/sweeps/genetic_sweep.py --help
+python3   examples/controller_tests/visualization/plot_results.py --help
 ```
 
-Example (multiple ζ values):
+Every script takes `--help` and documents its own flags there. This file is a map,
+not a manual: the previous version reproduced flag lists and output paths, and all
+of them were wrong within a few months.
 
-```bash
-isaac_run examples/controller_tests/eigen_stability_sweep.py \
-  --motor-moments 1e-7 2.7e-7 4e-7 \
-  --omega-n-values 2 4 6 8 10 12 \
-  --zeta-values 0.7 1.0 1.3 \
-  --duration 15
-```
+## Layout
 
-Optional: add `--headless` for a non-graphical run.
+### `sweeps/` — search the gain space (Isaac)
 
-### B. Direct M_dyn (a, b) sweep mode (`--a-values` + `--b-values`)
+| script | what it does |
+|---|---|
+| `genetic_sweep.py` | NSGA-II Pareto search over Eigen, PD and LPV-MPC gains. The main tuning entry point. |
+| `eigen_stability_sweep.py` | Eigen M_dyn eigenvalue-placement stability sweep. |
+| `eigen_ab_explore.py` | Space-filling exploration of the Eigen M_dyn (a, b) plane. |
+| `ablation_explore.py` | Marches each tuning parameter outward until flight breaks. |
+| `robustness_sweep.py` | How far a tuned controller survives inertia mismatch, sensor lag and wind. |
+| `pd_sweep.py` / `mpc_sweep.py` | 2-D gain sweeps for the PD and LPV-MPC baselines. |
 
-This mode sweeps the M_dyn entries directly:
+### `evaluations/` — turn runs into numbers
 
-- `a` = diagonal term (called `wn_mdyn` in code)
-- `b` = off-diagonal term (called `b_mdyn` in code)
+| script | what it does |
+|---|---|
+| `benchmarks.py` | Compare Cascaded PD, Eigen and LPV-MPC head to head. |
+| `select_pareto_top.py` | Pick the top-N Pareto configurations per controller. |
+| `select_reference.py` | Pick the operating point the ablation marches out from. |
+| `backfill_metrics.py` | Recompute every metric from `.npz` telemetry already on disk. |
+| `rebuild_breakdown.py` | Recompute `breakdown.csv` from a robustness archive. |
+| `check_smoke_run.py` | Assert the physical invariants on freshly written telemetry. |
+| `tuning_equivalence.py` | Analytical check that CascadedPD and Eigen are equivalently tuned. |
+| `test_rotor_failure.py` | Checks the rotor-failure injection and the mixer desaturation policies. Runs without Isaac. |
+| `probe_reset.py`, `probe_robustness.py` | One-off probes establishing facts the studies depend on (Isaac). |
+| `batch_compare.py` | Controller comparison across several `motor_moment` values (Isaac). |
 
-Parallelism: one drone per `a` (parallel), one pass per `b` (serial), and one batch per motor moment (serial).
+### `visualization/` — plots and reports
 
-Example:
+`plot_results.py` is the general one: point it at a `.npz` or a tree of them and it
+prints summary metrics and writes per-run plots. The rest are specific to one study —
+`pareto_comparison.py`, `robustness_report.py`, `ablation_report.py`,
+`eigen_plot_summary.py`, `eigen_plot_heatmap.py`, `interactive_dashboard.py` (Plotly),
+and `coning_plot.py` for the spin-axis and coning geometry of a spinning run.
 
-```bash
-isaac_run examples/controller_tests/eigen_stability_sweep.py \
-  --a-values 2 4 6 8 10 \
-  --b-values 0 2 4 6 8 10 \
-  --motor-moments 6e-7 \
-  --duration 20 \
-  --goal-mode random_xy \
-  --kp-att 7.0 --kd-att 9.0
-```
+### `motor_failure.py`
 
----
+Kills one rotor once the vehicle has settled and watches what happens. Its
+`--desaturation` flag selects what the mixer gives up when a rotor saturates:
+`uniform` scales every rotor down together (the simulator's historical behaviour,
+which collapses the collective), `collective` holds lift and gives up moment. See
+`extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/desaturation.py`.
 
-## Outputs from `eigen_stability_sweep.py`
+### `legacy/`
 
-All outputs go under:
+Superseded, kept for the record. `eigen_kp_sweep.py` was step 3 of the manual
+tuning workflow before `genetic_sweep.py` replaced it; `compare_controllers.py`
+was the original Eigen-vs-CascadedPD harness. `controllers.py` is still current —
+it is the interactive Isaac entry point for flying a single controller by hand,
+and the Pegasus-only half of every PX4 comparison.
 
-- `examples/controller_tests/results/`
+## Output
 
-The sweep writes two kinds of outputs:
-
-- **Raw per-run logs**: `*_statistics.npz` files (one per drone/run)
-- **Sweep summaries**: CSV tables + PNG plots/heatmaps (one set per motor moment)
-
-### A. ωn / ζ sweep outputs
-
-Base directory (per motor moment):
-
-- `examples/controller_tests/results/eigen_sweep/wn_eta_sweep/mm_<km>/`
-
-Where `<km>` is formatted as scientific notation with one decimal (Python `:.1e`), e.g. `mm_6.0e-07`.
-
-**Single ζ (no `--zeta-values`)** writes:
-
-- `mm_<km>/scores.csv`
-- `mm_<km>/score_plot.png` (bar chart of stability score vs $\omega_n$)
-- `mm_<km>/on<omega_n>_statistics.npz` (one file per $\omega_n$)
-
-**Multiple ζ (`--zeta-values ...`)** writes:
-
-- `mm_<km>/zeta_<zeta>/scores.csv`
-- `mm_<km>/zeta_<zeta>/on<omega_n>_statistics.npz`
-- `mm_<km>/eta_compare_heatmap.png` (score heatmap across ζ and $\omega_n$)
-- `mm_<km>/eta_compare_scores.csv` (same data as the heatmap)
-- `mm_<km>/eta_compare_effort_heatmap.png` (control-effort heatmap)
-- `mm_<km>/eta_compare_effort.csv`
-
-### B. Direct (a, b) sweep outputs
-
-Base directory (per motor moment):
-
-- `examples/controller_tests/results/eigen_sweep/ab_sweep/mm_<km>/`
-
-Writes sweep summaries:
-
-- `mm_<km>/scores.csv` (2-D table in `a \ b` layout)
-- `mm_<km>/effort.csv`
-- `mm_<km>/scores_heatmap.png`
-- `mm_<km>/effort_heatmap.png`
-
-And raw logs per `b` value:
-
-- `mm_<km>/b_<b>/a<a>_statistics.npz`
-
----
-
-## 2) Plot trajectories and errors with `plot_results.py`
-
-Script: `examples/controller_tests/plot_results.py`
-
-This script reads `*_statistics.npz` files, prints summary metrics to stdout, and generates plots.
-
-### A. Plot a whole sweep folder (recommended)
-
-In batch mode, the script searches recursively for all `*_statistics.npz` under `--batch-root`.
-
-Example (plot just one `mm_...` sweep):
-
-```bash
-python examples/controller_tests/plot_results.py \
-  --batch-root examples/controller_tests/results/eigen_sweep/mm_6.0e-07 \
-  --no-show
-```
-
-Example (plot an (a,b) sweep):
-
-```bash
-python examples/controller_tests/plot_results.py \
-  --batch-root examples/controller_tests/results/eigen_sweep/ab_sweep/mm_6.0e-07 \
-  --no-show
-```
-
-**Batch-mode outputs** (saved next to each source `.npz` by default):
-
-- `<npz_path_without_extension>_time_series.png`
-- `<npz_path_without_extension>_xy.png`
-- `<npz_path_without_extension>_yaw_rate.png` (only if the log contains `yaw_rate`)
-
-### B. Plot a single `.npz` file
-
-```bash
-python examples/controller_tests/plot_results.py \
-  --file examples/controller_tests/results/eigen_sweep/ab_sweep/mm_6.0e-07/b_0.000/a2.000_statistics.npz
-```
-
-To save plots in single-file mode, also pass `--save-prefix`:
-
-```bash
-python examples/controller_tests/plot_results.py \
-  --file examples/controller_tests/results/eigen_sweep/ab_sweep/mm_6.0e-07/b_0.000/a2.000_statistics.npz \
-  --save-prefix examples/controller_tests/results/tmp/a2.000
-```
-
----
-
-## What’s inside `*_statistics.npz`
-
-Each `*_statistics.npz` is a NumPy archive containing time-series arrays. At minimum `plot_results.py` expects:
-
-- `time`: shape `(N,)`
-- `p`: shape `(N,3)` position
-- `desired_p`: shape `(N,3)` reference position
-- `ep`: shape `(N,3)` position error
-
-Additional keys may be present depending on the controller/logging (e.g. `yaw_rate`, `motor_thrusts`, etc.).
+Everything is written under `examples/controller_tests/results/`, which is
+generated and gitignored — nothing in there is a source of truth, and any of it can
+be rebuilt from the scripts above. Raw per-run telemetry is `*_statistics.npz`
+(`time`, `p`, `desired_p`, `ep`, and further keys depending on the controller);
+sweeps additionally write CSV summaries and PNG plots alongside it.
