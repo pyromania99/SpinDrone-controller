@@ -276,11 +276,12 @@ PegasusSimulator                        PX4-Autopilot
   b72d634  knobs on both entry points    TiltEigenController.*  (skipped)
 ```
 
-**Uncommitted, and deliberately left that way** — these are yours:
-`legacy/controllers.py` (plus my one-line `rotor_tau`), `motor_failure.py`,
-`test_rotor_failure.py`, `multirotor.py`, `desaturation.py`.
-
-`593decc` (gyroscopic sign) and `175373b` are yours from before this work.
+**Since committed.** What this section listed as uncommitted — `desaturation.py`,
+`multirotor.py`, `test_rotor_failure.py`, `motor_failure.py` and `legacy/controllers.py` —
+now lands as `5fbe368` (the mixer policy), `5077622` (its checks), `d92a267` (the policy on
+both rotor-failure entry points) and `39bc57a` (`rotor_tau` into `legacy/controllers.py`),
+keeping the one-mismatch-per-commit rule above. `593decc` (gyroscopic sign) and `175373b`
+predate this work.
 
 ---
 
@@ -296,7 +297,7 @@ PegasusSimulator                        PX4-Autopilot
 | estimator | removable in PX4 | `MC_CTRL_GT` | 0 |
 | thrust/tilt limits | not modelled | — | collective/trajectory only |
 | hover-thrust normalisation | not modelled | — | collective only |
-| allocator desaturation | not modelled | — | binds 0.2% of samples |
+| allocator desaturation | **modelled, selectable** | `--desaturation` | `uniform` (unchanged); binds 0.2% of samples |
 | slew limit | not modelled | `CA_R*_SLEW` | 0 = off in PX4 too |
 
 **Only the top two are actually open.** The bottom four are deliberate: they touch the
@@ -402,10 +403,15 @@ correlation with score, n=144 scored individuals
 
 Monotone across **300×**.
 
-**`Kd_att`'s optimum sits ON the 0.05 gene floor** — the search is pressing the bound again,
+**`Kd_att`'s optimum sat ON the 0.05 gene floor** — the search was pressing the bound again,
 exactly as the `EIGEN_GENES` comment describes it doing at the old floor of 1.0. The true
 optimum may be below 0.05, or zero (pure-P attitude). `MC_EIG_ATT_D 0.1` is in the right
 region; the GA's historical `1.0` was not.
+
+> **Acted on (`3372385`).** The box is now `[-0.1, 0.1]`, so the search brackets zero
+> instead of approaching it from above and can go negative rather than piling up on a
+> bound. The next GA run is the first that can actually answer where the optimum is. Note
+> the `EIGEN_GENES` comment still describes the old `[0.05, 30.0]` box.
 
 #### `b`'s correlation was a confound — do not read it as evidence
 

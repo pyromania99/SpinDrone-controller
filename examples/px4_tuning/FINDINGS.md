@@ -50,7 +50,7 @@ PX4 gains, and treating them as one produces a limit cycle.
 
 `PX4LaunchTool` hands PX4 a fresh `tempfile.TemporaryDirectory()` as its rootfs on every
 launch and calls `root_fs.cleanup()` on teardown
-([px4_launch_tool.py:39,80](../../extensions/pegasus.simulator/pegasus/simulator/logic/backends/tools/px4_launch_tool.py#L39)).
+([px4_launch_tool.py:54,113](../../extensions/pegasus.simulator/pegasus/simulator/logic/backends/tools/px4_launch_tool.py#L54)).
 So `param set` never survives, `param save` is pointless — **and the ulog is deleted with
 the directory.**
 
@@ -141,7 +141,7 @@ Also note the SDF is **not the model in use**: Pegasus loads `ROBOTS["Iris"] = .
 Your Python controller doesn't model the vehicle, it **reads** it:
 `force_and_torques_to_velocities` builds the allocation matrix at runtime from the actual
 USD rotor positions and thrust curve
-([multirotor.py:199-215](../../extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/multirotor.py#L199-L215)).
+([multirotor.py:212-231](../../extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/multirotor.py#L212-L231)).
 It cannot be wrong about the airframe.
 
 PX4 can only use `CA_ROTOR*`, which said `thrust = 6.5·u²` while Pegasus produced
@@ -268,10 +268,16 @@ copies `angular_velocity` raw, and the "velocity notch/LPF chain" is linear velo
 **EKF2 is not in the rate path**, so no `EKF2_*_DELAY` parameter is relevant to it.
 
 **Important for sim→hardware:** roughly half the lag is a simulation artifact, but
-hardware *adds* motor spin-up (10-30 ms) that the sim omits entirely
-([quadratic_thrust_curve.py:101](../../extensions/pegasus.simulator/pegasus/simulator/logic/thrusters/quadratic_thrust_curve.py#L101)
-sets rotor velocity instantly). So hardware is probably **not** faster, and reducing sim
-lag may make gains that don't transfer.
+hardware *adds* motor spin-up (10-30 ms) that the sim omitted entirely — it set rotor
+velocity instantly. So hardware is probably **not** faster, and reducing sim lag may make
+gains that don't transfer.
+
+> **Since addressed (6a39ec5).** The shared thrust curve now models rotor/ESC spin-up as a
+> first-order lag
+> ([quadratic_thrust_curve.py:93,138-145](../../extensions/pegasus.simulator/pegasus/simulator/logic/thrusters/quadratic_thrust_curve.py#L138-L145)).
+> It stays off by default (`rotor_tau` 0.0) so archived sweeps are unaffected; the entry
+> points opt in via `ROTOR_TAU_PLACEHOLDER` (20 ms). Gains tuned before that commit were
+> tuned against the instant-response plant described above.
 
 ## 7. Yaw spin is by design; its rate is `motor_moment`  **[verified]**
 
@@ -302,7 +308,7 @@ harmless only because these laws command no yaw torque.
 > The "rank3 crashed, frequency tracked spin at corr +0.72" evidence is also from an x500.
 
 `eigen_params.c` values are the literal defaults in `eigen_controller.py`'s constructor
-signature ([eigen_controller.py:38-53](../utils/eigen_controller.py#L38-L53)) — the
+signature ([eigen_controller.py:70-94](../utils/eigen_controller.py#L70-L94)) — the
 un-tuned starting point. The GA evaluated that exact point:
 
 ```
