@@ -34,7 +34,6 @@ import argparse
 import csv
 import json
 import math
-import sys
 from pathlib import Path
 
 RESULTS = Path(__file__).resolve().parents[1] / "results"

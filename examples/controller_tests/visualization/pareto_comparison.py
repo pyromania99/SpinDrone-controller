@@ -692,7 +692,7 @@ def main():
             # Try genetic-only Eigen data as scatter points
             gen_eigen_only = RESULTS_DIR / "genetic_eigen_sweep" / mm_dir.name
             if gen_eigen_only.exists():
-                print(f"  (genetic Eigen data will be loaded below)")
+                print("  (genetic Eigen data will be loaded below)")
         import subprocess
         
         mm_str = mm_dir.name.replace('mm_', '')

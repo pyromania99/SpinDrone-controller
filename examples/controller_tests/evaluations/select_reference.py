@@ -219,7 +219,7 @@ def main() -> int:
               f"pool {entry['pool_size']:>4}  front {entry['front_size']:>3}  "
               f"score {entry['metrics']['score']:.4f}  "
               f"effort {entry['metrics'][EFFORT_KEY]:.4f}")
-        print(f"         genes " + "  ".join(
+        print("         genes " + "  ".join(
             f"{k}={v:g}" for k, v in entry["genes"].items()))
         if walls:
             print(f"         AT BOX BOUND: {', '.join(walls)} — the box chose "

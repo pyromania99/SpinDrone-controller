@@ -32,7 +32,6 @@ simulation_app = SimulationApp({"headless": True, "hide_ui": True,
                                 "active_gpu": 0})
 
 import carb                             # noqa: E402
-import numpy as np                      # noqa: E402
 import omni.timeline                    # noqa: E402
 from isaacsim.core.api import World     # noqa: E402
 from scipy.spatial.transform import Rotation  # noqa: E402

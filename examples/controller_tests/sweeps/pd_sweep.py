@@ -151,7 +151,6 @@ from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
 from pegasus.simulator.logic.backends import Backend
-from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
 from pegasus.simulator.logic.state import State
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))

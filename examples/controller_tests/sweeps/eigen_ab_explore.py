@@ -475,7 +475,7 @@ def main():
     carb.log_warn(f"[explore] sampling   : {ARGS.sampling}  ({n_samples} points)")
     carb.log_warn(f"[explore] a range     : {ARGS.a_range}   b range : {ARGS.b_range}")
     carb.log_warn(f"[explore] motor mm    : {ARGS.motor_moments}")
-    carb.log_warn(f"[explore] gains       : EigenController DEFAULTS (not overridden)")
+    carb.log_warn("[explore] gains       : EigenController DEFAULTS (not overridden)")
     carb.log_warn(f"[explore] pop-size    : {pop_size}   duration : {ARGS.duration}s")
     carb.log_warn("=" * 60)
 

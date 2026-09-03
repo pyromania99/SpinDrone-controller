@@ -188,11 +188,9 @@ def analyse(path: str, window: float | None) -> None:
         # Only while AIRBORNE. Over the whole log this picks up every value the
         # parameter passed through on the ground, which is not what flew.
         lp0 = data["vehicle_local_position"]
-        base = lp0.data["timestamp"][0]
         up = lp0.data["timestamp"][lp0.data["z"] < -1.0]
         ts_ms = st.data["timestamp"]
         m0 = ((ts_ms >= up[0]) & (ts_ms <= up[-1])) if len(up) > 10 else np.ones(len(ts_ms), bool)
-        del base
         if m0.sum():
             ran = sorted({int(a) for a in st.data["algorithm"][m0]})
             fallback = int(max(st.data["fallback_active"][m0]))
@@ -418,7 +416,7 @@ def analyse(path: str, window: float | None) -> None:
         if spans:
             moved = any(not s.endswith(" 0 cm") for s in spans)
             note = "  <-- setpoint moved; spread above is not all error" if moved else ""
-            print(f"  setpoint range  " + ", ".join(spans) + note)
+            print("  setpoint range  " + ", ".join(spans) + note)
 
 
 def main() -> None:

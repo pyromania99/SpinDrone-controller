@@ -584,8 +584,8 @@ def save_score_plot(on_vals, scores, zeta, mm, out_dir: Path):
             for s in finite_scores
         ]
 
-        bars = ax.bar(range(len(on_vals)), [s if s is not None else 0 for s in finite_scores],
-                      color=colors, edgecolor="black", linewidth=0.7)
+        ax.bar(range(len(on_vals)), [s if s is not None else 0 for s in finite_scores],
+               color=colors, edgecolor="black", linewidth=0.7)
 
         # Mark OOB bars with a label
         for i, s in enumerate(scores):
@@ -632,7 +632,7 @@ def save_csv(on_vals, scores, zeta, out_dir: Path):
     path = out_dir / "scores.csv"
     with open(str(path), "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([f"omega_n \\ zeta", f"{zeta:.2f}"])
+        writer.writerow(["omega_n \\ zeta", f"{zeta:.2f}"])
         for i, on in enumerate(on_vals):
             writer.writerow([
                 f"{on:.2f}",

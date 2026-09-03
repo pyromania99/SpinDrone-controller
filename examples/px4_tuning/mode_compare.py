@@ -97,8 +97,8 @@ def _report(label: str, t: np.ndarray, pqr: np.ndarray, frame: str,
         print(f"{label}")
         print(f"   window        {lo:.1f}-{hi:.1f}s   spin r {np.mean(r):+.3f} rad/s")
         print(f"   coning rms    {env.std():.4f} rad/s  -- BELOW the 0.02 noise floor")
-        print(f"   mode          none. No roll/pitch mode is present at this spin.")
-        print(f"   PX4 reference at the same spin: coning 0.245 rms, mode/r = -1.40")
+        print("   mode          none. No roll/pitch mode is present at this spin.")
+        print("   PX4 reference at the same spin: coning 0.245 rms, mode/r = -1.40")
         return
 
     freq = _spectrum(p, q, dt)
@@ -117,7 +117,7 @@ def _report(label: str, t: np.ndarray, pqr: np.ndarray, frame: str,
     print(f"   mode / r      {rel:+.3f}      <-- FRAME-INVARIANT, compare THIS across stacks")
     print(f"   coning rms    {env.std():.4f} rad/s   growth {growth:+.3f}/s"
           + (f"  (doubling {np.log(2)/growth:.1f}s)" if growth > 0.01 else ""))
-    print(f"   PX4 reference: mode/r = -1.40 +/- 0.05 over r = 7.5-9.5, both control laws")
+    print("   PX4 reference: mode/r = -1.40 +/- 0.05 over r = 7.5-9.5, both control laws")
 
 
 def _load(path: str):

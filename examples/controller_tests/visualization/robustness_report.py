@@ -417,7 +417,7 @@ tr:last-child td{border-bottom:none}
 
 def render_html(groups: list) -> str:
     axes = sorted({g["axis"] for g in groups})
-    parts = [f'<div class="viz-root"><h1>Controller robustness</h1>',
+    parts = ['<div class="viz-root"><h1>Controller robustness</h1>',
              '<p>How far each tuned configuration can be pushed before it stops '
              'flying. Generated from <code>robustness_archive.csv</code> by '
              '<code>visualization/robustness_report.py</code>; runs are classified by the '

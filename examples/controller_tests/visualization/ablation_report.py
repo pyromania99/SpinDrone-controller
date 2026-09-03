@@ -226,8 +226,8 @@ def print_summary(cases: list) -> None:
         genes = [g for g, _, _ in gene_space.genes_for(case["controller"], True)]
         sens = {g: sensitivity(case, g) for g in genes}
         ordered = sorted(genes, key=lambda g: sens[g]["tolerance"])
-        print(f"\n  sensitivity — how far before any metric leaves the band"
-              f"  (smaller = more load-bearing)")
+        print("\n  sensitivity — how far before any metric leaves the band"
+              "  (smaller = more load-bearing)")
         print(f"     {'gene':<14} {'tolerance':>10}  {'driven by':<16} elasticity(score)")
         for g in ordered:
             s = sens[g]
@@ -238,7 +238,7 @@ def print_summary(cases: list) -> None:
                   f"{'' if el is None else f'{el:+.3f}'}")
 
         if case["limits"]:
-            print(f"\n  stability limits")
+            print("\n  stability limits")
             print(f"     {'gene':<14} {'dir':<5} {'reference':>10} {'last ok':>10} "
                   f"{'first fail':>11} {'outcome':<18} mode")
             for lim in case["limits"]:

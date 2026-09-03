@@ -89,7 +89,6 @@ class CascadedPDController(Backend):
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
-        self.prev_error_world_z = 0.0
 
         self.log_yaw_rate = log_yaw_rate
         self.yaw_rate_log_period = max(float(yaw_rate_log_period), 0.0)
@@ -224,7 +223,6 @@ class CascadedPDController(Backend):
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
-        self.prev_error_world_z = 0.0
 
         # Reset new energy arrays
         self.thrust_over_time = []
@@ -287,9 +285,6 @@ class CascadedPDController(Backend):
         error_rate_world_y = (e_p[1] - self.prev_error_world_y) / dt_safe
         self.prev_error_world_x = e_p[0]
         self.prev_error_world_y = e_p[1]
-
-        error_rate_world_z = (e_p[2] - self.prev_error_world_z) / dt_safe
-        self.prev_error_world_z = e_p[2]
 
         acc_xy_des = np.array(
             [

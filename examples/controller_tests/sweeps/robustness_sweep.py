@@ -181,10 +181,6 @@ import robustness as rb          # noqa: E402
 import sim_clock                 # noqa: E402
 import sweep_metrics as sm       # noqa: E402
 import sweep_task as task        # noqa: E402
-import vehicle_params            # noqa: E402
-from eigen_controller import EigenController              # noqa: E402
-from cascaded_pd_controller import CascadedPDController   # noqa: E402
-from lpv_mpc_controller import LPVMPCController           # noqa: E402
 
 ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
 if ARGS.goal_radius is None:

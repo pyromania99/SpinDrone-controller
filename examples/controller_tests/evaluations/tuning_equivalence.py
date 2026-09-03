@@ -242,8 +242,6 @@ def main():
     print("\n1) OUTER POSITION LOOP  (p_ref → desired accel)")
     print("   Both controllers: Kp_xy = %.2f, Kd_xy = %.2f" % (Kp_xy, Kd_xy))
     print("   Both controllers: Kp_z  = %.2f, Kd_z  = %.2f" % (Kp_z, Kd_z))
-    outer_xy = outer_loop_tf(Kp_xy, Kd_xy)
-    outer_z  = outer_loop_tf(Kp_z,  Kd_z)
     print("   → Transfer functions IDENTICAL.  No comparison needed.\n")
 
     # ── Inner loop ──

@@ -39,7 +39,7 @@ Usage
   isaac_run examples/controller_tests/motor_failure.py --seed 7
 """
 from __future__ import annotations
-import argparse, os, sys
+import argparse, sys
 from pathlib import Path
 import carb
 from isaacsim import SimulationApp
@@ -98,8 +98,6 @@ from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
-from pegasus.simulator.logic.backends import Backend
-from pegasus.simulator.logic.state import State
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "utils"))
 from eigen_controller import EigenController

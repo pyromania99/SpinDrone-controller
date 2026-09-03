@@ -406,7 +406,7 @@ def plot_dashboard(data_map: dict[str, dict],
                  label, ha="center", va="bottom",
                  fontsize=10, color="white", fontweight="bold")
     ax6.set_ylabel("Settling Time [s]")
-    ax6.set_title(f"Settling Time  (|ep| < 0.10 m for 2 s)")
+    ax6.set_title("Settling Time  (|ep| < 0.10 m for 2 s)")
     ax6.tick_params(axis="x", colors="white", labelsize=9)
 
     # ── 7. Comprehensive metric radar / spider — replaced by bar comparison ───
