@@ -214,7 +214,7 @@ class PX4Driver:
 
         detail = "\n".join(bad)
         msg = ("airframe check FAILED - this is not the Pegasus Iris:\n" + detail +
-               "\n  fix: unset PX4_SYS_AUTOSTART, launch via single_vehicle.py "
+               "\n  fix: unset PX4_SYS_AUTOSTART, launch via sim_px4.py "
                "(--keep-log), and confirm PX4_SIM_MODEL=none_iris")
         if strict:
             raise RuntimeError(msg)

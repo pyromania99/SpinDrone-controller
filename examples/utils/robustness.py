@@ -29,7 +29,7 @@ factor of 1.0 here is a genuinely matched plant.
 Verified against the simulator
 ──────────────────────────────
 Two mechanisms this module relies on were checked rather than assumed, in
-examples/controller_tests/evaluations/probe_robustness.py:
+examples/tools/evaluations/probe_robustness.py:
 
     Writing mass/inertia through ``UsdPhysics.MassAPI`` is ignored while the
     physics scene is live and takes effect on the next ``world.reset()``.

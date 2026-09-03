@@ -59,11 +59,11 @@ import numpy as np
 # ── Where a sweep writes ─────────────────────────────────────────────────────
 
 # Environment variable that redirects every sweep's output tree. Empty or unset
-# means the normal ``examples/controller_tests/results``.
+# means the anchored default below.
 RESULTS_ROOT_ENV: str = "SWEEP_RESULTS_ROOT"
 
 
-def results_root(base_dir) -> Path:
+def results_root(base_dir=None) -> Path:
     """The directory a sweep should write its results into.
 
     Why this is not simply ``base_dir / "results"``
@@ -82,13 +82,25 @@ def results_root(base_dir) -> Path:
     ``--run-tag`` that lands its output in a per-run subdirectory; this gives
     the other sweeps the same protection without each needing its own flag.
 
-    Callers pass their own ``base_dir`` so a redirect is opt-in and the default
-    is unchanged.
+    Why it no longer depends on ``base_dir``
+    ────────────────────────────────────────
+    It used to return ``base_dir / "results"``, i.e. a tree beside whichever
+    script asked. That worked only while every caller lived under one folder.
+    They no longer do - the sweeps, the evaluations and the plots sit in three
+    different parents - so a caller-relative root would split one archive into
+    three, and the tools that read a sweep's output would look in a different
+    place from the sweep that wrote it.
+
+    The root is therefore anchored to the repository (``examples/results``),
+    not to the caller. ``base_dir`` is accepted and ignored so existing call
+    sites keep working; ``SWEEP_RESULTS_ROOT`` is still the way to redirect,
+    which is what smoke_test.sh and run_outer_sweep.sh use to avoid writing
+    into the real archives.
     """
     override = os.environ.get(RESULTS_ROOT_ENV, "").strip()
     if override:
         return Path(override)
-    return Path(base_dir) / "results"
+    return Path(__file__).resolve().parents[1] / "results"
 
 # ── Task geometry ────────────────────────────────────────────────────────────
 

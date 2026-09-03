@@ -15,7 +15,7 @@ now imports from here, so a metric change lands everywhere at once.
 Deliberately pure-numpy: this module imports neither ``carb`` nor anything
 from Isaac Sim, so it can also be run from a plain interpreter to recompute
 metrics from ``.npz`` files that are already on disk (see
-``examples/controller_tests/evaluations/backfill_metrics.py``).
+``examples/tools/evaluations/backfill_metrics.py``).
 
 What is measured
 ────────────────

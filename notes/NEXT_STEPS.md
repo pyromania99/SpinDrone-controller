@@ -206,7 +206,7 @@ GA and dies at 90 s in PX4, that is a real finding and Stage 3 will show it.
 ### Stage 3 — PX4 with ground truth
 
 ```sh
-isaac_run examples/flight/single_vehicle.py --keep-log --headless --motor-moment 2.7e-7
+isaac_run examples/flight/sim_px4.py --keep-log --headless --motor-moment 2.7e-7
 gain_search.py --candidates top5.json --ground-truth --motor-moment 2.7e-7
 ```
 
@@ -251,12 +251,12 @@ destructive, so the sim's job was to have found the cliffs already.
 | `quadratic_thrust_curve.py` | **first-order rotor lag** (exact ZOH `1-exp(-dt/tau)`, not the `dt/(tau+dt)` approximation — that biases 20 ms to 21.9). `ROTOR_TAU_PLACEHOLDER = 0.020`, the single constant every entry point resolves from. Class default stays `0.0`. |
 | `px4_mavlink_backend.py` | `send_ground_truth()` was **defined but never called**; now wired in, with the scaled-int casts it needed. Persistent-rootfs support so the ulog survives. |
 | `px4_launch_tool.py` | optional persistent rootfs; pops `PX4_SYS_AUTOSTART` (which outranks `PX4_SIM_MODEL` at `rcS:41`); copies `os.environ` instead of aliasing it |
-| `single_vehicle.py` | `--keep-log`, `--motor-moment`, `--rotor-tau`; writes `run_config.json` recording the simulator-side settings that appear nowhere in the ulog |
+| `sim_px4.py` | `--keep-log`, `--motor-moment`, `--rotor-tau`; writes `run_config.json` recording the simulator-side settings that appear nowhere in the ulog |
 | `genetic_sweep.py` | `--pos/att-delay-ms`, `--pos/att-tau-ms` → `SensorLag`; `--rotor-tau-ms`; `--torque-max` |
 | `eigen_controller.py` | `torque_max` — saturates per axis like PX4 |
 | `flight/controllers.py` | now carries `rotor_tau` (was the only entry point without it) |
 
-### New tools in `examples/px4_tuning/`
+### New tools in `examples/tools/px4_tuning/`
 
 | tool | what it answers |
 |---|---|
@@ -301,7 +301,7 @@ predate this work.
 | estimator | removable in PX4 | `MC_CTRL_GT` | 0 |
 | thrust/tilt limits | not modelled | — | collective/trajectory only |
 | hover-thrust normalisation | not modelled | — | collective only |
-| allocator desaturation | **modelled, selectable** | `--desaturation` on `genetic_sweep.py` and `single_vehicle.py` | `uniform` (unchanged) on every rung; binds 0.2% of samples |
+| allocator desaturation | **modelled, selectable** | `--desaturation` on `genetic_sweep.py` and `sim_px4.py` | `uniform` (unchanged) on every rung; binds 0.2% of samples |
 | slew limit | not modelled | `CA_R*_SLEW` | 0 = off in PX4 too |
 
 **Only the top two are actually open.** The bottom four are deliberate: they touch the
@@ -539,7 +539,7 @@ With that fixed, measured 560.2 Hz on `vehicle_angular_velocity`, `vehicle_attit
 `vehicle_local_position`, zero lockstep poll timeouts, and **cleaner** timing than 250 Hz
 (sensor dt p95 1.785 ms vs 8.000 ms).
 
-**This corrects single_vehicle.py:189-210.** "PX4 emits HIL_ACTUATOR_CONTROLS at 250 Hz no
+**This corrects sim_px4.py:189-210.** "PX4 emits HIL_ACTUATOR_CONTROLS at 250 Hz no
 matter how fast HIL_SENSOR arrives" was never a protocol limit - it was this same
 overridden `IMU_INTEG_RATE` pinning `vehicle_angular_velocity`, hence the rate loop, hence
 `actuator_outputs`. Feeding 560 Hz of sensor data into a 250 Hz reply rate starves the

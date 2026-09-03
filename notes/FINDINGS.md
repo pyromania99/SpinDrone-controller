@@ -70,7 +70,7 @@ live from the checkout.
 > `etc → build/px4_sitl_default/etc`, a build artifact that only refreshes on `make`. That
 > copy of `10016_none_iris` is currently two days stale and contains **zero** `MC_EIG_*`
 > params. So the advice below to hand-launch for a persistent log silently costs you the
-> airframe. Use `single_vehicle.py --keep-log` instead: it keeps autolaunch (and therefore
+> airframe. Use `sim_px4.py --keep-log` instead: it keeps autolaunch (and therefore
 > the source ROMFS) and keeps the ulog.
 
 **And the log you keep may be of the wrong vehicle entirely  [verified]**
@@ -92,7 +92,7 @@ Two independent causes, both silent — PX4 boots, arms and flies either way:
 2. **A hand-launched PX4 reads the stale build copy of the airframe** (see the correction
    above).
 
-`single_vehicle.py` was never at fault: its `--px4-airframe none_iris` →
+`sim_px4.py` was never at fault: its `--px4-airframe none_iris` →
 `px4_vehicle_model` → `PX4LaunchTool` → `PX4_SIM_MODEL` chain is sound. It simply was not
 what produced these logs — `PX4LaunchTool` runs PX4 with `cwd=TemporaryDirectory()`, and
 the logger writes to `./log` relative to cwd, so an autolaunched PX4 *cannot* write into
@@ -117,7 +117,7 @@ Related gotchas:
 - **To reach a shell without a console:** PX4 is launched with `-d` (pxh off), but the
   daemon socket at `/tmp/px4-sock-<instance>` is always open.
   `build/px4_sitl_default/bin/px4-param --instance 0 set FOO 1` works from anywhere.
-- **To keep a log**, use `single_vehicle.py --keep-log [DIR]`. This gives `PX4LaunchTool` a
+- **To keep a log**, use `sim_px4.py --keep-log [DIR]`. This gives `PX4LaunchTool` a
   persistent rootfs instead of a `TemporaryDirectory`, so the ulog survives while PX4 is
   still launched with the source ROMFS. Hand-launching with `--no-px4-autolaunch` also
   keeps the log but loads the stale build copy of the airframe — see the correction above.
@@ -162,7 +162,7 @@ without noticing; this one moves as the vehicle climbs.
 absorbed the entire error uncorrected.
 
 **Fix (two halves — the airframe alone cannot do it):**
-1. `single_vehicle.py`: `input_scaling = 1100`, `zero_position_armed = 0` → `omega = 1100u`,
+1. `sim_px4.py`: `input_scaling = 1100`, `zero_position_armed = 0` → `omega = 1100u`,
    so the curve passes through the origin and is genuinely of the form `k·u²`
 2. `10016_none_iris`: `CA_ROTOR*_CT = 10.344` = `8.54858e-6 × 1100²`
 
@@ -233,7 +233,7 @@ Pegasus sweeps so the fronts mean something.
 ## 6. Loop latency: 12 ms, and mostly not what you'd guess  **[verified]**
 
 Measured by cross-correlating `vehicle_torque_setpoint` against angular acceleration —
-[loop_latency.py](../examples/px4_tuning/loop_latency.py).
+[loop_latency.py](../examples/tools/px4_tuning/loop_latency.py).
 
 **Updated 2026-08-07: 12.0 ms**, both axes agreeing at r = 0.90/0.89, on the first
 verified-`10016` flight (`px4_runs/20260807_211118`). The earlier 16 ms was measured at
@@ -468,18 +468,18 @@ of 1.0, zero saturation. Use this as the control when something regresses.
 
 ## Tooling
 
-- [`flight_health.py`](../examples/px4_tuning/flight_health.py) — the first thing to run on any ulog. Checks the
+- [`flight_health.py`](../examples/tools/px4_tuning/flight_health.py) — the first thing to run on any ulog. Checks the
   airframe actually loaded, then reports loop rates (inner from the `update_count` slope,
   not the logged message rate, which the logger throttles 5×), the angle stage's D/P split,
   coning trend, torque authority, motor saturation and position hold. Classifies the
   dominant roll/pitch mode by whether its frequency **tracks the spin rate** — the one test
   that separates a plant mode from a loop mode — using the spectrum of the complex `p + jq`
   rather than of `hypot(p, q)`, which is rectified and reports double the true frequency.
-- [`loop_latency.py`](../examples/px4_tuning/loop_latency.py) — loop delay + `K_eff` from a ulog
+- [`loop_latency.py`](../examples/tools/px4_tuning/loop_latency.py) — loop delay + `K_eff` from a ulog
 - [`px4_driver.py`](../examples/flight/px4_driver.py) — MAVLink arm/offboard/setpoint + live param set with
   read-back. Encodes two SITL facts: headless refuses to arm without a GCS heartbeat, and
   `MAV_CMD_NAV_TAKEOFF` is ACKed but doesn't climb, so OFFBOARD must precede arming.
-- [`ulog_to_npz.py`](../examples/px4_tuning/ulog_to_npz.py) — ulog → the npz `sweep_metrics.compute_metrics`
+- [`ulog_to_npz.py`](../examples/tools/px4_tuning/ulog_to_npz.py) — ulog → the npz `sweep_metrics.compute_metrics`
   expects, so the whole existing scoring stack is reusable. **Converts motor commands to
   newtons** (`F = U_MAX_PER_MOTOR · u²`); feeding normalized values through would not
   error, it would silently report a vehicle that never saturates.

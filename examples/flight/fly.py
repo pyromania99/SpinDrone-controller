@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""
+fly.py — pick a level of the simulation ladder and fly it.
+
+The three levels
+────────────────
+  1  Pegasus + Python      The controller is a Python Backend reading simulator
+                           state directly. No PX4, no estimator, no transport
+                           delay.
+  2  PX4 + ground truth    Real PX4 - mixer, CommandFrontEnd limits, allocator,
+                           normalized torque - but MC_CTRL_GT=1 feeds it
+                           vehicle_attitude_groundtruth, so the estimator is out.
+  3  PX4, estimator in     MC_CTRL_GT=0. EKF2 back in the loop.
+
+They are a ladder, and the value of each rung is its DIFFERENCE from the one
+below. Level 2 minus level 1 is PX4's implementation cost; level 3 minus level 2
+is the estimator's cost at that spin rate. A number from one level on its own
+says very little.
+
+Why this is a front door and not one process
+────────────────────────────────────────────
+Levels 1 and 2/3 put a vehicle in the air using Isaac, which needs Isaac's own
+interpreter (python.sh). The offboard half of levels 2 and 3 drives PX4 over
+MAVLink and needs system python3 with pymavlink. No single process can be both,
+so this script stays plain python3 and launches the Isaac side as a subprocess -
+the same thing gain_search.py has always done. sim_pegasus.py and sim_px4.py are
+those Isaac-side halves; they are runnable on their own, but this is the way in.
+
+Usage
+-----
+  fly.py --level 1                                  # watch it, prompts for the rest
+  fly.py --level 1 --controller eigen --headless
+  fly.py --level 2 --motor-moment 2.7e-7 --hold 90  # PX4 on ground truth
+  fly.py --level 3 --motor-moment 2.7e-7 --hold 90  # same candidate, estimator in
+  fly.py --level 2 --attach --run-dir px4_runs/mine # a sim you started yourself
+
+  fly.py --level 2 --gains MC_EIG_WN=34.18 MC_EIG_B=0.0
+
+For a batch of candidates rather than one flight, use gain_search.py. For a
+rotor-loss study, use motor_failure.py.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import simlaunch                                          # noqa: E402
+import offboard                                           # noqa: E402
+from px4_driver import log                                # noqa: E402
+
+LEVELS = {
+    1: "Pegasus + Python (no PX4, no estimator)",
+    2: "PX4 + Pegasus, ground truth (MC_CTRL_GT=1)",
+    3: "PX4 + Pegasus, estimator in the loop (MC_CTRL_GT=0)",
+}
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--level", type=int, required=True, choices=(1, 2, 3),
+                   help="Which rung of the ladder to fly. See the table above.")
+
+    p.add_argument("--motor-moment", type=float, default=2.7e-7,
+                   help="Rotor drag moment km, which sets the steady yaw spin "
+                        "(r_ss ~ 4.9e7 * km). Default 2.7e-7 is ~13.2 rad/s, the spin "
+                        "the existing GA front was searched at.")
+    p.add_argument("--headless", action="store_true",
+                   help="No viewport. Levels 2 and 3 always launch headless.")
+    p.add_argument("--desaturation", choices=("uniform", "collective"), default="uniform",
+                   help="What the mixer gives up when a rotor saturates. Keep 'uniform' "
+                        "to stay comparable with every archived run.")
+
+    g1 = p.add_argument_group("level 1")
+    g1.add_argument("--controller", choices=("pd", "nonlinear", "eigen", "mpc"),
+                    default=None, help="Control law. Prompted for if omitted.")
+    g1.add_argument("--failure-mode", choices=("manual", "auto", "off"), default=None)
+    g1.add_argument("--rotor", type=int, choices=[0, 1, 2, 3], default=None)
+    g1.add_argument("--seed", type=int, default=None)
+
+    g2 = p.add_argument_group("levels 2 and 3")
+    g2.add_argument("--altitude", type=float, default=6.0)
+    g2.add_argument("--hold", type=float, default=90.0,
+                    help="Seconds to hold altitude before landing.")
+    g2.add_argument("--run-dir", default=None,
+                    help="Where the ulog goes. Default: px4_runs/<level>_<timestamp>.")
+    g2.add_argument("--attach", action="store_true",
+                    help="Do not launch anything - fly a sim that is already running. "
+                         "Pair with --run-dir pointing at the directory it was given.")
+    g2.add_argument("--gains", nargs="*", default=[],
+                    help="PX4 parameter overrides, e.g. MC_EIG_WN=34.18.")
+    g2.add_argument("--boot-timeout", type=float, default=240.0)
+    g2.add_argument("--duration", type=float, default=None,
+                    help="Hard cap on the sim process [s]. Default: hold + 180.")
+    g2.add_argument("--no-land", action="store_true")
+    g2.add_argument("--abort-on-loss", action="store_true",
+                    help="Stop early if telemetry shows altitude lost. Off by default: "
+                         "the MAVLink stream is not reliable enough to gate a flight on "
+                         "- the ulog is the source of truth.")
+    return p.parse_args()
+
+
+def fly_level_1(a: argparse.Namespace) -> int:
+    """Hand off to the Isaac-side level-1 sim and wait for it."""
+    args = ["--motor-moment", repr(a.motor_moment), "--desaturation", a.desaturation]
+    for flag, val in (("--controller", a.controller),
+                      ("--failure-mode", a.failure_mode),
+                      ("--rotor", a.rotor), ("--seed", a.seed)):
+        if val is not None:
+            args += [flag, str(val)]
+    if a.headless:
+        args.append("--headless")
+
+    # Not quiet, and not detached from stdin: level 1 prompts for whatever was not
+    # passed, and its viewport output is the point of running it.
+    log(f"level 1 - {LEVELS[1]}")
+    proc = simlaunch.launch(simlaunch.SIM_PEGASUS, args, quiet=False)
+    return proc.wait()
+
+
+def fly_px4(a: argparse.Namespace) -> int:
+    """Levels 2 and 3: put a PX4 sim up (or attach to one), then fly the profile."""
+    ground_truth = (a.level == 2)
+    log(f"level {a.level} - {LEVELS[a.level]}")
+
+    run_dir = Path(a.run_dir).expanduser().resolve() if a.run_dir else (
+        simlaunch.REPO / "px4_runs" /
+        f"L{a.level}_{datetime.now():%Y%m%d_%H%M%S}")
+
+    proc = None
+    if not a.attach:
+        duration = a.duration if a.duration is not None else a.hold + 180.0
+        log(f"launching sim -> {run_dir}")
+        proc = simlaunch.launch_px4_sim(
+            run_dir, a.motor_moment, duration,
+            extra=["--desaturation", a.desaturation],
+            on_port_busy=lambda port: log(
+                f"WARNING: TCP {port} still held; PX4 will likely fail to bind and "
+                f"report a bogus airframe mismatch"))
+    else:
+        if a.run_dir is None:
+            sys.exit("--attach needs --run-dir: the ulog is read from the directory "
+                     "the running sim was launched with.")
+        log(f"attaching to a running sim, ulog expected under {run_dir}")
+
+    # offboard.fly() reads its options off a namespace, so build the one it wants.
+    opts = argparse.Namespace(
+        run_dir=str(run_dir), altitude=a.altitude, hold=a.hold,
+        boot_timeout=a.boot_timeout, ground_truth=ground_truth, gains=a.gains,
+        abort_on_loss=a.abort_on_loss, no_land=a.no_land)
+    try:
+        return offboard.fly(opts)
+    finally:
+        if proc is not None:
+            log("stopping sim")
+            simlaunch.kill(proc)
+        else:
+            # An attached sim is the caller's to stop, but a PX4 orphaned by a
+            # crash would still hold the lockstep port against the next run.
+            time.sleep(0.5)
+
+
+def main() -> int:
+    a = parse_args()
+    if not simlaunch.ISAAC_PY.exists() and not a.attach:
+        sys.exit(f"{simlaunch.ISAAC_PY} not found - set ISAACSIM_PATH")
+    return fly_level_1(a) if a.level == 1 else fly_px4(a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

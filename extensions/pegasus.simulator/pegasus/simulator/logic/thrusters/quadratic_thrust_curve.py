@@ -12,10 +12,10 @@ from pegasus.simulator.logic.thrusters.thrust_curve import ThrustCurve
 #
 # PLACEHOLDER. 0.020 s is the midpoint of the 10-30 ms range FINDINGS section 6 cites for
 # hardware generally; it is NOT a measurement of this vehicle's motors. Replace it with the
-# number examples/px4_tuning/measure_motor_lag.py fits from esc_status.esc_rpm.
+# number examples/tools/px4_tuning/measure_motor_lag.py fits from esc_status.esc_rpm.
 #
 # It lives here, as one constant, because the entry points that must AGREE are in different
-# files: single_vehicle.py flies PX4 and genetic_sweep.py flies the Python controller, and
+# files: sim_px4.py flies PX4 and genetic_sweep.py flies the Python controller, and
 # a gain found on one is compared against the other. When those two defaults drifted apart
 # the stacks silently modelled different vehicles - the same class of error as the Gazebo
 # x500 airframe and the lag-free GA front, both of which produced confident wrong answers.
@@ -88,7 +88,7 @@ class QuadraticThrustCurve(ThrustCurve):
         #
         # Note this lags ROTOR VELOCITY, not thrust: force is rotor_constant*omega^2 below,
         # so squaring a lagged omega gives the correct (non-first-order) thrust response
-        # for free. Measure it with examples/px4_tuning/measure_motor_lag.py, which fits
+        # for free. Measure it with examples/tools/px4_tuning/measure_motor_lag.py, which fits
         # esc_status.esc_rpm against a commanded step and reports exactly this constant.
         self._rotor_tau = float(config.get("rotor_tau", 0.0))
 

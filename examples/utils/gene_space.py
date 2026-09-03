@@ -5,7 +5,7 @@
 
 Why this module exists
 ──────────────────────
-All of this lived inside ``examples/controller_tests/sweeps/genetic_sweep.py``,
+All of this lived inside ``examples/sweeps/genetic_sweep.py``,
 which runs ``parse_args()`` and constructs ``SimulationApp(...)`` at module
 scope. Importing it therefore boots Isaac Sim and consumes ``sys.argv``, so the
 gene definitions were unreachable from any other process — an analysis script

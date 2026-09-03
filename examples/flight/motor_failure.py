@@ -120,11 +120,10 @@ def main():
     render = not ARGS.headless
     rng = np.random.default_rng(ARGS.seed)
 
-    # Telemetry belongs with the other controller_tests output, not beside this
-    # script - the script is filed by what it does, the results by what they are.
-    base = Path(__file__).resolve().parents[1] / "controller_tests"
+    # Telemetry goes to the one anchored results tree, not beside this script -
+    # the script is filed by what it does, the results by what they are.
     out = (Path(ARGS.out) if ARGS.out
-           else task.results_root(base) / "motor_failure" / "run.npz")
+           else task.results_root() / "motor_failure" / "run.npz")
     out.parent.mkdir(parents=True, exist_ok=True)
 
     pg = PegasusInterface()

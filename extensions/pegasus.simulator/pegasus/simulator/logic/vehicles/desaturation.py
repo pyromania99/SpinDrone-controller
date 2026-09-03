@@ -4,7 +4,7 @@
 
 Deliberately pure numpy, with no Pegasus or Isaac imports, so it can be loaded
 by file path and unit-tested outside the simulator. See
-examples/controller_tests/evaluations/test_rotor_failure.py.
+examples/tools/evaluations/test_rotor_failure.py.
 
 The two policies
 ────────────────

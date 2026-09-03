@@ -43,10 +43,7 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
-import os
 import shutil
-import signal
-import socket
 import subprocess
 import sys
 import time
@@ -57,9 +54,10 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from px4_driver import PX4Driver, log  # noqa: E402
 
-REPO = Path(__file__).resolve().parents[2]
-ISAAC_PY = Path(os.environ.get("ISAACSIM_PATH", Path.home() / "isaacsim")) / "python.sh"
-SIM = REPO / "examples/flight/single_vehicle.py"
+import simlaunch  # noqa: E402
+
+REPO = simlaunch.REPO
+ISAAC_PY = simlaunch.ISAAC_PY
 
 GAIN_KEYS = ("MC_EIG_ATT_P", "MC_EIG_ATT_D", "MC_EIG_WN", "MC_EIG_B")
 
@@ -105,72 +103,21 @@ def coarse_grid() -> list[dict]:
     return out
 
 
-SIM_TCP_PORT = 4560          # PX4 <-> simulator lockstep socket
-
-
-def _port_busy(port: int = SIM_TCP_PORT) -> bool:
-    """True if anything still holds the lockstep port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(("127.0.0.1", port))
-            return False
-        except OSError:
-            return True
-
-
-def _reap_px4() -> None:
-    """Kill PX4 instances left behind by a previous trial.
-
-    PX4LaunchTool starts px4 in its OWN session, so kill_sim's killpg on the Isaac tree
-    never reaches it. The orphan keeps TCP 4560 bound, and because the sweep launches
-    trials back-to-back the next one cannot bind - PX4 never boots, every parameter reads
-    None, and check_airframe reports "wrong airframe" for what is really a stale socket.
-    That misdiagnosis is expensive: the error names the airframe, so it sends you looking
-    at SYS_AUTOSTART instead of at process cleanup.
-    """
-    subprocess.run(["pkill", "-f", r"bin/px4"], check=False,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-def _wait_port_free(timeout: float = 60.0) -> bool:
-    _reap_px4()
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if not _port_busy():
-            return True
-        time.sleep(2.0)
-        _reap_px4()
-    return not _port_busy()
-
-
 def launch_sim(run_dir: Path, duration: float) -> subprocess.Popen:
-    """Start Isaac + PX4 headless. --duration bounds the trial so a wedged lockstep
-    cannot stall the sweep; start_new_session lets us kill the whole tree, since Isaac
-    spawns children that outlive a bare terminate()."""
-    if not _wait_port_free():
-        log(f"      WARNING: TCP {SIM_TCP_PORT} still held; this trial will likely fail "
-            f"to bind and report a bogus airframe mismatch")
-    run_dir.mkdir(parents=True, exist_ok=True)
-    cmd = [str(ISAAC_PY), str(SIM), "--headless", "--keep-log", str(run_dir),
-           "--motor-moment", repr(ARGS.motor_moment), "--duration", repr(duration)]
-    return subprocess.Popen(cmd, cwd=str(REPO), start_new_session=True,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    """Start Isaac + PX4 headless for one trial.
+
+    --duration bounds the trial so a wedged lockstep cannot stall the sweep. The
+    port clearing and process-tree teardown live in simlaunch, shared with fly.py.
+    """
+    return simlaunch.launch_px4_sim(
+        run_dir, ARGS.motor_moment, duration,
+        on_port_busy=lambda port: log(
+            f"      WARNING: TCP {port} still held; this trial will likely fail "
+            f"to bind and report a bogus airframe mismatch"))
 
 
 def kill_sim(proc: subprocess.Popen) -> None:
-    if proc.poll() is not None:
-        return
-    try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        proc.wait(timeout=25)
-    except Exception:
-        try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except Exception:
-            pass
-    # PX4 lives in its own session and survives the killpg above.
-    _reap_px4()
+    simlaunch.kill(proc)
 
 
 def score_ulog(run_dir: Path) -> dict:

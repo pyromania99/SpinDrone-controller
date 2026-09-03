@@ -1,0 +1,38 @@
+[
+  {
+    "MC_EIG_WN": 34.1837,
+    "MC_EIG_B": 0.0,
+    "MC_EIG_ATT_P": 4.1186,
+    "MC_EIG_ATT_D": 0.1
+  },
+  {
+    "MC_EIG_WN": 35.8817,
+    "MC_EIG_B": 0.0034,
+    "MC_EIG_ATT_P": 4.1179,
+    "MC_EIG_ATT_D": 0.1
+  },
+  {
+    "MC_EIG_WN": 33.9087,
+    "MC_EIG_B": 2.1986,
+    "MC_EIG_ATT_P": 4.1186,
+    "MC_EIG_ATT_D": 0.1
+  },
+  {
+    "MC_EIG_WN": 32.6829,
+    "MC_EIG_B": 0.0,
+    "MC_EIG_ATT_P": 4.1068,
+    "MC_EIG_ATT_D": 0.1
+  },
+  {
+    "MC_EIG_WN": 33.4784,
+    "MC_EIG_B": 2.7278,
+    "MC_EIG_ATT_P": 4.1186,
+    "MC_EIG_ATT_D": 0.1
+  },
+  {
+    "MC_EIG_WN": 16.34,
+    "MC_EIG_B": 13.15,
+    "MC_EIG_ATT_P": 4.68,
+    "MC_EIG_ATT_D": 0.1
+  }
+]
