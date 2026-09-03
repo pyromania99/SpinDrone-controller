@@ -25,6 +25,17 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 import rotor_failure
 
+# desaturation.py lives in the extension but imports nothing from Pegasus or
+# Isaac, so it is loaded by file path — importing it as a package member would
+# pull in the whole extension and require the simulator.
+import importlib.util as _ilu
+_DESAT = (Path(__file__).resolve().parents[3] / "extensions" / "pegasus.simulator"
+          / "pegasus" / "simulator" / "logic" / "vehicles" / "desaturation.py")
+_spec = _ilu.spec_from_file_location("desaturation", _DESAT)
+desaturation = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(desaturation)
+desaturate = desaturation.desaturate
+
 
 class FakeState:
     def __init__(self, p, v, w=(0.0, 0.0, 0.0)):
@@ -145,8 +156,73 @@ def main() -> int:
     fly(b, 3.0)
     ok &= check("not airborne cannot settle or fail", not b.has_failed)
 
+    ok &= desaturation_checks()
+
     print("\n" + ("all checks passed" if ok else "FAILURES ABOVE"))
     return 0 if ok else 1
+
+
+def desaturation_checks() -> bool:
+    """The mixer's saturation policy — see extensions/.../desaturation.py."""
+    print("\ndesaturation policy")
+    ok = True
+    LIM = 1100.0**2                      # max_rotor_velocity ** 2
+    kT = 8.54858e-6
+
+    # Below saturation the two policies must be indistinguishable, or enabling
+    # "collective" would change normal flight as well as the failure case.
+    s = np.array([0.3, 0.5, 0.4, 0.45]) * LIM
+    u = desaturate(s, LIM, "uniform")
+    c = desaturate(s, LIM, "collective")
+    ok &= check("below saturation: unchanged", np.allclose(u, s) and np.allclose(c, s))
+    ok &= check("below saturation: policies agree", np.allclose(u, c))
+
+    # At saturation: uniform loses collective, collective keeps it.
+    s = np.array([0.53, 2.55, 0.39, 2.69]) * LIM      # the measured failure case
+    u = desaturate(s, LIM, "uniform")
+    c = desaturate(s, LIM, "collective")
+    ok &= check("uniform loses collective", u.mean() < 0.75 * min(s.mean(), LIM))
+    ok &= check("collective preserves more thrust", c.sum() > u.sum())
+    ok &= check("collective beats uniform on the 3 live rotors",
+                c[[0, 1, 2]].sum() > u[[0, 1, 2]].sum())
+
+    # Bounds must hold for both, on adversarial input.
+    rng = np.random.default_rng(0)
+    bounds_ok = True
+    for _ in range(500):
+        s = rng.uniform(0, 6, 4) * LIM
+        for pol in ("uniform", "collective"):
+            out = desaturate(s, LIM, pol)
+            if out.min() < -1e-9 or out.max() > LIM * (1 + 1e-9):
+                bounds_ok = False
+    ok &= check("never negative, never above the limit (500 random cases)", bounds_ok)
+
+    # A collective demand beyond the airframe total cannot be redistributed —
+    # it must saturate to an even split rather than raise or overshoot.
+    s = np.full(4, 3.0 * LIM)
+    c = desaturate(s, LIM, "collective")
+    ok &= check("over-ceiling demand -> all rotors at max",
+                np.allclose(c, LIM))
+
+    # Graceful degradation: a demand that only just saturates should keep some
+    # spread (i.e. some moment), not collapse straight to an even split.
+    s = np.array([0.55, 0.95, 0.50, 1.05]) * LIM
+    c = desaturate(s, LIM, "collective")
+    ok &= check("partial saturation retains some moment", c.std() > 1e-6)
+    ok &= check("partial saturation keeps the mean",
+                abs(c.mean() - s.mean()) < 1e-6 * LIM)
+
+    # The headline number from the plan, in newtons.
+    s = np.array([4.52, 21.77, 3.32, 22.97]) / kT / 1.0
+    s = np.minimum(s, 1e12)
+    u = desaturate(s, LIM, "uniform") * kT
+    c = desaturate(s, LIM, "collective") * kT
+    W = 1.618615 * 9.81
+    ok &= check(f"live-rotor lift: uniform {u[[0,1,2]].sum():.2f} N < weight {W:.2f} N",
+                u[[0, 1, 2]].sum() < W)
+    ok &= check(f"live-rotor lift: collective {c[[0,1,2]].sum():.2f} N > weight {W:.2f} N",
+                c[[0, 1, 2]].sum() > W)
+    return ok
 
 
 if __name__ == "__main__":
