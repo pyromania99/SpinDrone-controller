@@ -12,9 +12,9 @@ Two kinds of script, and the distinction matters because getting it wrong looks
 like an import error rather than a usage error:
 
 - **Anything that flies** needs Isaac Sim, so it is launched with `isaac_run`.
-  That is everything under `sweeps/`, plus `motor_failure.py`, the two `probe_*`
-  scripts and `batch_compare.py` in `evaluations/`, and `controllers.py` and
-  `eigen_kp_sweep.py` in `legacy/`.
+  That is everything under `sweeps/`, both entry points at the top of this folder
+  (`controllers.py`, `motor_failure.py`), the two `probe_*` scripts and
+  `batch_compare.py` in `evaluations/`, and `eigen_kp_sweep.py` in `archive/`.
 - **Anything that reads telemetry off disk** is plain Python, run with `python3`.
   That is all of `visualization/` and the rest of `evaluations/`.
 
@@ -63,21 +63,33 @@ prints summary metrics and writes per-run plots. The rest are specific to one st
 `eigen_plot_summary.py`, `eigen_plot_heatmap.py`, `interactive_dashboard.py` (Plotly),
 and `coning_plot.py` for the spin-axis and coning geometry of a spinning run.
 
-### `motor_failure.py`
+### Entry points, at the top of this folder
 
-Kills one rotor once the vehicle has settled and watches what happens. Its
-`--desaturation` flag selects what the mixer gives up when a rotor saturates:
-`uniform` scales every rotor down together (the simulator's historical behaviour,
-which collapses the collective), `collective` holds lift and gives up moment. See
+Two scripts fly one vehicle interactively rather than sweeping anything, which is
+why they sit here rather than in a subfolder.
+
+`controllers.py` prompts for a controller, a motor moment and a failure mode, then
+flies it in the GUI. It is also the Pegasus-only half of every PX4 comparison,
+which is why it has to model the same plant the sweeps do — see the `rotor_tau`
+note in its thrust-curve setup.
+
+`motor_failure.py` kills one rotor once the vehicle has settled and watches what
+happens. Its `--desaturation` flag selects what the mixer gives up when a rotor
+saturates: `uniform` scales every rotor down together (the simulator's historical
+behaviour, which collapses the collective), `collective` holds lift and gives up
+moment. See
 `extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/desaturation.py`.
 
-### `legacy/`
+### `archive/`
 
-Superseded, kept for the record. `eigen_kp_sweep.py` was step 3 of the manual
-tuning workflow before `genetic_sweep.py` replaced it; `compare_controllers.py`
-was the original Eigen-vs-CascadedPD harness. `controllers.py` is still current —
-it is the interactive Isaac entry point for flying a single controller by hand,
-and the Pegasus-only half of every PX4 comparison.
+Superseded, kept for the record rather than because anything calls them.
+`eigen_kp_sweep.py` was step 3 of the manual tuning workflow before
+`genetic_sweep.py` replaced it; `compare_controllers.py` was the original
+Eigen-vs-CascadedPD harness.
+
+This folder was called `legacy/` and also held `controllers.py`, which is not
+legacy at all — it has been promoted to the top of this folder, where the other
+interactive entry point already lived.
 
 ## Output
 

@@ -2,7 +2,7 @@
 """
 ga_to_candidates.py — turn a Pegasus GA archive into a gain_search.py candidate list.
 
-This is the Stage 1 -> Stage 3 bridge in NEXT_STEPS.md. The GA searches Python gene names
+This is the Stage 1 -> Stage 3 bridge in notes/NEXT_STEPS.md. The GA searches Python gene names
 (wn_mdyn, b_mdyn, Kp_att, Kd_att); gain_search.py sets PX4 parameters. The mapping is
 one-to-one, but two things have to happen on the way across and neither is automatic:
 

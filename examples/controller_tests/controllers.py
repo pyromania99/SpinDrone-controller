@@ -42,7 +42,7 @@ from pegasus.simulator.logic.thrusters.quadratic_thrust_curve import ROTOR_TAU_P
 
 # Import the custom python control backend
 import sys, os
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "utils"))
 from cascaded_pd_controller import CascadedPDController
 from nonlinear_controller import NonlinearController
 from eigen_controller import EigenController

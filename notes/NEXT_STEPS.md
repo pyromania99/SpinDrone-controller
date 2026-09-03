@@ -250,7 +250,7 @@ destructive, so the sim's job was to have found the cliffs already.
 | `single_vehicle.py` | `--keep-log`, `--motor-moment`, `--rotor-tau`; writes `run_config.json` recording the simulator-side settings that appear nowhere in the ulog |
 | `genetic_sweep.py` | `--pos/att-delay-ms`, `--pos/att-tau-ms` → `SensorLag`; `--rotor-tau-ms`; `--torque-max` |
 | `eigen_controller.py` | `torque_max` — saturates per axis like PX4 |
-| `legacy/controllers.py` | now carries `rotor_tau` (was the only entry point without it) |
+| `controller_tests/controllers.py` | now carries `rotor_tau` (was the only entry point without it) |
 
 ### New tools in `examples/px4_tuning/`
 
@@ -277,9 +277,9 @@ PegasusSimulator                        PX4-Autopilot
 ```
 
 **Since committed.** What this section listed as uncommitted — `desaturation.py`,
-`multirotor.py`, `test_rotor_failure.py`, `motor_failure.py` and `legacy/controllers.py` —
+`multirotor.py`, `test_rotor_failure.py`, `motor_failure.py` and `controller_tests/controllers.py` —
 now lands as `5fbe368` (the mixer policy), `5077622` (its checks), `d92a267` (the policy on
-both rotor-failure entry points) and `39bc57a` (`rotor_tau` into `legacy/controllers.py`),
+both rotor-failure entry points) and `39bc57a` (`rotor_tau` into `controller_tests/controllers.py`),
 keeping the one-mismatch-per-commit rule above. `593decc` (gyroscopic sign) and `175373b`
 predate this work.
 

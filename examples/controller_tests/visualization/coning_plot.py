@@ -29,7 +29,7 @@ D  cone half-angle against the spin axis's own tilt off vertical. When the two
 
 Usage
   python3 examples/controller_tests/visualization/coning_plot.py \\
-      examples/controller_tests/legacy/results/controller_eval/eigen/statistics/eigen_statistics.npz
+      examples/controller_tests/results/controller_eval/eigen/statistics/eigen_statistics.npz
 
   python3 .../coning_plot.py <npz> --cut 9.05 --out /tmp/coning.png
 """

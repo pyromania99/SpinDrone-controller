@@ -50,7 +50,7 @@ PX4 gains, and treating them as one produces a limit cycle.
 
 `PX4LaunchTool` hands PX4 a fresh `tempfile.TemporaryDirectory()` as its rootfs on every
 launch and calls `root_fs.cleanup()` on teardown
-([px4_launch_tool.py:54,113](../../extensions/pegasus.simulator/pegasus/simulator/logic/backends/tools/px4_launch_tool.py#L54)).
+([px4_launch_tool.py:54,113](../extensions/pegasus.simulator/pegasus/simulator/logic/backends/tools/px4_launch_tool.py#L54)).
 So `param set` never survives, `param save` is pointless — **and the ulog is deleted with
 the directory.**
 
@@ -133,7 +133,7 @@ airframe corrupts real Gazebo runs, whose Iris has a different rotor model
 (`motorConstant 5.84e-06` vs Pegasus's `8.54858e-06`).
 
 Also note the SDF is **not the model in use**: Pegasus loads `ROBOTS["Iris"] = .../iris.usd`
-([params.py:31](../../extensions/pegasus.simulator/pegasus/simulator/params.py#L31)).
+([params.py:31](../extensions/pegasus.simulator/pegasus/simulator/params.py#L31)).
 `PX4_SIM_MODEL` only selects which *param file* loads.
 
 ## 3. The thrust-model mismatch — the big one  **[verified]**
@@ -141,7 +141,7 @@ Also note the SDF is **not the model in use**: Pegasus loads `ROBOTS["Iris"] = .
 Your Python controller doesn't model the vehicle, it **reads** it:
 `force_and_torques_to_velocities` builds the allocation matrix at runtime from the actual
 USD rotor positions and thrust curve
-([multirotor.py:212-231](../../extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/multirotor.py#L212-L231)).
+([multirotor.py:212-231](../extensions/pegasus.simulator/pegasus/simulator/logic/vehicles/multirotor.py#L212-L231)).
 It cannot be wrong about the airframe.
 
 PX4 can only use `CA_ROTOR*`, which said `thrust = 6.5·u²` while Pegasus produced
@@ -233,7 +233,7 @@ Pegasus sweeps so the fronts mean something.
 ## 6. Loop latency: 12 ms, and mostly not what you'd guess  **[verified]**
 
 Measured by cross-correlating `vehicle_torque_setpoint` against angular acceleration —
-[loop_latency.py](loop_latency.py).
+[loop_latency.py](../examples/px4_tuning/loop_latency.py).
 
 **Updated 2026-08-07: 12.0 ms**, both axes agreeing at r = 0.90/0.89, on the first
 verified-`10016` flight (`px4_runs/20260807_211118`). The earlier 16 ms was measured at
@@ -274,7 +274,7 @@ gains that don't transfer.
 
 > **Since addressed (6a39ec5).** The shared thrust curve now models rotor/ESC spin-up as a
 > first-order lag
-> ([quadratic_thrust_curve.py:93,138-145](../../extensions/pegasus.simulator/pegasus/simulator/logic/thrusters/quadratic_thrust_curve.py#L138-L145)).
+> ([quadratic_thrust_curve.py:93,138-145](../extensions/pegasus.simulator/pegasus/simulator/logic/thrusters/quadratic_thrust_curve.py#L138-L145)).
 > It stays off by default (`rotor_tau` 0.0) so archived sweeps are unaffected; the entry
 > points opt in via `ROTOR_TAU_PLACEHOLDER` (20 ms). Gains tuned before that commit were
 > tuned against the instant-response plant described above.
@@ -286,7 +286,7 @@ torques add instead of cancelling. This is intentional for the fault-tolerance r
 the controllers surrender yaw to keep position authority.
 
 Steady-state rate is `r_ss ≈ 4.9e7 · km`
-([sweep_metrics.py:51-58](../utils/sweep_metrics.py#L51-L58)), confirmed in flight:
+([sweep_metrics.py:51-58](../examples/utils/sweep_metrics.py#L51-L58)), confirmed in flight:
 `km = 2.0e-7` → predicted 9.8, measured 9.8; `km = 1.0e-7` → measured 4.9.
 
 Because all rotors share a direction, `CA_ROTOR*_KM` should share a sign too — that makes
@@ -308,7 +308,7 @@ harmless only because these laws command no yaw torque.
 > The "rank3 crashed, frequency tracked spin at corr +0.72" evidence is also from an x500.
 
 `eigen_params.c` values are the literal defaults in `eigen_controller.py`'s constructor
-signature ([eigen_controller.py:70-94](../utils/eigen_controller.py#L70-L94)) — the
+signature ([eigen_controller.py:70-94](../examples/utils/eigen_controller.py#L70-L94)) — the
 un-tuned starting point. The GA evaluated that exact point:
 
 ```
@@ -468,18 +468,18 @@ of 1.0, zero saturation. Use this as the control when something regresses.
 
 ## Tooling
 
-- [`flight_health.py`](flight_health.py) — the first thing to run on any ulog. Checks the
+- [`flight_health.py`](../examples/px4_tuning/flight_health.py) — the first thing to run on any ulog. Checks the
   airframe actually loaded, then reports loop rates (inner from the `update_count` slope,
   not the logged message rate, which the logger throttles 5×), the angle stage's D/P split,
   coning trend, torque authority, motor saturation and position hold. Classifies the
   dominant roll/pitch mode by whether its frequency **tracks the spin rate** — the one test
   that separates a plant mode from a loop mode — using the spectrum of the complex `p + jq`
   rather than of `hypot(p, q)`, which is rectified and reports double the true frequency.
-- [`loop_latency.py`](loop_latency.py) — loop delay + `K_eff` from a ulog
-- [`px4_driver.py`](px4_driver.py) — MAVLink arm/offboard/setpoint + live param set with
+- [`loop_latency.py`](../examples/px4_tuning/loop_latency.py) — loop delay + `K_eff` from a ulog
+- [`px4_driver.py`](../examples/px4_tuning/px4_driver.py) — MAVLink arm/offboard/setpoint + live param set with
   read-back. Encodes two SITL facts: headless refuses to arm without a GCS heartbeat, and
   `MAV_CMD_NAV_TAKEOFF` is ACKed but doesn't climb, so OFFBOARD must precede arming.
-- [`ulog_to_npz.py`](ulog_to_npz.py) — ulog → the npz `sweep_metrics.compute_metrics`
+- [`ulog_to_npz.py`](../examples/px4_tuning/ulog_to_npz.py) — ulog → the npz `sweep_metrics.compute_metrics`
   expects, so the whole existing scoring stack is reusable. **Converts motor commands to
   newtons** (`F = U_MAX_PER_MOTOR · u²`); feeding normalized values through would not
   error, it would silently report a vehicle that never saturates.

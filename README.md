@@ -31,8 +31,9 @@ Because Isaac Sim requires deep hardware rendering access, your host machine **m
 - `extensions/`: The core Pegasus Simulator extension logic. This gets automatically installed as an editable module (`-e`) into the container.
 - `examples/utils/`: The controllers themselves — `eigen_controller.py`, `cascaded_pd_controller.py` and `lpv_mpc_controller.py` — plus the shared task, metric and vehicle-parameter definitions every sweep is built on.
 - `examples/controller_tests/`: Gain sweeps, evaluations and plots for those controllers, including the genetic Pareto search. See its own README.
-- `examples/px4_tuning/`: The PX4 SITL side — flying tuned gains on the real autopilot, scoring the ulogs, and the tuning findings written up in `FINDINGS.md` and `NEXT_STEPS.md`.
+- `examples/px4_tuning/`: The PX4 SITL side — flying tuned gains on the real autopilot and scoring the ulogs.
 - `examples/px4_flight/`: Launches a single vehicle against PX4 SITL.
+- `notes/`: The research record — `FINDINGS.md` (why each piece of the PX4 work exists) and `NEXT_STEPS.md` (what to run next, and in what order).
 - `Dockerfile`: Found at the root of the project, executing environment configurations while wiring up `container_user` to seamlessly align with your host permissions.
 
 ---
