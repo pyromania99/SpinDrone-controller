@@ -12,6 +12,10 @@ from omni.isaac.dynamic_control import _dynamic_control
 # The vehicle interface
 from pegasus.simulator.logic.vehicles.vehicle import Vehicle
 
+# Actuator desaturation policies. Kept in its own pure-numpy module so it can be
+# unit-tested without starting Isaac; see that file for why "collective" exists.
+from pegasus.simulator.logic.vehicles.desaturation import desaturate
+
 # Mavlink interface
 from pegasus.simulator.logic.backends.px4_mavlink_backend import PX4MavlinkBackend, PX4MavlinkBackendConfig
 
@@ -43,6 +47,13 @@ class MultirotorConfig:
         # Body-rate damping torque coefficients [roll, pitch, yaw] in N*m/(rad/s).
         # Keep yaw slightly higher to damp residual yaw oscillations faster.
         self.rotational_damping = [0.02, 0.02, 0.035]
+
+        # What to do when the allocation asks for more than a rotor can deliver.
+        # See Multirotor.force_and_torques_to_velocities for the two policies.
+        # "uniform" is the historical behaviour and the default: every archived
+        # sweep and every tuned gain set in this repository was flown against it,
+        # so changing this default would silently move the plant underneath them.
+        self.desaturation = "uniform"
 
         # The default sensors for a quadrotor
         self.sensors = [Barometer(), IMU(), Magnetometer(), GPS()]
@@ -91,6 +102,11 @@ class Multirotor(Vehicle):
         self._thrusters = config.thrust_curve
         self._drag = config.drag
         self._rotational_damping = np.array(getattr(config, "rotational_damping", [0.02, 0.02, 0.035]), dtype=float)
+        self._desaturation = str(getattr(config, "desaturation", "uniform"))
+        if self._desaturation not in ("uniform", "collective"):
+            raise ValueError(
+                f"desaturation must be 'uniform' or 'collective', got "
+                f"{self._desaturation!r}")
 
     def start(self):
         """In this case we do not need to do anything extra when the simulation starts"""
@@ -221,15 +237,12 @@ class Multirotor(Vehicle):
         squared_ang_vel[squared_ang_vel < 0] = 0.0
 
         # ------------------------------------------------------------------------------------------------
-        # Saturate the inputs while preserving their relation to each other, by performing a normalization
+        # Saturate the inputs. Two policies; see the module note on desaturation.
         # ------------------------------------------------------------------------------------------------
         max_thrust_vel_squared = np.power(self._thrusters.max_rotor_velocity[0], 2)
-        max_val = np.max(squared_ang_vel)
 
-        if max_val >= max_thrust_vel_squared:
-            normalize = np.maximum(max_val / max_thrust_vel_squared, 1.0)
-
-            squared_ang_vel = squared_ang_vel / normalize
+        squared_ang_vel = desaturate(squared_ang_vel, max_thrust_vel_squared,
+                                     self._desaturation)
 
         # Compute the angular velocities for each rotor in [rad/s]
         ang_vel = np.sqrt(squared_ang_vel)
