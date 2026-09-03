@@ -233,6 +233,18 @@ _BOUNDS_DIAG = sm.bounds_diagonal(ARGS.bounds)
 # either: Kd_att multiplies a 250 Hz finite-difference attitude-error rate, and
 # small is the well-behaved end of that — the noise-amplifying end is the top.
 # 0.05 leaves 20x of headroom below where the search kept pressing.
+# The NSGA-II second objective. sweep_metrics.py:48 is explicit - "Use effort_ac_ses
+# as the optimisation target; effort is retained unchanged so old and new archives stay
+# comparable" - but this search was still sorting on `effort`, which never got switched
+# over. `effort` is dominated by effort_dc (the collective/hover channel): measured across
+# the 121-member converged elite of the 2026-08-16 lagged run, effort spanned 0.72% while
+# effort_ac spanned 250%. Since the attitude gains being searched act ONLY through
+# differential thrust, the channel that responds to them was contributing under 1% of the
+# number being optimised, and the Pareto front was effectively single-objective.
+# effort_ac_ses additionally folds in saturation (effort_ac x (1 + SAT_ALPHA x sat_frac)),
+# which is the control-authority term the front is supposed to trade against.
+EFFORT_KEY = "effort_ac_ses"
+
 EIGEN_GENES = [
     ("wn_mdyn", 0.5, 60.0),
     ("b_mdyn",  0.0, 40.0),
@@ -515,6 +527,7 @@ def _worst_case(per_scale: list, scales: list) -> dict:
     out = dict(per_scale[worst_i])
     out["score"] = max(costs)
     out["effort"] = max(_as_cost(m["effort"]) for m in per_scale)
+    out[EFFORT_KEY] = max(_as_cost(m[EFFORT_KEY]) for m in per_scale)
     for g, m in zip(scales, per_scale):
         out[f"score_g{g:g}"] = m["score"]
     return out
@@ -821,9 +834,9 @@ def _save_pareto_csv(archive, genes_def, out_dir: Path, mm: float, config: dict 
 
     with open(str(e_path), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["idx", "effort"])
+        w.writerow(["idx", EFFORT_KEY])
         for i, (gen, genes, metrics) in enumerate(archive):
-            ef = metrics["effort"]
+            ef = metrics[EFFORT_KEY]
             w.writerow([i, f"{ef:.6f}" if np.isfinite(ef) else "inf"])
 
     detail_path = out_dir / "genetic_archive.csv"
@@ -1198,7 +1211,7 @@ def main():
         carb.log_warn("\n[genetic] Evaluating initial population (Gen 0)...")
         pop_metrics = evaluate_pop(population, mm, hover_targets)
         pop_scores = np.array([m["score"] for m in pop_metrics])
-        pop_efforts = np.array([m["effort"] for m in pop_metrics])
+        pop_efforts = np.array([m[EFFORT_KEY] for m in pop_metrics])
         
         for i in range(pop_size):
             archive.append((0, population[i].copy(), pop_metrics[i]))
@@ -1230,7 +1243,7 @@ def main():
             combined_metrics = pop_metrics + off_metrics
 
             comb_scores = np.array([m["score"] for m in combined_metrics])
-            comb_efforts = np.array([m["effort"] for m in combined_metrics])
+            comb_efforts = np.array([m[EFFORT_KEY] for m in combined_metrics])
 
             # ── Periodic step-response validation ──────────────────────────
             # Every --validate-every generations, find who's CURRENTLY on the
@@ -1313,7 +1326,7 @@ def main():
             population = np.array(new_pop)
             pop_metrics = new_metrics
             pop_scores = np.array([m["score"] for m in pop_metrics])
-            pop_efforts = np.array([m["effort"] for m in pop_metrics])
+            pop_efforts = np.array([m[EFFORT_KEY] for m in pop_metrics])
 
             fin = np.isfinite(pop_scores)
             if fin.any():
@@ -1327,7 +1340,7 @@ def main():
                          config=sm.controller_config(drones[0][1].inner))
 
         arc_sc = np.array([a[2]["score"] for a in archive])
-        arc_ef = np.array([a[2]["effort"] for a in archive])
+        arc_ef = np.array([a[2][EFFORT_KEY] for a in archive])
         fin_mask = np.isfinite(arc_sc) & np.isfinite(arc_ef)
         if fin_mask.any():
             fin_sc = arc_sc[fin_mask]
