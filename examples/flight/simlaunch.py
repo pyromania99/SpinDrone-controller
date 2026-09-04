@@ -92,8 +92,9 @@ def launch_px4_sim(run_dir: Path, motor_moment: float, duration: float,
                    headless: bool = True) -> subprocess.Popen:
     """Start Isaac + PX4 with its ulog kept under ``run_dir``.
 
-    Headless by default: these runs are long and usually unattended. Pass
-    ``headless=False`` to bring up the viewport and watch one.
+    Headless defaults to True for callers that do not say - gain_search.py runs
+    unattended batches. fly.py flies one flight and passes False, because the
+    usual reason to fly a single one is to watch it.
     """
     if not wait_port_free() and on_port_busy is not None:
         on_port_busy(SIM_TCP_PORT)

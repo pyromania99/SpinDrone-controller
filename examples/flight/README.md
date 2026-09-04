@@ -27,6 +27,10 @@ below argparse. Reading a flag list never boots a simulator.
 
 ## The three levels
 
+Every level is **headed by default** — `fly.py` flies a single flight, and the
+usual reason to fly one is to watch it. Pass `--headless` for an unattended run.
+Batch work (`gain_search.py`) is headless regardless.
+
 | level | what is in the loop |
 |---|---|
 | **1 — Pegasus + Python** | The controller is a Python `Backend` reading simulator state directly. No PX4, no estimator, no transport delay — whatever it measures is the control law and the plant, nothing else. |

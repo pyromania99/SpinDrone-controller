@@ -70,11 +70,9 @@ def parse_args() -> argparse.Namespace:
                         "(r_ss ~ 4.9e7 * km). Default 2.7e-7 is ~13.2 rad/s, the spin "
                         "the existing GA front was searched at.")
     p.add_argument("--headless", action="store_true",
-                   help="Level 1: no viewport (it is headed by default).")
-    p.add_argument("--watch", action="store_true",
-                   help="Levels 2 and 3: bring up the viewport instead of running "
-                        "headless. They are headless by default because the flights "
-                        "are long and usually unattended.")
+                   help="Run without a viewport. Every level is headed by default: "
+                        "fly.py flies one flight, and the usual reason to fly one is "
+                        "to watch it. Batch work (gain_search.py) stays headless.")
     p.add_argument("--desaturation", choices=("uniform", "collective"), default="uniform",
                    help="What the mixer gives up when a rotor saturates. Keep 'uniform' "
                         "to stay comparable with every archived run.")
@@ -180,7 +178,7 @@ def fly_px4(a: argparse.Namespace) -> int:
             run_dir, a.motor_moment, duration,
             extra=["--desaturation", a.desaturation],
             log_path=sim_log,
-            headless=not a.watch,
+            headless=a.headless,
             on_port_busy=lambda port: log(
                 f"WARNING: TCP {port} still held; PX4 will likely fail to bind and "
                 f"report a bogus airframe mismatch"))
