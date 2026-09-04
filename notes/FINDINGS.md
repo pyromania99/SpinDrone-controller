@@ -279,6 +279,40 @@ gains that don't transfer.
 > points opt in via `ROTOR_TAU_PLACEHOLDER` (20 ms). Gains tuned before that commit were
 > tuned against the instant-response plant described above.
 
+## 6b. Cascaded PD cannot hold 30 rad/s; the mode is gyroscopic coning  **[measured]**
+
+Level 1, `km = 6e-7` (~29.5 rad/s steady), `--rotor-tau 0`, vertical-only
+profile, 30 s. Same plant for both laws; only the controller differs.
+
+`cascaded_pd` diverges. Attitude error grows exponentially at **+0.224 1/s**
+(doubling every 3.1 s), and the roll/pitch rate envelope grows monotonically
+per 5 s window: 0.038 → 0.041 → 0.049 → 0.072 → 0.157 → 0.282 rad/s. Altitude
+holds 1.48 m the whole time; it is *station* that is lost, reaching 7.66 m of
+lateral error by t = 30 s and still accelerating.
+
+The mode is identified, not guessed. Its dominant frequency is **30.58 rad/s**
+against a body spin of **29.69 rad/s** — a ratio of **1.030**, i.e. it rotates
+with the body. That is the coning mode `sweep_task.py` predicts: the
+`(Iyy - Izz)·q·r` Euler cross terms couple roll into pitch with a gain
+proportional to spin. On the measured composite inertia,
+`(Iyy - Izz)/Ixx = -0.901`, so at 29.7 rad/s the plant carries **26.8 1/s** of
+roll↔pitch coupling. Cascaded PD damps each axis independently and has no term
+of that form, so this is structural, not a tuning failure — no `Kd_att`
+recovers it, which is consistent with the archive, where the whole stable
+family at this spin sits at the *low* end of `Kp_att`.
+
+`eigen` holds it, on the identical plant. `M_eff = M - A_r` cancels exactly
+this coupling (see §the A_r sign fix, `593decc`). Measured: `|eR|` **decays**
+0.0097 → 0.0082 → 0.0045, the roll/pitch envelope is flat at 0.025-0.031 rad/s
+across every window, altitude sits at 1.49 m against a 1.50 m target, and
+final lateral error is **0.00 m**.
+
+Practical consequence: a PD-vs-eigen comparison at high spin is not measuring
+tuning quality, it is measuring whether the law cancels the gyroscopic term.
+Note also that a short run hides this — the archived `controller_eval`
+cascaded_pd log is 6.96 s, and at a 3.1 s doubling time the mode is still
+small there.
+
 ## 7. Yaw spin is by design; its rate is `motor_moment`  **[verified]**
 
 `rot_dir` defaults to `[-1,-1,-1,-1]` — all four rotors turn the same way, so reaction
