@@ -301,11 +301,18 @@ of that form, so this is structural, not a tuning failure — no `Kd_att`
 recovers it, which is consistent with the archive, where the whole stable
 family at this spin sits at the *low* end of `Kp_att`.
 
-`eigen` holds it, on the identical plant. `M_eff = M - A_r` cancels exactly
-this coupling (see §the A_r sign fix, `593decc`). Measured: `|eR|` **decays**
-0.0097 → 0.0082 → 0.0045, the roll/pitch envelope is flat at 0.025-0.031 rad/s
-across every window, altitude sits at 1.49 m against a 1.50 m target, and
-final lateral error is **0.00 m**.
+`eigen` holds it, on the identical plant (same spin to within 0.15 rad/s).
+`M_eff = M - A_r` cancels exactly this coupling (see §the A_r sign fix,
+`593decc`). Measured over 30 s: `|eR|` stays bounded at 0.0069 mean / 0.0098
+max, with a fitted growth rate of **+0.0001 1/s** — flat for practical
+purposes, and 2000x below PD's +0.224. The roll/pitch envelope is flat at
+0.025-0.031 rad/s across every window, altitude sits at 1.495 m against a
+1.50 m target, and lateral error peaks at 7.1 mm and ends at 0.44 mm.
+
+Stated precisely because it is easy to overclaim: the mode is not *decaying*,
+it is not growing at a rate that matters. At +0.0001 1/s the doubling time is
+about two hours, against a 30 s observation, so this says the coning mode is
+cancelled — not that the flight is proven stable indefinitely.
 
 Practical consequence: a PD-vs-eigen comparison at high spin is not measuring
 tuning quality, it is measuring whether the law cancels the gyroscopic term.
