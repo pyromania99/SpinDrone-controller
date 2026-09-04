@@ -83,6 +83,13 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--failure-mode", choices=("manual", "auto", "off"), default=None)
     g1.add_argument("--rotor", type=int, choices=[0, 1, 2, 3], default=None)
     g1.add_argument("--seed", type=int, default=None)
+    g1.add_argument("--rotor-tau", type=float, default=None, metavar="S",
+                    help="Level 1 rotor/ESC lag [s]; 0 for instant response, matching "
+                         "archives older than 2026-08-15.")
+    g1.add_argument("--controller-gains", nargs="*", default=[], metavar="K=V",
+                    help="Level 1 controller gains, e.g. Kp_att=60 Kd_att=1.481. "
+                         "Distinct from --gains, which sets PX4 parameters on "
+                         "levels 2 and 3.")
     g1.add_argument("--lateral", action="store_true", default=False,
                     help="Translate to the goal after taking off. Off by default so the "
                          "profile matches levels 2 and 3, which climb and hold the "
@@ -130,6 +137,10 @@ def fly_level_1(a: argparse.Namespace) -> int:
             args += [flag, str(val)]
     if a.headless:
         args.append("--headless")
+    if a.rotor_tau is not None:
+        args += ["--rotor-tau", repr(a.rotor_tau)]
+    if a.controller_gains:
+        args += ["--gains"] + list(a.controller_gains)
     if a.lateral:
         args.append("--lateral")
     if not a.takeoff_first:

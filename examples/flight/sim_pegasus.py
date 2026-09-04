@@ -39,6 +39,18 @@ def parse_args():
                    help="What the mixer gives up when a rotor saturates. 'uniform' is "
                         "the default everywhere else in this repo; 'collective' holds "
                         "lift and is what lets the vehicle climb after a rotor stops.")
+    p.add_argument("--rotor-tau", type=float, default=None, metavar="S",
+                   help="Rotor/ESC spin-up time constant [s]. Default is the shared "
+                        "placeholder (0.020). Pass 0 for instant response, which is "
+                        "the plant every archive in results/ older than 2026-08-15 "
+                        "was flown on - gains tuned there can be unstable against a "
+                        "lag that did not exist when they were found.")
+    p.add_argument("--gains", nargs="*", default=[], metavar="K=V",
+                   help="Controller gain overrides, e.g. --gains Kp_att=60 "
+                        "Kd_att=1.481 Kd_yaw_rate=0. Applied through "
+                        "controller_factory, the same path the sweeps use, so the "
+                        "names and per-axis broadcasting match an archive row. "
+                        "Without this the controller flies its own defaults.")
     p.add_argument("--lateral", action="store_true", default=False,
                    help="Translate to the goal after taking off. Off by default so "
                         "the profile matches levels 2 and 3, which climb to altitude "
@@ -56,7 +68,21 @@ def parse_args():
                         "which never happens headless - so a headless run needs this.")
     p.add_argument("--headless", action="store_true", default=False)
     # Isaac appends its own argv, so ignore what is not ours.
-    return p.parse_known_args()[0]
+    args = p.parse_known_args()[0]
+
+    # Parsed here rather than after startup: a typo in --gains should cost
+    # nothing, and main() does not run until Isaac has booted.
+    parsed = {}
+    for kv in args.gains:
+        key, sep, val = kv.partition("=")
+        if not sep:
+            p.error(f"--gains expects K=V, got {kv!r}")
+        try:
+            parsed[key.strip()] = float(val)
+        except ValueError:
+            p.error(f"--gains {key.strip()}: {val!r} is not a number")
+    args.gains = parsed
+    return args
 
 
 ARGS = parse_args()
@@ -102,6 +128,7 @@ from lpv_mpc_controller import LPVMPCController
 import rotor_failure
 import sweep_task as task
 import sim_clock
+import controller_factory as cf
 
 import numpy as np
 
@@ -121,7 +148,8 @@ class PegasusApp:
     def __init__(self, selected_controller: str, motor_moment: float = None,
                  failure_mode: str = "manual", failure_rotor: int = None,
                  failure_seed: int = None, desaturation: str = "uniform",
-                 takeoff_first: bool = True, lateral: bool = False):
+                 takeoff_first: bool = True, lateral: bool = False,
+                 gains: dict = None, rotor_tau: float = None):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -156,7 +184,8 @@ class PegasusApp:
         self.eval_dir = task.results_root() / "controller_eval"
 
         # Build selected backend from the controller registry
-        self.controller = build_controller(selected_controller, self.eval_dir)
+        self.controller = build_controller(selected_controller, self.eval_dir,
+                                          gains=gains, km=motor_moment)
         carb.log_warn(f"Using controller: {selected_controller}")
 
         # Wrap it so one rotor can be stopped mid-flight. The wrapper forwards
@@ -191,10 +220,13 @@ class PegasusApp:
         # sim_px4.py and genetic_sweep.py both carry it is exactly the drift that
         # made those two model different vehicles - and this script is the Pegasus-only
         # half of every PX4 comparison, so it is the one that most needs to match.
+        tau = ROTOR_TAU_PLACEHOLDER if rotor_tau is None else float(rotor_tau)
         config_multirotor1.thrust_curve = QuadraticThrustCurve(config={
             "motor_moment": motor_moment if motor_moment is not None else 0.0,
-            "rotor_tau": ROTOR_TAU_PLACEHOLDER,
+            "rotor_tau": tau,
         })
+        carb.log_warn(f"[plant] rotor_tau = {tau*1e3:.1f} ms"
+                      + ("  (instant response)" if tau == 0.0 else ""))
         # Which quantity the mixer sacrifices when a rotor saturates. "uniform"
         # is the default everywhere else; "collective" keeps lift and gives up
         # moment, which is what lets the vehicle climb after a rotor stops.
@@ -407,8 +439,26 @@ class PegasusApp:
         self.timeline.stop()
         simulation_app.close()
 
-def build_controller(controller_key: str, eval_dir):
-    """Factory/registry for all imported controllers."""
+def build_controller(controller_key: str, eval_dir, gains=None, km=None):
+    """Factory/registry for all imported controllers.
+
+    With ``gains``, construction is handed to controller_factory.make_controller -
+    the same path genetic_sweep.py uses - so a gain set copied out of an archive
+    row is interpreted identically here, including the scalar-to-per-axis
+    broadcasting that Kp_att/Kd_att need on the PD controller. Without gains the
+    registry below is used unchanged, so the no-flag behaviour is untouched.
+    """
+    if gains:
+        results = {
+            "pd": eval_dir / "cascaded_pd" / "statistics" / "cascaded_pd_statistics.npz",
+            "nonlinear": eval_dir / "nonlinear" / "statistics" / "nonlinear_statistics.npz",
+            "eigen": eval_dir / "eigen" / "statistics" / "eigen_statistics.npz",
+            "mpc": eval_dir / "lpv_mpc" / "statistics" / "lpv_mpc_statistics.npz",
+        }[controller_key]
+        carb.log_warn(f"[gains] {controller_key}: "
+                      + "  ".join(f"{k}={v:g}" for k, v in sorted(gains.items())))
+        return cf.make_controller(controller_key, gains, str(results),
+                                  (0.0, 0.0, 1.5), km=km)
 
     controller_registry = {
         "pd": lambda: CascadedPDController(
@@ -518,7 +568,9 @@ def main():
                         failure_seed=failure_seed,
                         desaturation=desaturation,
                         takeoff_first=ARGS.takeoff_first,
-                        lateral=ARGS.lateral)
+                        lateral=ARGS.lateral,
+                        gains=ARGS.gains,
+                        rotor_tau=ARGS.rotor_tau)
 
     # Run the application loop
     pg_app.run()
