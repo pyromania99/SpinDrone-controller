@@ -70,7 +70,11 @@ def parse_args() -> argparse.Namespace:
                         "(r_ss ~ 4.9e7 * km). Default 2.7e-7 is ~13.2 rad/s, the spin "
                         "the existing GA front was searched at.")
     p.add_argument("--headless", action="store_true",
-                   help="No viewport. Levels 2 and 3 always launch headless.")
+                   help="Level 1: no viewport (it is headed by default).")
+    p.add_argument("--watch", action="store_true",
+                   help="Levels 2 and 3: bring up the viewport instead of running "
+                        "headless. They are headless by default because the flights "
+                        "are long and usually unattended.")
     p.add_argument("--desaturation", choices=("uniform", "collective"), default="uniform",
                    help="What the mixer gives up when a rotor saturates. Keep 'uniform' "
                         "to stay comparable with every archived run.")
@@ -96,6 +100,11 @@ def parse_args() -> argparse.Namespace:
     g2.add_argument("--attach", action="store_true",
                     help="Do not launch anything - fly a sim that is already running. "
                          "Pair with --run-dir pointing at the directory it was given.")
+    g2.add_argument("--ctrl-alg", type=int, default=None, choices=(0, 1, 2, 3),
+                    help="PX4 control law to fly: 0 stock cascade, 1 cascaded PD, "
+                         "2 template, 3 eigen dynamics. Omit to fly whatever the "
+                         "airframe booted with (10016_none_iris defaults to 1). The "
+                         "law also names the run directory, so two laws never share one.")
     g2.add_argument("--gains", nargs="*", default=[],
                     help="PX4 parameter overrides, e.g. MC_EIG_WN=34.18.")
     g2.add_argument("--boot-timeout", type=float, default=240.0)
@@ -152,9 +161,14 @@ def fly_px4(a: argparse.Namespace) -> int:
     ground_truth = (a.level == 2)
     log(f"level {a.level} - {LEVELS[a.level]}")
 
+    # The control law goes in the directory name. Two laws flown back to back are
+    # different experiments, and a name that records only the level would file
+    # them together - which is how a cascaded_pd ulog ends up read as an eigen one.
+    alg_tag = (offboard.CTRL_ALG_NAMES.get(a.ctrl_alg, str(a.ctrl_alg))
+               if a.ctrl_alg is not None else "airframe")
     run_dir = Path(a.run_dir).expanduser().resolve() if a.run_dir else (
         simlaunch.REPO / "px4_runs" /
-        f"L{a.level}_{datetime.now():%Y%m%d_%H%M%S}")
+        f"L{a.level}_{alg_tag}_{datetime.now():%Y%m%d_%H%M%S}")
 
     sim_log = run_dir / "sim.log"
     proc = None
@@ -166,6 +180,7 @@ def fly_px4(a: argparse.Namespace) -> int:
             run_dir, a.motor_moment, duration,
             extra=["--desaturation", a.desaturation],
             log_path=sim_log,
+            headless=not a.watch,
             on_port_busy=lambda port: log(
                 f"WARNING: TCP {port} still held; PX4 will likely fail to bind and "
                 f"report a bogus airframe mismatch"))
@@ -179,7 +194,7 @@ def fly_px4(a: argparse.Namespace) -> int:
     opts = argparse.Namespace(
         run_dir=str(run_dir), altitude=a.altitude, hold=a.hold,
         boot_timeout=a.boot_timeout, ground_truth=ground_truth, gains=a.gains,
-        abort_on_loss=a.abort_on_loss, no_land=a.no_land)
+        abort_on_loss=a.abort_on_loss, no_land=a.no_land, ctrl_alg=a.ctrl_alg)
     try:
         return offboard.fly(opts)
     except SystemExit as exc:

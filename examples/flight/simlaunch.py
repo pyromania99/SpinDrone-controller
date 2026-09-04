@@ -88,13 +88,20 @@ def launch(script: Path, args: list[str], quiet: bool = True,
 
 def launch_px4_sim(run_dir: Path, motor_moment: float, duration: float,
                    extra: list[str] | None = None, quiet: bool = True,
-                   on_port_busy=None, log_path: Path | None = None) -> subprocess.Popen:
-    """Start Isaac + PX4 headless with its ulog kept under ``run_dir``."""
+                   on_port_busy=None, log_path: Path | None = None,
+                   headless: bool = True) -> subprocess.Popen:
+    """Start Isaac + PX4 with its ulog kept under ``run_dir``.
+
+    Headless by default: these runs are long and usually unattended. Pass
+    ``headless=False`` to bring up the viewport and watch one.
+    """
     if not wait_port_free() and on_port_busy is not None:
         on_port_busy(SIM_TCP_PORT)
     run_dir.mkdir(parents=True, exist_ok=True)
-    args = ["--headless", "--keep-log", str(run_dir),
+    args = ["--keep-log", str(run_dir),
             "--motor-moment", repr(motor_moment), "--duration", repr(duration)]
+    if headless:
+        args.insert(0, "--headless")
     return launch(SIM_PX4, args + list(extra or []), quiet=quiet, log_path=log_path)
 
 

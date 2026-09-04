@@ -32,6 +32,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from px4_driver import PX4Driver, log            # noqa: E402
 
 
+# MC_CTRL_ALG values, from PX4 src/modules/mc_controller/module.yaml.
+CTRL_ALG_NAMES = {
+    0: "stock_cascade",
+    1: "cascaded_pd",
+    2: "template",
+    3: "eigen",
+}
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -44,6 +53,11 @@ def parse_args() -> argparse.Namespace:
                         "on purpose - a divergence that takes a minute to develop is "
                         "exactly what a short window misses.")
     p.add_argument("--boot-timeout", type=float, default=240.0)
+    p.add_argument("--ctrl-alg", type=int, default=None,
+                   choices=(0, 1, 2, 3),
+                   help="PX4 control law to fly: 0 stock cascade, 1 cascaded PD, "
+                        "2 template, 3 eigen dynamics. Omit to fly whatever the "
+                        "airframe booted with (10016_none_iris defaults to 1).")
     p.add_argument("--ground-truth", action="store_true",
                    help="MC_CTRL_GT=1: feed the controller simulator truth, separating "
                         "'these gains are wrong' from 'the state reaching them is wrong'.")
@@ -88,9 +102,27 @@ def fly(ARGS) -> int:
 
     drv.check_airframe()
 
+    # Fly whichever control law is selected, rather than demanding one. This used
+    # to require MC_CTRL_ALG==3 and exit otherwise, which failed every level-2/3
+    # flight before it armed: 10016_none_iris boots with
+    # `param set-default MC_CTRL_ALG 1`, so a correctly loaded airframe was
+    # rejected for holding its own documented default.
+    #
+    # --ctrl-alg switches it, and is safe to apply live:
+    # MulticopterController::handleParameterUpdate() applies a change as soon as
+    # the vehicle is disarmed, which is its state here, before takeoff. set_gains
+    # reads back, so a rejected value raises rather than flying something other
+    # than what was asked for.
+    if ARGS.ctrl_alg is not None:
+        want_alg = int(ARGS.ctrl_alg)
+        current = drv.param_get("MC_CTRL_ALG")
+        if current is None or int(current) != want_alg:
+            log(f"MC_CTRL_ALG={current} -> setting {want_alg}")
+            drv.set_gains(MC_CTRL_ALG=want_alg)
     alg = drv.param_get("MC_CTRL_ALG")
-    if alg is None or int(alg) != 3:
-        sys.exit(f"MC_CTRL_ALG={alg}, expected 3 (eigen)")
+    if alg is None:
+        sys.exit("MC_CTRL_ALG unreadable - is mc_controller running?")
+    log(f"control law: {CTRL_ALG_NAMES.get(int(alg), '?')} (MC_CTRL_ALG={int(alg)})")
 
     if ARGS.ground_truth:
         drv.set_gains(MC_CTRL_GT=1)
