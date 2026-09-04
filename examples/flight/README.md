@@ -11,7 +11,7 @@ ulog after the fact; that is `../tools/px4_tuning/`.
 | script | run with | what it does |
 |---|---|---|
 | **`fly.py`** | `python3` | **The front door.** `--level 1|2|3` picks a rung of the ladder below and dispatches to the right pair of scripts. Launches its own sim, or `--attach`es to one you started yourself. Start here. |
-| `sim_pegasus.py` | `isaac_run` | Isaac side of **level 1**. A pure-Python controller flying inside Isaac Sim directly — no PX4. Flags for controller, motor moment, failure mode and mixer policy; anything left unset is prompted for interactively when run directly, so its old interactive mode still works if you run it by hand. |
+| `sim_pegasus.py` | `isaac_run` | Isaac side of **level 1**. Climbs to altitude over the spawn point before translating to the goal, matching what PX4 does on levels 2/3; `--no-takeoff-first` restores the old single-diagonal flight that the archived sweeps used. A pure-Python controller flying inside Isaac Sim directly — no PX4. Flags for controller, motor moment, failure mode and mixer policy; anything left unset is prompted for interactively when run directly, so its old interactive mode still works if you run it by hand. |
 | `sim_px4.py` | `isaac_run` | Isaac side of **levels 2 and 3**. Spawns the vehicle and boots a real PX4 SITL process talking MAVLink to it. Does **not** arm or fly anything — it just puts a flyable sim on the wire for `offboard.py` to fly. `--keep-log` keeps the ulog. |
 | `offboard.py` | `python3` | The actual flight profile for levels 2/3: arm, take off, hold, land, then point at the resulting ulog. Talks to an already-running PX4 over MAVLink. `fly.py` calls this automatically; run it directly if you launched `sim_px4.py` yourself and want to fly it without `fly.py` owning the process. |
 | `px4_driver.py` | *(library)* | The shared `PX4Driver` class every offboard script here imports: connect, arm, offboard setpoints, live parameter get/set, and `check_airframe()`, which refuses to fly the wrong airframe rather than fly it wrong. Not run on its own — keep it a sibling of whatever imports it. |
@@ -70,7 +70,15 @@ pymavlink. One process cannot be both. So `fly.py` stays plain `python3` and
 launches the Isaac side as a subprocess — the same thing `gain_search.py` has
 always done.
 
+## When a level 2/3 run fails
+
+`fly.py` writes the sim's own stdout/stderr to `<run-dir>/sim.log` and prints
+that path on launch. If the flight dies with "PX4 never appeared", the reason is
+in that file — it is the sim that failed, not the offboard half, and `fly.py`
+now tails it for you rather than leaving you with the symptom.
+
 ## Output
 
 Level-1 telemetry goes to `../results/`, the one anchored tree shared with every
-sweep. PX4 runs write their ulog under `px4_runs/`. Both are gitignored.
+sweep. PX4 runs write their ulog under `px4_runs/`, alongside `sim.log`. Both
+are gitignored.

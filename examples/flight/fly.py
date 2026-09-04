@@ -81,6 +81,11 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--failure-mode", choices=("manual", "auto", "off"), default=None)
     g1.add_argument("--rotor", type=int, choices=[0, 1, 2, 3], default=None)
     g1.add_argument("--seed", type=int, default=None)
+    g1.add_argument("--no-takeoff-first", dest="takeoff_first", action="store_false",
+                    default=True,
+                    help="Fly straight at the goal as one diagonal instead of climbing "
+                         "to altitude first. The archived sweeps in results/ were flown "
+                         "this way, so use it when comparing against one.")
 
     g2 = p.add_argument_group("levels 2 and 3")
     g2.add_argument("--altitude", type=float, default=6.0)
@@ -114,12 +119,32 @@ def fly_level_1(a: argparse.Namespace) -> int:
             args += [flag, str(val)]
     if a.headless:
         args.append("--headless")
+    if not a.takeoff_first:
+        args.append("--no-takeoff-first")
 
     # Not quiet, and not detached from stdin: level 1 prompts for whatever was not
     # passed, and its viewport output is the point of running it.
     log(f"level 1 - {LEVELS[1]}")
     proc = simlaunch.launch(simlaunch.SIM_PEGASUS, args, quiet=False)
     return proc.wait()
+
+
+def _report_sim_failure(proc, sim_log: Path, tail: int = 25) -> None:
+    """Print why the sim died, from its own log, rather than only that it did."""
+    rc = proc.poll()
+    log(f"--- sim exited with code {rc} ---" if rc is not None
+        else "--- sim still running; it never became flyable ---")
+    try:
+        lines = sim_log.read_text(errors="replace").splitlines()
+    except OSError as exc:
+        log(f"could not read {sim_log}: {exc}")
+        return
+    if not lines:
+        log(f"{sim_log} is empty - Isaac produced no output at all.")
+        return
+    log(f"last {min(tail, len(lines))} lines of {sim_log}:")
+    for line in lines[-tail:]:
+        log(f"  | {line}")
 
 
 def fly_px4(a: argparse.Namespace) -> int:
@@ -131,13 +156,16 @@ def fly_px4(a: argparse.Namespace) -> int:
         simlaunch.REPO / "px4_runs" /
         f"L{a.level}_{datetime.now():%Y%m%d_%H%M%S}")
 
+    sim_log = run_dir / "sim.log"
     proc = None
     if not a.attach:
         duration = a.duration if a.duration is not None else a.hold + 180.0
         log(f"launching sim -> {run_dir}")
+        log(f"sim output    -> {sim_log}")
         proc = simlaunch.launch_px4_sim(
             run_dir, a.motor_moment, duration,
             extra=["--desaturation", a.desaturation],
+            log_path=sim_log,
             on_port_busy=lambda port: log(
                 f"WARNING: TCP {port} still held; PX4 will likely fail to bind and "
                 f"report a bogus airframe mismatch"))
@@ -154,6 +182,14 @@ def fly_px4(a: argparse.Namespace) -> int:
         abort_on_loss=a.abort_on_loss, no_land=a.no_land)
     try:
         return offboard.fly(opts)
+    except SystemExit as exc:
+        # offboard.fly() exits with a message when PX4 never shows up. That names
+        # the symptom; the cause is almost always in the sim's own output, which
+        # is on disk rather than on this terminal. Surface it here instead of
+        # leaving the reader to guess which of Isaac, PX4 or the airframe failed.
+        if proc is not None and sim_log.exists():
+            _report_sim_failure(proc, sim_log)
+        raise exc
     finally:
         if proc is not None:
             log("stopping sim")

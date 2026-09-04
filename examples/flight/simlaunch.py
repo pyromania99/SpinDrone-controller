@@ -63,13 +63,24 @@ def wait_port_free(timeout: float = 60.0) -> bool:
     return not port_busy()
 
 
-def launch(script: Path, args: list[str], quiet: bool = True) -> subprocess.Popen:
+def launch(script: Path, args: list[str], quiet: bool = True,
+           log_path: Path | None = None) -> subprocess.Popen:
     """Run an Isaac-side script under Isaac's own interpreter.
 
     ``start_new_session`` lets the whole tree be killed later: Isaac spawns
     children that outlive a bare terminate().
+
+    ``log_path`` captures the sim's stdout and stderr to a file. Prefer it to
+    ``quiet``: a sim that dies during boot is the single most likely failure
+    here, and with the output on /dev/null the only symptom is the caller
+    waiting out its boot timeout and then reporting that PX4 never appeared -
+    which names the symptom and hides the cause.
     """
-    sink = subprocess.DEVNULL if quiet else None
+    if log_path is not None:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        sink = open(log_path, "wb")
+    else:
+        sink = subprocess.DEVNULL if quiet else None
     return subprocess.Popen([str(ISAAC_PY), str(script), *args],
                             cwd=str(REPO), start_new_session=True,
                             stdout=sink, stderr=sink)
@@ -77,14 +88,14 @@ def launch(script: Path, args: list[str], quiet: bool = True) -> subprocess.Pope
 
 def launch_px4_sim(run_dir: Path, motor_moment: float, duration: float,
                    extra: list[str] | None = None, quiet: bool = True,
-                   on_port_busy=None) -> subprocess.Popen:
+                   on_port_busy=None, log_path: Path | None = None) -> subprocess.Popen:
     """Start Isaac + PX4 headless with its ulog kept under ``run_dir``."""
     if not wait_port_free() and on_port_busy is not None:
         on_port_busy(SIM_TCP_PORT)
     run_dir.mkdir(parents=True, exist_ok=True)
     args = ["--headless", "--keep-log", str(run_dir),
             "--motor-moment", repr(motor_moment), "--duration", repr(duration)]
-    return launch(SIM_PX4, args + list(extra or []), quiet=quiet)
+    return launch(SIM_PX4, args + list(extra or []), quiet=quiet, log_path=log_path)
 
 
 def kill(proc: subprocess.Popen) -> None:

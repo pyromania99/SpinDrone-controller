@@ -39,6 +39,13 @@ def parse_args():
                    help="What the mixer gives up when a rotor saturates. 'uniform' is "
                         "the default everywhere else in this repo; 'collective' holds "
                         "lift and is what lets the vehicle climb after a rotor stops.")
+    p.add_argument("--no-takeoff-first", dest="takeoff_first", action="store_false",
+                   default=True,
+                   help="Fly straight at the goal as one diagonal, climbing and "
+                        "translating together. That is what every archived sweep in "
+                        "results/ was flown with, so use it when comparing against "
+                        "one. The default climbs to altitude over the spawn first, "
+                        "which is what PX4 does on levels 2 and 3.")
     p.add_argument("--headless", action="store_true", default=False)
     # Isaac appends its own argv, so ignore what is not ours.
     return p.parse_known_args()[0]
@@ -104,7 +111,8 @@ class PegasusApp:
 
     def __init__(self, selected_controller: str, motor_moment: float = None,
                  failure_mode: str = "manual", failure_rotor: int = None,
-                 failure_seed: int = None, desaturation: str = "uniform"):
+                 failure_seed: int = None, desaturation: str = "uniform",
+                 takeoff_first: bool = True):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -184,11 +192,12 @@ class PegasusApp:
         self.desaturation = desaturation
         config_multirotor1.desaturation = desaturation
 
+        SPAWN = [2.3, -1.5, 0.07]
         Multirotor(
             "/World/quadrotor1",
             ROBOTS['Iris'],
             0,
-            [2.3, -1.5, 0.07],
+            SPAWN,
             Rotation.from_euler("XYZ", [0.0, 0.0, 0.0], degrees=True).as_quat(),
             config=config_multirotor1,
         )
@@ -196,6 +205,45 @@ class PegasusApp:
         # Arena the flight monitor judges takeoff against. Generous, since
         # nothing here terminates on leaving it.
         self._bounds = [-50., 50., -50., 50., 0., 50.]
+
+        # ── Climb first, translate second ────────────────────────────────────
+        #
+        # The controllers take a single fixed target, so a ground start at SPAWN
+        # with a goal somewhere else is flown as one diagonal: the vehicle climbs
+        # and translates at the same time, and the attitude needed for the
+        # lateral leg is demanded while it is still near the floor. PX4 does not
+        # fly it that way - offboard.py takes off vertically and only then holds
+        # a position - so the two levels were being asked to do different things.
+        #
+        # Staged here instead: hold the goal ALTITUDE directly above the spawn
+        # until the vehicle actually gets there, then hand over the real goal.
+        # Set --no-takeoff-first to fly the old single diagonal, which is what
+        # every archived sweep in results/ was flown with.
+        self._takeoff_first = takeoff_first
+        self._goal = None
+        self._translated = True
+        goal = getattr(self.controller, "hover_target", None)
+        if takeoff_first and goal is not None:
+            self._goal = np.array(goal, dtype=float)
+            # Same altitude, but straight up from where it starts.
+            self.controller.hover_target = np.array(
+                [SPAWN[0], SPAWN[1], self._goal[2]], dtype=float)
+            # 90% of the goal altitude, NOT FlightMonitor's TAKEOFF_ALTITUDE_FRAC
+            # (0.5). That fraction answers "has it left the ground", which is a
+            # crash gate; this needs "is it actually at altitude", and handing the
+            # lateral goal over at half height would reintroduce the diagonal this
+            # is meant to remove. Short of 1.0 so a small steady-state droop
+            # cannot stall the handover forever.
+            self._handover_alt = 0.90 * float(self._goal[2])
+            self._translated = False
+            carb.log_warn(
+                f"[takeoff-first] climbing to {self._goal[2]:.2f} m over the spawn, "
+                f"then translating to {tuple(round(float(v), 2) for v in self._goal)}")
+        elif takeoff_first:
+            # nonlinear_controller follows its own built-in trajectory and has no
+            # hover_target to stage; say so rather than silently doing nothing.
+            carb.log_warn("[takeoff-first] controller has no hover_target "
+                          "(trajectory-driven); flying it unstaged.")
 
         # Reset the simulation environment so that all articulations (aka robots) are initialized
         # backend.start() is NOT called here: Vehicle's timeline callback invokes
@@ -272,6 +320,22 @@ class PegasusApp:
                                        else f"settling: |v|={np.linalg.norm(b.velocity):.2f} m/s")
             self._failure_label.text = "no failure"
 
+    def _maybe_translate(self) -> None:
+        """Hand the real goal over once the vehicle has actually climbed.
+
+        Called every step; a no-op after the handover, and when staging is off
+        or the controller has no hover_target to stage.
+        """
+        if self._translated:
+            return
+        z = float(np.asarray(self.controller.p, dtype=float)[2])
+        if z < self._handover_alt:
+            return
+        self.controller.hover_target = self._goal
+        self._translated = True
+        carb.log_warn(f"[takeoff-first] reached {z:.2f} m - translating to "
+                      f"{tuple(round(float(v), 2) for v in self._goal)}")
+
     def run(self):
         """
         Method that implements the application main loop, where the physics steps are executed.
@@ -295,6 +359,7 @@ class PegasusApp:
             if self.failure_mode != "off":
                 self.backend.check_oob(self._bounds)
 
+            self._maybe_translate()
             self._update_yaw_rate_overlay()
         
         # Cleanup and stop
@@ -411,7 +476,8 @@ def main():
                         failure_mode=failure_mode,
                         failure_rotor=failure_rotor,
                         failure_seed=failure_seed,
-                        desaturation=desaturation)
+                        desaturation=desaturation,
+                        takeoff_first=ARGS.takeoff_first)
 
     # Run the application loop
     pg_app.run()
