@@ -46,6 +46,10 @@ def parse_args():
                         "results/ was flown with, so use it when comparing against "
                         "one. The default climbs to altitude over the spawn first, "
                         "which is what PX4 does on levels 2 and 3.")
+    p.add_argument("--duration", type=float, default=None,
+                   help="Stop after this many seconds of simulated time and write the "
+                        "npz. Without it the run continues until the window is closed, "
+                        "which never happens headless - so a headless run needs this.")
     p.add_argument("--headless", action="store_true", default=False)
     # Isaac appends its own argv, so ignore what is not ours.
     return p.parse_known_args()[0]
@@ -93,6 +97,7 @@ from eigen_controller import EigenController
 from lpv_mpc_controller import LPVMPCController
 import rotor_failure
 import sweep_task as task
+import sim_clock
 
 import numpy as np
 
@@ -344,8 +349,22 @@ class PegasusApp:
         # Start the simulation
         self.timeline.play()
 
-        # The "infinite" loop
+        # Bounded when --duration is given, unbounded otherwise. Headless has no
+        # window to close, so without a bound the run only ends when something
+        # kills it - and a killed process never reaches timeline.stop(), which is
+        # what makes the vehicle flush its npz.
+        steps_left = None
+        if ARGS.duration is not None:
+            steps_left, _ = sim_clock.steps_for_duration(self.world, ARGS.duration)
+            carb.log_warn(f"[duration] stopping after {ARGS.duration:g} s "
+                          f"({steps_left} steps)")
+
         while simulation_app.is_running():
+            if steps_left is not None:
+                if steps_left <= 0:
+                    carb.log_warn("[duration] reached; stopping")
+                    break
+                steps_left -= 1
 
             # Update the UI of the app and perform the physics step
             self.world.step(render=True)

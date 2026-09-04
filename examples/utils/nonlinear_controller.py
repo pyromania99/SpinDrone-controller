@@ -18,6 +18,7 @@ from pegasus.simulator.logic.state import State
 from pegasus.simulator.logic.backends import Backend
 
 # Auxiliary scipy and numpy modules
+from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -152,6 +153,12 @@ class NonlinearController(Backend):
         statistics["desired_body_z_rate"] = np.array(self.desired_body_z_rate_over_time)
         import os
         os.makedirs(os.path.dirname(self.results_files), exist_ok=True)
+        # Create the directory before writing. A controller is handed an
+        # absolute results path by its caller, and nothing guarantees the
+        # parent exists - a fresh checkout, or a results tree that moved,
+        # both leave np.savez raising FileNotFoundError at the very end of
+        # an otherwise good flight, losing the whole run.
+        Path(self.results_files).parent.mkdir(parents=True, exist_ok=True)
         np.savez(self.results_files, **statistics)
         carb.log_warn("Statistics saved to: " + self.results_files)
 

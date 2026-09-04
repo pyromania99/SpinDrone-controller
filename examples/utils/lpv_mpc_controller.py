@@ -220,6 +220,12 @@ class LPVMPCController(Backend):
         }
         import os
         os.makedirs(os.path.dirname(self.results_file), exist_ok=True)
+        # Create the directory before writing. A controller is handed an
+        # absolute results path by its caller, and nothing guarantees the
+        # parent exists - a fresh checkout, or a results tree that moved,
+        # both leave np.savez raising FileNotFoundError at the very end of
+        # an otherwise good flight, losing the whole run.
+        Path(self.results_file).parent.mkdir(parents=True, exist_ok=True)
         np.savez(self.results_file, **statistics)
         carb.log_warn("MPC Statistics saved to: " + self.results_file)
         self.reset_statistics()
