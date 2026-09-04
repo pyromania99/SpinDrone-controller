@@ -83,11 +83,15 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--failure-mode", choices=("manual", "auto", "off"), default=None)
     g1.add_argument("--rotor", type=int, choices=[0, 1, 2, 3], default=None)
     g1.add_argument("--seed", type=int, default=None)
+    g1.add_argument("--lateral", action="store_true", default=False,
+                    help="Translate to the goal after taking off. Off by default so the "
+                         "profile matches levels 2 and 3, which climb and hold the "
+                         "takeoff point; a level-1 run that also translates is not "
+                         "comparable with them.")
     g1.add_argument("--no-takeoff-first", dest="takeoff_first", action="store_false",
                     default=True,
-                    help="Fly straight at the goal as one diagonal instead of climbing "
-                         "to altitude first. The archived sweeps in results/ were flown "
-                         "this way, so use it when comparing against one.")
+                    help="With --lateral, fly one diagonal instead of climbing first. "
+                         "The archived sweeps in results/ were flown this way.")
 
     g2 = p.add_argument_group("levels 2 and 3")
     g2.add_argument("--altitude", type=float, default=6.0)
@@ -126,6 +130,8 @@ def fly_level_1(a: argparse.Namespace) -> int:
             args += [flag, str(val)]
     if a.headless:
         args.append("--headless")
+    if a.lateral:
+        args.append("--lateral")
     if not a.takeoff_first:
         args.append("--no-takeoff-first")
 

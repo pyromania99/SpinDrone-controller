@@ -39,13 +39,17 @@ def parse_args():
                    help="What the mixer gives up when a rotor saturates. 'uniform' is "
                         "the default everywhere else in this repo; 'collective' holds "
                         "lift and is what lets the vehicle climb after a rotor stops.")
+    p.add_argument("--lateral", action="store_true", default=False,
+                   help="Translate to the goal after taking off. Off by default so "
+                        "the profile matches levels 2 and 3, which climb to altitude "
+                        "and hold the takeoff point - a level-1 run that also "
+                        "translates is not comparable with them.")
     p.add_argument("--no-takeoff-first", dest="takeoff_first", action="store_false",
                    default=True,
-                   help="Fly straight at the goal as one diagonal, climbing and "
-                        "translating together. That is what every archived sweep in "
-                        "results/ was flown with, so use it when comparing against "
-                        "one. The default climbs to altitude over the spawn first, "
-                        "which is what PX4 does on levels 2 and 3.")
+                   help="With --lateral, fly one diagonal to the goal (climbing and "
+                        "translating together) instead of climbing first. That is how "
+                        "every archived sweep in results/ was flown, so use it when "
+                        "comparing against one. No effect without --lateral.")
     p.add_argument("--duration", type=float, default=None,
                    help="Stop after this many seconds of simulated time and write the "
                         "npz. Without it the run continues until the window is closed, "
@@ -117,7 +121,7 @@ class PegasusApp:
     def __init__(self, selected_controller: str, motor_moment: float = None,
                  failure_mode: str = "manual", failure_rotor: int = None,
                  failure_seed: int = None, desaturation: str = "uniform",
-                 takeoff_first: bool = True):
+                 takeoff_first: bool = True, lateral: bool = False):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -211,24 +215,34 @@ class PegasusApp:
         # nothing here terminates on leaving it.
         self._bounds = [-50., 50., -50., 50., 0., 50.]
 
-        # ── Climb first, translate second ────────────────────────────────────
+        # ── Flight profile: climb, then hold or translate ────────────────────
         #
-        # The controllers take a single fixed target, so a ground start at SPAWN
-        # with a goal somewhere else is flown as one diagonal: the vehicle climbs
-        # and translates at the same time, and the attitude needed for the
-        # lateral leg is demanded while it is still near the floor. PX4 does not
-        # fly it that way - offboard.py takes off vertically and only then holds
-        # a position - so the two levels were being asked to do different things.
+        # Default is climb-and-hold over the spawn, with NO lateral leg, because
+        # that is what levels 2 and 3 fly: offboard.py takes off to altitude and
+        # then holds local NED (0, 0, -alt) - the takeoff point - for the whole
+        # run. Level 1 used to fly a ground start at SPAWN toward a goal
+        # elsewhere, so it alone was doing a translation, and the ladder's
+        # differences included that instead of only the thing being measured.
         #
-        # Staged here instead: hold the goal ALTITUDE directly above the spawn
-        # until the vehicle actually gets there, then hand over the real goal.
-        # Set --no-takeoff-first to fly the old single diagonal, which is what
-        # every archived sweep in results/ was flown with.
-        self._takeoff_first = takeoff_first
+        # --lateral restores the translation, and then --no-takeoff-first
+        # decides how: staged (climb to altitude first, then go) or as the
+        # single diagonal every archived sweep in results/ was flown with.
         self._goal = None
-        self._translated = True
+        self._translated = True          # nothing pending
         goal = getattr(self.controller, "hover_target", None)
-        if takeoff_first and goal is not None:
+
+        if goal is None:
+            # nonlinear_controller follows its own built-in trajectory and has no
+            # hover_target to retarget; say so rather than silently doing nothing.
+            carb.log_warn("[profile] controller is trajectory-driven (no "
+                          "hover_target); flying it unmodified.")
+        elif not lateral:
+            hold = np.array([SPAWN[0], SPAWN[1], float(goal[2])], dtype=float)
+            self.controller.hover_target = hold
+            carb.log_warn(
+                f"[profile] vertical only: climb to {hold[2]:.2f} m over the spawn "
+                f"and hold. Matches levels 2/3. --lateral to translate.")
+        elif takeoff_first:
             self._goal = np.array(goal, dtype=float)
             # Same altitude, but straight up from where it starts.
             self.controller.hover_target = np.array(
@@ -242,13 +256,13 @@ class PegasusApp:
             self._handover_alt = 0.90 * float(self._goal[2])
             self._translated = False
             carb.log_warn(
-                f"[takeoff-first] climbing to {self._goal[2]:.2f} m over the spawn, "
-                f"then translating to {tuple(round(float(v), 2) for v in self._goal)}")
-        elif takeoff_first:
-            # nonlinear_controller follows its own built-in trajectory and has no
-            # hover_target to stage; say so rather than silently doing nothing.
-            carb.log_warn("[takeoff-first] controller has no hover_target "
-                          "(trajectory-driven); flying it unstaged.")
+                f"[profile] climbing to {self._goal[2]:.2f} m over the spawn, then "
+                f"translating to {tuple(round(float(v), 2) for v in self._goal)}")
+        else:
+            carb.log_warn(
+                f"[profile] single diagonal from the spawn to "
+                f"{tuple(round(float(v), 2) for v in np.asarray(goal, dtype=float))} "
+                f"- climbing and translating together, as the archived sweeps did.")
 
         # Reset the simulation environment so that all articulations (aka robots) are initialized
         # backend.start() is NOT called here: Vehicle's timeline callback invokes
@@ -353,21 +367,28 @@ class PegasusApp:
         # window to close, so without a bound the run only ends when something
         # kills it - and a killed process never reaches timeline.stop(), which is
         # what makes the vehicle flush its npz.
-        steps_left = None
+        # Measured in SIMULATED seconds actually flown, not in steps. Counting
+        # steps needs a step->time factor, and world.step(render=True) advances a
+        # rendering frame that can contain several physics steps: a 25 s request
+        # counted that way ran 100 s. elapsed_from_backends reads the time the
+        # physics callback actually accumulated, so it holds whatever the
+        # physics/rendering dt ratio is.
         if ARGS.duration is not None:
-            steps_left, _ = sim_clock.steps_for_duration(self.world, ARGS.duration)
-            carb.log_warn(f"[duration] stopping after {ARGS.duration:g} s "
-                          f"({steps_left} steps)")
+            carb.log_warn(f"[duration] stopping after {ARGS.duration:g} simulated s")
+
+        # Rendering headless costs time and buys nothing - and it is what made a
+        # step count mean four different things depending on the flag.
+        render = not ARGS.headless
 
         while simulation_app.is_running():
-            if steps_left is not None:
-                if steps_left <= 0:
-                    carb.log_warn("[duration] reached; stopping")
+            if ARGS.duration is not None:
+                flown = sim_clock.elapsed_from_backends([self.backend])
+                if flown >= ARGS.duration:
+                    carb.log_warn(f"[duration] reached {flown:.2f} s; stopping")
                     break
-                steps_left -= 1
 
             # Update the UI of the app and perform the physics step
-            self.world.step(render=True)
+            self.world.step(render=render)
 
             # Advance the flight monitor. Its return value is deliberately
             # ignored: it reports a crash, and this app exists to watch what
@@ -496,7 +517,8 @@ def main():
                         failure_rotor=failure_rotor,
                         failure_seed=failure_seed,
                         desaturation=desaturation,
-                        takeoff_first=ARGS.takeoff_first)
+                        takeoff_first=ARGS.takeoff_first,
+                        lateral=ARGS.lateral)
 
     # Run the application loop
     pg_app.run()
