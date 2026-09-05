@@ -58,6 +58,12 @@ def parse_args():
                    help="b_mdyn values to try at each tau. gene_space.py bounds b at "
                         "[0, 40]; the default covers the lower two thirds, where every "
                         "archived front sits.")
+    p.add_argument("--theta-deg", type=float, nargs="*", default=None,
+                   help="Sweep theta_mdyn (degrees) instead of b_mdyn, holding the "
+                        "M_dyn magnitude fixed at --wn-mdyn. This is the a*R(theta) "
+                        "parameterisation: magnitude and rotation are independent, "
+                        "and theta is not confined to the first quadrant the way "
+                        "(a>0, b>=0) is. Try: --theta-deg 0 30 60 90 120 150 180.")
     p.add_argument("--motor-moment", type=float, default=6.0e-7,
                    help="km, which sets the steady spin (r_ss ~ 4.9e7 * km). Default "
                         "6e-7 is ~30 rad/s, the spin the tau effect was measured at.")
@@ -126,6 +132,14 @@ import sweep_task as task                      # noqa: E402
 ARGS.spawn_altitude = task.resolve_spawn_altitude(ARGS.spawn_altitude)
 if ARGS.goal_radius is None:
     ARGS.goal_radius = task.DEFAULT_GOAL_RADIUS
+
+# Which knob this run varies. b_mdyn is the legacy Cartesian entry; theta_mdyn
+# is the angle of the same 2x2 block once it is read as magnitude-and-rotation,
+# and it is the one that can leave the first quadrant.
+SWEEP_THETA = ARGS.theta_deg is not None
+AXIS_NAME = "theta_mdyn" if SWEEP_THETA else "b_mdyn"
+AXIS_LABEL = "theta_mdyn [deg]" if SWEEP_THETA else "b_mdyn"
+AXIS_VALUES = list(ARGS.theta_deg) if SWEEP_THETA else list(ARGS.b_values)
 
 # ── OOB-aware telemetry backend (same gating as the other sweeps) ─────────────
 class BoundedBackend(Backend):
@@ -254,7 +268,8 @@ def pick_ideal(rows_for_tau: list) -> dict:
 def save_csv(rows: list, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "b_vs_tau.csv"
-    cols = ["tau_ms", "b_mdyn", "wn_mdyn", "motor_moment", "score", "effort",
+    cols = ["tau_ms", "axis", "axis_value", "b_mdyn", "wn_mdyn", "motor_moment",
+            "score", "effort",
             "stable", "r_ss", "rms_error", "failure"]
     with open(path, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
@@ -310,20 +325,21 @@ def save_plots(rows: list, out_dir: Path, mm: float) -> None:
                     (tau - 1.25, b - 2), 2.5, 4, hatch="xx", fill=False,
                     edgecolor="0.55", lw=0.0))
 
+    lim = "largest" if not SWEEP_THETA else "widest"
     ax.plot(taus, ceiling, "s--", color="darkorange", lw=2.4, ms=9,
-            label="largest STABLE b (the binding limit)", zorder=6)
+            label=f"{lim} STABLE {AXIS_NAME} (the binding limit)", zorder=6)
     ax.plot(taus, best_b, "o-", color="crimson", lw=2.2, ms=8,
-            label="best-scoring b (shallow optimum)", zorder=7)
+            label=f"best-scoring {AXIS_NAME}", zorder=7)
     for tau, none in zip(taus, no_stable):
         if none:
             ax.axvspan(tau - 1.25, tau + 1.25, color="crimson", alpha=0.10, zorder=0)
     if any(no_stable):
         ax.plot([], [], "s", color="crimson", alpha=0.3, ms=12,
-                label="no b is stable at this tau")
+                label=f"no {AXIS_NAME} is stable at this tau")
 
     ax.set_xlabel("rotor_tau [ms]")
-    ax.set_ylabel("b_mdyn")
-    ax.set_title(f"M_dyn cross-coupling b vs rotor/ESC lag\n"
+    ax.set_ylabel(AXIS_LABEL)
+    ax.set_title(f"M_dyn {AXIS_NAME} vs rotor/ESC lag\n"
                  f"km = {mm:.1e}  (r_ss ≈ {4.9e7 * mm:.0f} rad/s), "
                  f"{ARGS.duration:g} s per run — hatched = diverged")
     ax.legend(loc="upper right", fontsize=9)
@@ -341,9 +357,10 @@ def save_plots(rows: list, out_dir: Path, mm: float) -> None:
         shown = np.log10(np.where(np.isfinite(grid), grid, np.nan))
     mesh = ax.pcolormesh(taus, bs, shown, shading="nearest", cmap="magma_r")
     fig.colorbar(mesh, ax=ax, label="log10(score) — white cells never finished")
-    ax.plot(taus, ceiling, "s--", color="cyan", lw=2, ms=8, label="largest stable b")
-    ax.set_xlabel("rotor_tau [ms]"); ax.set_ylabel("b_mdyn")
-    ax.set_title("Score over the full (tau, b) grid")
+    ax.plot(taus, ceiling, "s--", color="cyan", lw=2, ms=8,
+            label=f"stability limit in {AXIS_NAME}")
+    ax.set_xlabel("rotor_tau [ms]"); ax.set_ylabel(AXIS_LABEL)
+    ax.set_title(f"Score over the full (tau, {AXIS_NAME}) grid")
     ax.legend(loc="best")
     fig.tight_layout()
     fig.savefig(out_dir / "score_heatmap.png", dpi=150)
@@ -356,20 +373,26 @@ def main():
     render_sim = not ARGS.headless
     bounds = ARGS.bounds
     mm = ARGS.motor_moment
-    b_values = list(ARGS.b_values)
+    axis_values = list(AXIS_VALUES)
     tau_list = list(ARGS.tau_ms)
-    pop_size = len(b_values)
+    pop_size = len(axis_values)
 
     base_dir = Path(__file__).resolve().parent.parent
     results_base = task.results_root(base_dir)
-    out_dir = results_base / "b_vs_tau" / f"mm_{mm:.1e}"
+    stem = "theta_vs_tau" if SWEEP_THETA else "b_vs_tau"
+    out_dir = results_base / stem / f"mm_{mm:.1e}"
     if ARGS.run_tag:
         out_dir = out_dir / ARGS.run_tag
 
     carb.log_warn("\n" + "=" * 60)
-    carb.log_warn("[b-vs-tau] ideal M_dyn b against rotor/ESC lag")
+    carb.log_warn(f"[b-vs-tau] ideal M_dyn {AXIS_NAME} against rotor/ESC lag")
     carb.log_warn(f"[b-vs-tau] tau [ms]  : {tau_list}")
-    carb.log_warn(f"[b-vs-tau] b values  : {b_values}  ({pop_size} drones in parallel)")
+    carb.log_warn(f"[b-vs-tau] {AXIS_NAME:9}: {axis_values}  "
+                  f"({pop_size} drones in parallel)")
+    if SWEEP_THETA:
+        carb.log_warn(f"[b-vs-tau] magnitude : wn_mdyn = "
+                      f"{ARGS.wn_mdyn if ARGS.wn_mdyn is not None else 'controller default'}"
+                      f"  (held fixed; only the rotation varies)")
     carb.log_warn(f"[b-vs-tau] km        : {mm:.2e}  -> r_ss ~ {4.9e7 * mm:.1f} rad/s")
     carb.log_warn(f"[b-vs-tau] duration  : {ARGS.duration}s per run, "
                   f"{len(tau_list)} batches")
@@ -410,10 +433,13 @@ def main():
         target = task.offset_target(spawn_pos, ARGS.target_altitude,
                                     ARGS.goal_radius, goal_rng, max_dx=max_dx)
         drone_bounds = [spawn_x - half, spawn_x + half, y_min, y_max, z_min, z_max]
-        kwargs = dict(target_position=target, results_file=tmp_files[i],
-                      b_mdyn=b_values[i], km=mm)
+        kwargs = dict(target_position=target, results_file=tmp_files[i], km=mm)
         if ARGS.wn_mdyn is not None:
             kwargs["wn_mdyn"] = float(ARGS.wn_mdyn)
+        if SWEEP_THETA:
+            kwargs["theta_mdyn"] = float(axis_values[i])
+        else:
+            kwargs["b_mdyn"] = float(axis_values[i])
         inner = EigenController(**kwargs)
         backend = BoundedBackend(inner, tmp_files[i])
         cfg = MultirotorConfig()
@@ -436,7 +462,10 @@ def main():
             vehicle, backend, spawn_pos, _ = drones[slot]
             # The plant is per-vehicle, which is why tau is uniform in a batch.
             vehicle._thrusters = make_thrust_curve(mm, tau_s)
-            backend.inner.b_mdyn = float(b_values[slot])
+            if SWEEP_THETA:
+                backend.inner.theta_mdyn = float(axis_values[slot])
+            else:
+                backend.inner.b_mdyn = float(axis_values[slot])
             backend.inner.km = mm
             vehicle.set_world_pose(position=spawn_pos, orientation=[0., 0., 0., 1.])
             vehicle.set_linear_velocity([0., 0., 0.])
@@ -478,9 +507,10 @@ def main():
     for tau_ms in tau_list:
         carb.log_warn(f"\n[b-vs-tau] tau = {tau_ms:g} ms  ({pop_size} b values)")
         metrics = run_batch(tau_ms)
-        for b, m in zip(b_values, metrics):
+        for axis_v, m in zip(axis_values, metrics):
             row = {
-                "tau_ms": float(tau_ms), "b_mdyn": float(b),
+                "tau_ms": float(tau_ms), "axis": AXIS_NAME,
+                "axis_value": float(axis_v), "b_mdyn": float(axis_v),
                 "wn_mdyn": (float(ARGS.wn_mdyn) if ARGS.wn_mdyn is not None
                             else float(drones[0][1].inner.wn_mdyn)),
                 "motor_moment": mm,
@@ -489,7 +519,8 @@ def main():
                 "rms_error": m.get("rms_error"), "failure": m.get("failure", ""),
             }
             rows.append(row)
-            carb.log_warn(f"    b={b:6.2f}  score={_as_cost(row['score']):9.4f}  "
+            carb.log_warn(f"    {AXIS_NAME}={axis_v:7.2f}  "
+                          f"score={_as_cost(row['score']):9.4f}  "
                           f"stable={row['stable']}  r_ss={row['r_ss']}")
         best = pick_ideal([r for r in rows if r["tau_ms"] == tau_ms])
         carb.log_warn(f"  -> best b at tau={tau_ms:g} ms: {best['b_mdyn']:g}"

@@ -90,7 +90,8 @@ class EigenController(Backend):
         max_total_thrust=80.0,
         torque_max=None,
         wn_mdyn=37.5706,
-        b_mdyn=0.0,         # at the physical floor: no M_dyn cross-coupling
+        b_mdyn=0.0,         # legacy cross-coupling; see theta_mdyn
+        theta_mdyn=None,    # degrees; when set, M_dyn = wn_mdyn * R(theta)
     ):
         super().__init__(config=None)
 
@@ -121,6 +122,25 @@ class EigenController(Backend):
         self.Kd_att = float(Kd_att)
         self.wn_mdyn = float(wn_mdyn)
         self.b_mdyn  = float(b_mdyn)
+
+        # M_dyn's 2x2 block as magnitude-and-angle instead of two Cartesian
+        # entries.
+        #
+        # The block was ever only [[-a, -b], [b, -a]], which is already a
+        # scaled rotation: magnitude hypot(a, b), angle atan2(b, a). Written
+        # that way the two knobs are not independent - raising b to rotate the
+        # block also grows its magnitude - and with a > 0, b >= 0 the angle can
+        # never leave the first quadrant, so only a quarter turn is reachable.
+        #
+        # With theta_mdyn set, wn_mdyn is the magnitude and theta_mdyn is the
+        # angle in degrees, unrestricted. The two are then independent: rotate
+        # without changing how hard the block pulls, and rotate past 90 deg.
+        #
+        # Left None by default, in which case the block is built from
+        # (wn_mdyn, b_mdyn) exactly as before - bit-identical, since the
+        # conversion is the same rotation read a different way. Every archived
+        # gain set therefore replays unchanged.
+        self.theta_mdyn = None if theta_mdyn is None else float(theta_mdyn)
 
         self.max_total_thrust = float(max_total_thrust)
 
@@ -332,6 +352,18 @@ class EigenController(Backend):
         row = self.trajectory[self.index]
         return np.array([row[1], row[2], row[3]])
 
+    def mdyn_polar(self):
+        """(magnitude, angle_in_radians) of M_dyn's 2x2 block.
+
+        theta_mdyn set  -> (wn_mdyn, radians(theta_mdyn)), the two independent.
+        theta_mdyn None -> (hypot(wn, b), atan2(b, wn)), which reproduces the
+        old [[-a,-b],[b,-a]] block exactly.
+        """
+        if self.theta_mdyn is not None:
+            return float(self.wn_mdyn), float(np.radians(self.theta_mdyn))
+        return (float(np.hypot(self.wn_mdyn, self.b_mdyn)),
+                float(np.arctan2(self.b_mdyn, self.wn_mdyn)))
+
     def update(self, dt: float):
         if not self.received_first_state:
             return
@@ -392,9 +424,13 @@ class EigenController(Backend):
         self.prev_pitch_error = pitch_error
         self.prev_roll_error = roll_error
 
+        # Rebuilt every step: the sweeps mutate wn_mdyn/b_mdyn/theta_mdyn on a
+        # live controller between runs, so this cannot be cached at __init__.
+        mag, theta = self.mdyn_polar()
+        c, s_ = np.cos(theta), np.sin(theta)
         M_dyn = np.array([
-            [-self.wn_mdyn, -self.b_mdyn, 0.0],
-            [ self.b_mdyn, -self.wn_mdyn, 0.0],
+            [-mag * c, -mag * s_, 0.0],
+            [ mag * s_, -mag * c, 0.0],
             [0.0, 0.0, -self.beta],
         ])
 

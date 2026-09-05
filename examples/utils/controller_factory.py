@@ -54,7 +54,7 @@ from lpv_mpc_controller import LPVMPCController             # noqa: E402
 # cannot affect the vehicle, and advertising it as a tunable invites tuning
 # against a parameter with no effect.
 INNER_KEYS: dict = {
-    "eigen": {"wn_mdyn", "b_mdyn", "Kp_att", "Kd_att", "alpha"},
+    "eigen": {"wn_mdyn", "b_mdyn", "theta_mdyn", "Kp_att", "Kd_att", "alpha"},
     "pd":    {"Kp_att", "Kd_att", "Kd_yaw_rate"},
     # q_weight/r_weight/N are the constructor spellings; mpc_* are the archive
     # spellings. Both accepted so an older config dict still replays.
@@ -141,6 +141,10 @@ def make_controller(controller: str, gains: dict, results_file, target,
             results_file=results_file, target_position=target,
             km=km if km is not None else 6.0e-7,
             wn_mdyn=g.get("wn_mdyn", 18.0), b_mdyn=g.get("b_mdyn", 10.2),
+            # Present -> wn_mdyn is read as the magnitude and this as the angle
+            # in degrees. Absent -> the (wn, b) pair is used exactly as before,
+            # so a config written before this existed replays unchanged.
+            theta_mdyn=g.get("theta_mdyn"),
             Kp_att=g.get("Kp_att", 7.0), Kd_att=g.get("Kd_att", 1.0),
             alpha=g.get("alpha", 0.5),
             kp_pos=_outer(g, "kp_xy", 0.50), kd_pos=_outer(g, "kd_xy", 1.0),
