@@ -42,6 +42,8 @@ rotor-loss study, use motor_failure.py.
 from __future__ import annotations
 
 import argparse
+import atexit
+import signal
 import sys
 import time
 from datetime import datetime
@@ -51,6 +53,39 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import simlaunch                                          # noqa: E402
 import offboard                                           # noqa: E402
 from px4_driver import log                                # noqa: E402
+
+# Sims this process started, so they can be stopped however we exit.
+#
+# simlaunch starts Isaac with start_new_session=True, which is what lets the
+# whole tree be killed deliberately - but it also means the child does NOT die
+# with its parent. Without the handlers below, a Ctrl-C or a kill left Isaac
+# running: holding the GPU, holding TCP 4560, and colliding with the next run.
+# Level 1 was the worse case, having had no cleanup path at all.
+_LAUNCHED = []
+
+
+def _stop_launched() -> None:
+    while _LAUNCHED:
+        proc = _LAUNCHED.pop()
+        try:
+            if proc.poll() is None:
+                simlaunch.kill(proc)
+        except Exception:
+            pass
+
+
+def _install_cleanup() -> None:
+    """Stop the sim on Ctrl-C, on SIGTERM, and on any normal exit."""
+    atexit.register(_stop_launched)
+
+    def _handler(signum, _frame):
+        log(f"signal {signal.Signals(signum).name}; stopping the sim")
+        _stop_launched()
+        raise SystemExit(128 + signum)
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, _handler)
+
 
 LEVELS = {
     1: "Pegasus + Python (no PX4, no estimator)",
@@ -73,6 +108,10 @@ def parse_args() -> argparse.Namespace:
                    help="Run without a viewport. Every level is headed by default: "
                         "fly.py flies one flight, and the usual reason to fly one is "
                         "to watch it. Batch work (gain_search.py) stays headless.")
+    p.add_argument("--duration", type=float, default=None,
+                   help="Level 1: how long to fly, in simulated seconds - without it "
+                        "the run never ends on its own. Levels 2 and 3: hard cap on "
+                        "the sim process, defaulting to --hold + 180.")
     p.add_argument("--desaturation", choices=("uniform", "collective"), default="uniform",
                    help="What the mixer gives up when a rotor saturates. Keep 'uniform' "
                         "to stay comparable with every archived run.")
@@ -117,8 +156,7 @@ def parse_args() -> argparse.Namespace:
     g2.add_argument("--gains", nargs="*", default=[],
                     help="PX4 parameter overrides, e.g. MC_EIG_WN=34.18.")
     g2.add_argument("--boot-timeout", type=float, default=240.0)
-    g2.add_argument("--duration", type=float, default=None,
-                    help="Hard cap on the sim process [s]. Default: hold + 180.")
+
     g2.add_argument("--no-land", action="store_true")
     g2.add_argument("--abort-on-loss", action="store_true",
                     help="Stop early if telemetry shows altitude lost. Off by default: "
@@ -135,6 +173,8 @@ def fly_level_1(a: argparse.Namespace) -> int:
                       ("--rotor", a.rotor), ("--seed", a.seed)):
         if val is not None:
             args += [flag, str(val)]
+    if a.duration is not None:
+        args += ["--duration", repr(a.duration)]
     if a.headless:
         args.append("--headless")
     if a.rotor_tau is not None:
@@ -150,7 +190,11 @@ def fly_level_1(a: argparse.Namespace) -> int:
     # passed, and its viewport output is the point of running it.
     log(f"level 1 - {LEVELS[1]}")
     proc = simlaunch.launch(simlaunch.SIM_PEGASUS, args, quiet=False)
-    return proc.wait()
+    _LAUNCHED.append(proc)
+    try:
+        return proc.wait()
+    finally:
+        _stop_launched()
 
 
 def _report_sim_failure(proc, sim_log: Path, tail: int = 25) -> None:
@@ -199,6 +243,7 @@ def fly_px4(a: argparse.Namespace) -> int:
             on_port_busy=lambda port: log(
                 f"WARNING: TCP {port} still held; PX4 will likely fail to bind and "
                 f"report a bogus airframe mismatch"))
+        _LAUNCHED.append(proc)
     else:
         if a.run_dir is None:
             sys.exit("--attach needs --run-dir: the ulog is read from the directory "
@@ -230,8 +275,39 @@ def fly_px4(a: argparse.Namespace) -> int:
             time.sleep(0.5)
 
 
+# Flags that only do something on one rung. Passing one to the other rung is
+# silently ignored by argparse, which is how "--hold 90" on level 1 looks like a
+# 90 second flight and produces an unbounded one.
+_LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral",
+                "rotor_tau", "controller_gains")
+_LEVEL23_ONLY = ("hold", "altitude", "attach", "gains", "ctrl_alg", "run_dir",
+                 "boot_timeout", "no_land", "abort_on_loss")
+
+
+def _warn_wrong_level(a, argv=None) -> None:
+    """Say so when a flag cannot apply to the level being flown.
+
+    Reads argv rather than comparing against defaults: passing a flag its own
+    default value is still passing it, and "--hold 90" - 90 being the default -
+    is exactly the case worth catching.
+    """
+    argv = sys.argv[1:] if argv is None else argv
+    typed = {tok.split("=", 1)[0] for tok in argv if tok.startswith("--")}
+    wrong = _LEVEL23_ONLY if a.level == 1 else _LEVEL1_ONLY
+    for dest in wrong:
+        flag = "--" + dest.replace("_", "-")
+        if flag not in typed:
+            continue
+        other = "levels 2 and 3" if a.level == 1 else "level 1"
+        log(f"WARNING: {flag} applies to {other}, not level {a.level} - ignored."
+            + ("  Use --duration to set the flight length."
+               if dest == "hold" and a.level == 1 else ""))
+
+
 def main() -> int:
     a = parse_args()
+    _warn_wrong_level(a)
+    _install_cleanup()
     if not simlaunch.ISAAC_PY.exists() and not a.attach:
         sys.exit(f"{simlaunch.ISAAC_PY} not found - set ISAACSIM_PATH")
     return fly_level_1(a) if a.level == 1 else fly_px4(a)
