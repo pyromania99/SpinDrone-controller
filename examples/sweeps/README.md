@@ -19,6 +19,7 @@ isaac_run  examples/sweeps/genetic_sweep.py ...      # actually fly it
 | `eigen_ab_explore.py` | Space-filling exploration of the Eigen M_dyn (a, b) plane. |
 | `ablation_explore.py` | Marches each tuning parameter outward until flight breaks. |
 | `robustness_sweep.py` | How far a tuned controller survives inertia mismatch, sensor lag and wind. |
+| `b_vs_tau_sweep.py` | How the ideal M_dyn cross-coupling `b` tracks rotor/ESC lag. Parallel over `b`, serial over `tau`, since the thrust curve is per-vehicle. Answers whether the `b` that flies best moves with a lag value that is currently a guess (FINDINGS §6c). |
 | `pd_sweep.py` / `mpc_sweep.py` | 2-D gain sweeps for the PD and LPV-MPC baselines. |
 
 The controllers themselves are in `../utils/`; `controller_factory.py` turns a
