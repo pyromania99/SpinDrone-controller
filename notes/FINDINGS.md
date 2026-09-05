@@ -320,6 +320,32 @@ Note also that a short run hides this — the archived `controller_eval`
 cascaded_pd log is 6.96 s, and at a 3.1 s doubling time the mode is still
 small there.
 
+## 6c. The 20 ms rotor_tau placeholder decides whether eigen holds 30 rad/s  **[measured]**
+
+Level 1, eigen, `km = 6e-7` (~29.5 rad/s), vertical-only, same command both
+times. The only variable is `rotor_tau`.
+
+    rotor_tau = 20 ms (ROTOR_TAU_PLACEHOLDER, the default)
+        flies cleanly to t = 8 s, |eR| ~ 0.005, altitude 1.494 m
+        departs as the spin finishes ramping: |eR| 0.0052 -> 1.497 by t = 12 s,
+        altitude 1.494 -> 0.453 m. Run over at 12.86 s.
+
+    rotor_tau = 0 (instant response)
+        90.00 s, altitude 1.495 m, |eR| 0.0056 at the end. No departure.
+
+That is a 300x difference in attitude error from one unmeasured number.
+`ROTOR_TAU_PLACEHOLDER` documents itself as "the midpoint of the 10-30 ms range
+FINDINGS section 6 cites for hardware, NOT a measured value for this vehicle",
+and the mismatch ledger in NEXT_STEPS.md lists rotor/ESC lag as "modelled,
+value guessed" - one of only two entries still open.
+
+It is not merely open, it is decisive at this spin. Whether the eigen
+controller can hold 30 rad/s is currently a property of a placeholder, so
+`measure_motor_lag.py` against a hardware ulog is the measurement that settles
+it. Note also the failure is spin-dependent and late: it survives the first
+8 s at a lower instantaneous spin and only departs as r approaches its steady
+value, so a short run at this km will not show it.
+
 ## 7. Yaw spin is by design; its rate is `motor_moment`  **[verified]**
 
 `rot_dir` defaults to `[-1,-1,-1,-1]` — all four rotors turn the same way, so reaction
