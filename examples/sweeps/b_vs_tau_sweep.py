@@ -265,58 +265,85 @@ def save_csv(rows: list, out_dir: Path) -> Path:
 
 
 def save_plots(rows: list, out_dir: Path, mm: float) -> None:
-    """The headline plot (ideal b vs tau) and the score surface behind it."""
+    """Two relationships, because they are not equally strong.
+
+    The score-optimal b is a shallow bowl - a few percent across the whole
+    stable range - so on its own it reads as noise. What moves hard with tau is
+    the largest b that stays stable at all, and that is the line to design
+    against. Both are drawn; only the stable cells are shaded, so the bowl is
+    visible instead of being flattened by diverged cells two orders of
+    magnitude worse.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     taus = sorted({r["tau_ms"] for r in rows})
     bs = sorted({r["b_mdyn"] for r in rows})
-    grid = np.full((len(bs), len(taus)), np.nan)
+    stable_grid = np.full((len(bs), len(taus)), np.nan)
     for r in rows:
-        grid[bs.index(r["b_mdyn"]), taus.index(r["tau_ms"])] = _as_cost(r["score"])
+        if r["stable"]:
+            stable_grid[bs.index(r["b_mdyn"]), taus.index(r["tau_ms"])] = _as_cost(r["score"])
 
-    ideal, ideal_unstable = [], []
+    best_b, ceiling, no_stable = [], [], []
     for tau in taus:
-        best = pick_ideal([r for r in rows if r["tau_ms"] == tau])
-        ideal.append(best["b_mdyn"])
-        ideal_unstable.append(not best["any_stable"])
+        at_tau = [r for r in rows if r["tau_ms"] == tau]
+        stable = [r for r in at_tau if r["stable"]]
+        best = pick_ideal(at_tau)
+        best_b.append(best["b_mdyn"] if stable else np.nan)
+        ceiling.append(max(r["b_mdyn"] for r in stable) if stable else np.nan)
+        no_stable.append(not stable)
 
-    # ── headline: ideal b vs tau, over the score surface ──────────────────────
-    fig, ax = plt.subplots(figsize=(8, 5.5))
-    finite = grid[np.isfinite(grid)]
+    fig, ax = plt.subplots(figsize=(9, 5.8))
+    finite = stable_grid[np.isfinite(stable_grid)]
     if finite.size:
-        vmax = np.percentile(finite, 90)   # a few diverged cells must not flatten the rest
-        mesh = ax.pcolormesh(taus, bs, np.clip(grid, None, vmax),
-                             shading="nearest", cmap="viridis_r", alpha=0.75)
-        fig.colorbar(mesh, ax=ax, label="score (lower is better, clipped at p90)")
-    ax.plot(taus, ideal, "o-", color="crimson", lw=2.2, ms=8,
-            label="best b at this tau", zorder=5)
-    if any(ideal_unstable):
-        xs = [t for t, u in zip(taus, ideal_unstable) if u]
-        ys = [b for b, u in zip(ideal, ideal_unstable) if u]
-        ax.plot(xs, ys, "x", color="black", ms=14, mew=3, zorder=6,
-                label="no stable b at this tau")
+        mesh = ax.pcolormesh(taus, bs, stable_grid, shading="nearest",
+                             cmap="viridis_r", vmin=finite.min(), vmax=finite.max())
+        cb = fig.colorbar(mesh, ax=ax)
+        cb.set_label("score among STABLE runs (lower is better)")
+    # Diverged cells are left blank and hatched: they are not "a worse score",
+    # they are a different outcome, and colouring them swamps the scale.
+    for j, tau in enumerate(taus):
+        for i, b in enumerate(bs):
+            if not np.isfinite(stable_grid[i, j]):
+                ax.add_patch(plt.Rectangle(
+                    (tau - 1.25, b - 2), 2.5, 4, hatch="xx", fill=False,
+                    edgecolor="0.55", lw=0.0))
+
+    ax.plot(taus, ceiling, "s--", color="darkorange", lw=2.4, ms=9,
+            label="largest STABLE b (the binding limit)", zorder=6)
+    ax.plot(taus, best_b, "o-", color="crimson", lw=2.2, ms=8,
+            label="best-scoring b (shallow optimum)", zorder=7)
+    for tau, none in zip(taus, no_stable):
+        if none:
+            ax.axvspan(tau - 1.25, tau + 1.25, color="crimson", alpha=0.10, zorder=0)
+    if any(no_stable):
+        ax.plot([], [], "s", color="crimson", alpha=0.3, ms=12,
+                label="no b is stable at this tau")
+
     ax.set_xlabel("rotor_tau [ms]")
     ax.set_ylabel("b_mdyn")
-    ax.set_title(f"Ideal M_dyn cross-coupling b vs rotor/ESC lag\n"
+    ax.set_title(f"M_dyn cross-coupling b vs rotor/ESC lag\n"
                  f"km = {mm:.1e}  (r_ss ≈ {4.9e7 * mm:.0f} rad/s), "
-                 f"{ARGS.duration:g} s per run")
-    ax.legend(loc="best")
+                 f"{ARGS.duration:g} s per run — hatched = diverged")
+    ax.legend(loc="upper right", fontsize=9)
     ax.grid(alpha=0.3, ls=":")
     fig.tight_layout()
     fig.savefig(out_dir / "ideal_b_vs_tau.png", dpi=150)
     plt.close(fig)
 
-    # ── the full surface, unclipped, for reading the optimum's sharpness ──────
-    fig, ax = plt.subplots(figsize=(8, 5.5))
-    with np.errstate(invalid="ignore"):
+    # Full grid including failures, on a log scale, for the whole shape.
+    fig, ax = plt.subplots(figsize=(9, 5.8))
+    grid = np.full((len(bs), len(taus)), np.nan)
+    for r in rows:
+        grid[bs.index(r["b_mdyn"]), taus.index(r["tau_ms"])] = _as_cost(r["score"])
+    with np.errstate(invalid="ignore", divide="ignore"):
         shown = np.log10(np.where(np.isfinite(grid), grid, np.nan))
     mesh = ax.pcolormesh(taus, bs, shown, shading="nearest", cmap="magma_r")
-    fig.colorbar(mesh, ax=ax, label="log10(score)")
-    ax.plot(taus, ideal, "o-", color="cyan", lw=2, ms=7, label="best b")
+    fig.colorbar(mesh, ax=ax, label="log10(score) — white cells never finished")
+    ax.plot(taus, ceiling, "s--", color="cyan", lw=2, ms=8, label="largest stable b")
     ax.set_xlabel("rotor_tau [ms]"); ax.set_ylabel("b_mdyn")
-    ax.set_title("Score over the (tau, b) grid — white cells diverged")
+    ax.set_title("Score over the full (tau, b) grid")
     ax.legend(loc="best")
     fig.tight_layout()
     fig.savefig(out_dir / "score_heatmap.png", dpi=150)

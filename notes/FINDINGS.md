@@ -346,6 +346,39 @@ it. Note also the failure is spin-dependent and late: it survives the first
 8 s at a lower instantaneous spin and only departs as r approaches its steady
 value, so a short run at this km will not show it.
 
+## 6d. b cannot buy back rotor lag; the usable b range collapses with tau  **[measured]**
+
+`b_vs_tau_sweep.py`, km = 6e-7 (~29.5 rad/s), 30 s per run, 8 values of
+`b_mdyn` (0-28) at each of 7 lag values. 56 flights.
+
+    tau [ms]     stable b values        largest stable b    best-scoring b
+       0         all of 0..28                  28                 16
+       5         0..24 (28 marginal)           28                 16
+      10         0..12                         12                  4
+      15         0..4                           4                  4
+      20         none                           -                  -
+      25         none                           -                  -
+      30         none                           -                  -
+
+Two things follow, and the second is the one that matters.
+
+**The optimum in b is shallow.** Across every stable cell at tau = 0 the score
+spans 0.01205 to 0.01244 - 3.2% - with a weak minimum near b = 16. At that
+depth "ideal b" is barely distinguishable from run-to-run variation, so a
+best-score b read off one sweep should not be treated as a tuned value.
+
+**The stability ceiling is not shallow.** The largest b that stays airborne
+falls 28 -> 12 -> 4 -> nothing as tau goes 5 -> 10 -> 15 -> 20 ms, and beyond
+about 15 ms no b in the range holds the spin at all. Whatever b is doing, it
+is not compensating for actuator lag: b and tau do not trade off, the lag
+simply closes the window b lives in.
+
+The practical consequence for tuning: if the real rotor_tau is near the 20 ms
+placeholder, the eigen controller does not need a different b at 30 rad/s, it
+needs something other than b. And a b chosen at tau = 0 (say 16) is outside
+the stable set by tau = 10 ms, so a gain set tuned on the instant-response
+plant is not merely detuned on a lagged one - it is unflyable.
+
 ## 7. Yaw spin is by design; its rate is `motor_moment`  **[verified]**
 
 `rot_dir` defaults to `[-1,-1,-1,-1]` — all four rotors turn the same way, so reaction
