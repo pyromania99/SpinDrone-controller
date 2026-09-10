@@ -125,6 +125,20 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--rotor-tau", type=float, default=None, metavar="S",
                     help="Level 1 rotor/ESC lag [s]; 0 for instant response, matching "
                          "archives older than 2026-08-15.")
+    g1.add_argument("--seat", choices=("off", "fixed", "adaptive"), default=None,
+                    metavar="MODE",
+                    help="Level 1: command-frame rotation of the roll/pitch wrench "
+                         "(brief v2). Default off. Eigen controller only.")
+    g1.add_argument("--seat-law", choices=("angle", "cross"), default=None,
+                    help="Level 1: theta_s update law. 'cross' (default) self-suppresses "
+                         "in a starved channel; 'angle' is the original atan2 form.")
+    g1.add_argument("--adapt-b", action="store_true",
+                    help="Level 1: adapt M_dyn's pole angle (brief v3 §4). Independent "
+                         "of --seat; pair with --seat off to run b alone.")
+    g1.add_argument("--pole-gains", nargs="*", default=[], metavar="K=V",
+                    help="Level 1: PoleAdapter overrides, e.g. k_b=0.2.")
+    g1.add_argument("--seat-gains", nargs="*", default=[], metavar="K=V",
+                    help="Level 1: seat overrides, e.g. k=3 theta_max=1.4 k_sign=-1.")
     g1.add_argument("--controller-gains", nargs="*", default=[], metavar="K=V",
                     help="Level 1 controller gains, e.g. Kp_att=60 Kd_att=1.481. "
                          "Distinct from --gains, which sets PX4 parameters on "
@@ -181,6 +195,16 @@ def fly_level_1(a: argparse.Namespace) -> int:
         args += ["--rotor-tau", repr(a.rotor_tau)]
     if a.controller_gains:
         args += ["--gains"] + list(a.controller_gains)
+    if a.seat is not None:
+        args += ["--seat", a.seat]
+    if a.seat_gains:
+        args += ["--seat-gains"] + list(a.seat_gains)
+    if a.seat_law is not None:
+        args += ["--seat-law", a.seat_law]
+    if a.adapt_b:
+        args.append("--adapt-b")
+    if a.pole_gains:
+        args += ["--pole-gains"] + list(a.pole_gains)
     if a.lateral:
         args.append("--lateral")
     if not a.takeoff_first:
@@ -279,7 +303,7 @@ def fly_px4(a: argparse.Namespace) -> int:
 # silently ignored by argparse, which is how "--hold 90" on level 1 looks like a
 # 90 second flight and produces an unbounded one.
 _LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral",
-                "rotor_tau", "controller_gains")
+                "rotor_tau", "controller_gains", "seat", "seat_gains", "adapt_b", "pole_gains", "seat_law")
 _LEVEL23_ONLY = ("hold", "altitude", "attach", "gains", "ctrl_alg", "run_dir",
                  "boot_timeout", "no_land", "abort_on_loss")
 

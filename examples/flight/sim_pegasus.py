@@ -45,6 +45,27 @@ def parse_args():
                         "the plant every archive in results/ older than 2026-08-15 "
                         "was flown on - gains tuned there can be unstable against a "
                         "lag that did not exist when they were found.")
+    p.add_argument("--seat", choices=("off", "fixed", "adaptive"), default="off",
+                   help="Command-frame rotation of the roll/pitch wrench, to cancel the "
+                        "phase rotation actuator lag applies under spin (brief v2). "
+                        "'off' (default) builds no seat at all. 'fixed' sets the angle "
+                        "from r*tau_a + atan(r*rotor_tau); 'adaptive' measures the "
+                        "misalignment in flight. Eigen controller only.")
+    p.add_argument("--seat-law", choices=("angle", "cross"), default="cross",
+                   help="theta_s update law. 'cross' (default) drives on the raw "
+                        "cross product |xd||xa|sin(alpha), so a starved channel "
+                        "suppresses its own update and no eps gate is needed. "
+                        "'angle' drives on atan2 alpha - full-size steps regardless "
+                        "of signal. Note k is dimensional for 'cross'.")
+    p.add_argument("--adapt-b", action="store_true",
+                   help="Adapt the pole angle inside M_dyn (brief v3 §4). Independent "
+                        "of --seat: it rotates nothing, it moves where the designed "
+                        "closed-loop pole sits. Use with --seat off to run b alone.")
+    p.add_argument("--pole-gains", nargs="*", default=[], metavar="K=V",
+                   help="PoleAdapter overrides, e.g. k_b=0.2 theta_b_max=1.4.")
+    p.add_argument("--seat-gains", nargs="*", default=[], metavar="K=V",
+                   help="Seat overrides, e.g. k=3 theta_max=1.4 r_min=8 k_sign=-1 "
+                        "tau_a=0.002. Names are seat.Seat's constructor arguments.")
     p.add_argument("--gains", nargs="*", default=[], metavar="K=V",
                    help="Controller gain overrides, e.g. --gains Kp_att=60 "
                         "Kd_att=1.481 Kd_yaw_rate=0. Applied through "
@@ -82,6 +103,28 @@ def parse_args():
         except ValueError:
             p.error(f"--gains {key.strip()}: {val!r} is not a number")
     args.gains = parsed
+
+    seat_parsed = {}
+    for kv in args.seat_gains:
+        key, sep, val = kv.partition("=")
+        if not sep:
+            p.error(f"--seat-gains expects K=V, got {kv!r}")
+        try:
+            seat_parsed[key.strip()] = float(val)
+        except ValueError:
+            p.error(f"--seat-gains {key.strip()}: {val!r} is not a number")
+    args.seat_gains = seat_parsed
+
+    pole_parsed = {}
+    for kv in args.pole_gains:
+        key, sep, val = kv.partition("=")
+        if not sep:
+            p.error(f"--pole-gains expects K=V, got {kv!r}")
+        try:
+            pole_parsed[key.strip()] = float(val)
+        except ValueError:
+            p.error(f"--pole-gains {key.strip()}: {val!r} is not a number")
+    args.pole_gains = pole_parsed
     return args
 
 
@@ -124,6 +167,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "utils"))
 from cascaded_pd_controller import CascadedPDController
 from nonlinear_controller import NonlinearController
 from eigen_controller import EigenController
+from seat import PoleAdapter, Seat
 from lpv_mpc_controller import LPVMPCController
 import rotor_failure
 import sweep_task as task
@@ -149,7 +193,10 @@ class PegasusApp:
                  failure_mode: str = "manual", failure_rotor: int = None,
                  failure_seed: int = None, desaturation: str = "uniform",
                  takeoff_first: bool = True, lateral: bool = False,
-                 gains: dict = None, rotor_tau: float = None):
+                 gains: dict = None, rotor_tau: float = None,
+                 seat: str = "off", seat_gains: dict = None,
+                 adapt_b: bool = False, pole_gains: dict = None,
+                 seat_law: str = "cross"):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -185,7 +232,11 @@ class PegasusApp:
 
         # Build selected backend from the controller registry
         self.controller = build_controller(selected_controller, self.eval_dir,
-                                          gains=gains, km=motor_moment)
+                                          gains=gains, km=motor_moment,
+                                          seat=seat, seat_gains=seat_gains,
+                                          adapt_b=adapt_b, pole_gains=pole_gains,
+                                          seat_law=seat_law,
+                                          rotor_tau=rotor_tau)
         carb.log_warn(f"Using controller: {selected_controller}")
 
         # Wrap it so one rotor can be stopped mid-flight. The wrapper forwards
@@ -439,7 +490,46 @@ class PegasusApp:
         self.timeline.stop()
         simulation_app.close()
 
-def build_controller(controller_key: str, eval_dir, gains=None, km=None):
+def _make_seat(mode, overrides, rotor_tau, controller_key, law="cross"):
+    """Build the seat, or None for no seat at all.
+
+    None rather than a disabled object, so the eigen law genuinely has no seat in
+    the 'off' arm. Anything but the eigen law gets None and is told why: the seat
+    sits in that law's update(), and porting it to the other two would be
+    duplication with nothing to learn from it.
+    """
+    if mode in (None, "off"):
+        return None
+    if controller_key != "eigen":
+        carb.log_warn(f"[seat] ignored: --seat is wired into the eigen law only, "
+                      f"and '{controller_key}' was selected")
+        return None
+    kwargs = dict(overrides or {})
+    # rotor_tau IS the actuator lag this compensates, so default T to the plant's
+    # own value. Only 'fixed' reads it; 'adaptive' never does.
+    kwargs.setdefault("T", ROTOR_TAU_PLACEHOLDER if rotor_tau is None else float(rotor_tau))
+    kwargs.setdefault("law", law)
+    s = Seat(mode=mode, **kwargs)
+    carb.log_warn(f"[seat] {s.describe()}")
+    return s
+
+
+def _make_pole_adapter(enabled, overrides, controller_key):
+    """Build the adaptive pole angle, or None."""
+    if not enabled:
+        return None
+    if controller_key != "eigen":
+        carb.log_warn(f"[pole] ignored: --adapt-b is wired into the eigen law only, "
+                      f"and '{controller_key}' was selected")
+        return None
+    pa = PoleAdapter(**dict(overrides or {}))
+    carb.log_warn(f"[pole] {pa.describe()}")
+    return pa
+
+
+def build_controller(controller_key: str, eval_dir, gains=None, km=None,
+                     seat="off", seat_gains=None, rotor_tau=None,
+                     adapt_b=False, pole_gains=None, seat_law="cross"):
     """Factory/registry for all imported controllers.
 
     With ``gains``, construction is handed to controller_factory.make_controller -
@@ -457,8 +547,10 @@ def build_controller(controller_key: str, eval_dir, gains=None, km=None):
         }[controller_key]
         carb.log_warn(f"[gains] {controller_key}: "
                       + "  ".join(f"{k}={v:g}" for k, v in sorted(gains.items())))
-        return cf.make_controller(controller_key, gains, str(results),
-                                  (0.0, 0.0, 1.5), km=km)
+        return cf.make_controller(
+            controller_key, gains, str(results), (0.0, 0.0, 1.5), km=km,
+            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law),
+            pole_adapter=_make_pole_adapter(adapt_b, pole_gains, controller_key))
 
     controller_registry = {
         "pd": lambda: CascadedPDController(
@@ -474,7 +566,8 @@ def build_controller(controller_key: str, eval_dir, gains=None, km=None):
         "eigen": lambda: EigenController(
             trajectory_file=None,  # Use built-in exponential trajectory
             results_file=str(eval_dir / "eigen" / "statistics" / "eigen_statistics.npz"),
-
+            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law),
+            pole_adapter=_make_pole_adapter(adapt_b, pole_gains, controller_key),
         ),
         "mpc": lambda: LPVMPCController(
             trajectory_file=None,
@@ -570,7 +663,12 @@ def main():
                         takeoff_first=ARGS.takeoff_first,
                         lateral=ARGS.lateral,
                         gains=ARGS.gains,
-                        rotor_tau=ARGS.rotor_tau)
+                        rotor_tau=ARGS.rotor_tau,
+                        seat=ARGS.seat,
+                        seat_gains=ARGS.seat_gains,
+                        adapt_b=ARGS.adapt_b,
+                        pole_gains=ARGS.pole_gains,
+                        seat_law=ARGS.seat_law)
 
     # Run the application loop
     pg_app.run()

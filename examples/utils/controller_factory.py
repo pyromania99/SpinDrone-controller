@@ -127,7 +127,7 @@ def _outer(g: dict, name: str, default: float) -> float:
 
 
 def make_controller(controller: str, gains: dict, results_file, target,
-                    km: float = None):
+                    km: float = None, seat=None, pole_adapter=None):
     """Construct ``controller`` configured by ``gains``.
 
     Outer-loop gains are applied when present and left at the controller's own
@@ -151,7 +151,12 @@ def make_controller(controller: str, gains: dict, results_file, target,
             kp_z=_outer(g, "kp_z", 15.0), kd_z=_outer(g, "kd_z", 8.0),
             # None keeps the historical unlimited torque; callers that want to match
             # PX4's saturation pass MC_EIG_TRQ_MAX through the gains dict.
-            torque_max=g.get("torque_max"))
+            torque_max=g.get("torque_max"),
+            # A ready-built seat.Seat, or None. Deliberately not routed through
+            # `gains`: it is an object, it belongs to the actuator rather than the
+            # control law, and check_gain_keys exists to refuse non-gain keys.
+            seat=seat,
+            pole_adapter=pole_adapter)
 
     if controller == "pd":
         # Kp_att/Kd_att are per-axis pairs here, and are a thrust differential

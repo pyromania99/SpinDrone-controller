@@ -22,6 +22,8 @@ from pegasus.simulator.logic.state import State
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 from applied_thrust import applied_rotor_forces, max_rotor_force
+from seat import PoleAdapter as SeatPoleAdapter
+from seat import WrenchObserver as SeatWrenchObserver
 import vehicle_params
 
 
@@ -92,6 +94,8 @@ class EigenController(Backend):
         wn_mdyn=37.5706,
         b_mdyn=0.0,         # legacy cross-coupling; see theta_mdyn
         theta_mdyn=None,    # degrees; when set, M_dyn = wn_mdyn * R(theta)
+        seat=None,          # examples/utils/seat.Seat, or None for no seat at all
+        pole_adapter=None,  # examples/utils/seat.PoleAdapter, or None
     ):
         super().__init__(config=None)
 
@@ -195,6 +199,20 @@ class EigenController(Backend):
         self.torque_over_time = []          # [roll, pitch, yaw] control torques [N·m]
         self.motor_thrusts_over_time = []   # [u1, u2, u3, u4] output allocations [N]
 
+        # Command-frame rotation of the wrench (brief v2). None means there is no
+        # seat: update() never calls into seat.py, so an A/B against it compares two
+        # code paths rather than one path with a flag in it.
+        self.seat = seat
+        # Adaptive pole angle (brief v3 §4). Independent of the seat: it rotates
+        # nothing, it moves M_dyn's angle. Either, both, or neither may be present.
+        self.pole_adapter = pole_adapter
+        self.seat_observer = (SeatWrenchObserver()
+                              if (seat is not None or pole_adapter is not None) else None)
+        self.seat_theta_over_time = []      # [rad] angle applied to the wrench
+        self.seat_alpha_over_time = []      # [rad] measured misalignment, NaN when gated
+        self.pole_theta_over_time = []      # [rad] adaptive offset on M_dyn's angle
+        self.pole_alpha_over_time = []      # [rad] alpha_b, NaN when gated
+
     def _sync_physical_params_from_vehicle(self):
         """Install the vehicle's real mass/inertia; keep defaults on failure.
 
@@ -256,6 +274,10 @@ class EigenController(Backend):
             "thrust": np.array(self.thrust_over_time),
             "torque": np.vstack(self.torque_over_time) if self.torque_over_time else np.zeros((0, 3)),
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
+            "seat_theta": np.array(self.seat_theta_over_time),
+            "seat_alpha": np.array(self.seat_alpha_over_time),
+            "pole_theta": np.array(self.pole_theta_over_time),
+            "pole_alpha": np.array(self.pole_alpha_over_time),
         }
 
         import os
@@ -307,6 +329,17 @@ class EigenController(Backend):
         self.thrust_over_time = []
         self.torque_over_time = []
         self.motor_thrusts_over_time = []
+        self.seat_theta_over_time = []
+        self.seat_alpha_over_time = []
+        self.pole_theta_over_time = []
+        self.pole_alpha_over_time = []
+        if self.pole_adapter is not None:
+            self.pole_adapter.reset()
+        # The sweeps reuse one controller across passes, so a converged angle must
+        # not survive into the next flight.
+        if self.seat is not None:
+            self.seat.reset()
+            self.seat_observer.reset()
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
@@ -427,6 +460,8 @@ class EigenController(Backend):
         # Rebuilt every step: the sweeps mutate wn_mdyn/b_mdyn/theta_mdyn on a
         # live controller between runs, so this cannot be cached at __init__.
         mag, theta = self.mdyn_polar()
+        if self.pole_adapter is not None:
+            theta = theta + self.pole_adapter.theta_b     # adaptive pole angle (v3 §4)
         c, s_ = np.cos(theta), np.sin(theta)
         M_dyn = np.array([
             [-mag * c, -mag * s_, 0.0],
@@ -550,6 +585,50 @@ class EigenController(Backend):
         if self.torque_max is not None:
             tau = np.clip(tau, -self.torque_max, self.torque_max)
 
+        # ── the seat (brief v2) ──────────────────────────────────────────────
+        #
+        # xd is the acceleration a LAGLESS actuator would have produced from this
+        # wrench: tau/J, componentwise because Ixx != Iyy (0.0349 vs 0.0313 on the
+        # Iris) and a non-uniform scaling is not a pure magnitude change - it
+        # rotates, so it must be applied before the angle is taken.
+        #
+        # xa is rebuilt from the measured rate by subtracting the modelled drift,
+        # which is A_r's own rate block - the same matrix the feedback
+        # linearization above already uses, so no new dependence enters. See
+        # seat.WrenchObserver for why that reconstruction is what a vehicle can do
+        # and what it costs.
+        if self.seat_observer is not None:
+            xd = np.array([tau[0] / self.Ixx, tau[1] / self.Iyy])
+            drift_x = np.array([-self.alpha * p + gyro_pq * q,
+                                gyro_qp * p - self.alpha * q])
+            if self.seat is not None and self.seat.mode == self.seat.FIXED:
+                self.seat.update_fixed(r)
+                self.seat_observer.observe(xd, (p, q), drift_x, dt)  # logged only
+            else:
+                alpha_meas = self.seat_observer.observe(xd, (p, q), drift_x, dt)
+                if self.seat is not None:
+                    # The raw cross product, for the CROSS law: |xd||xa| sin(alpha),
+                    # built from the SAME aligned pair the angle came from.
+                    dx, da = self.seat_observer.last_xd, self.seat_observer.last_xa
+                    drive = (float(dx[0] * da[1] - dx[1] * da[0])
+                             if (dx is not None and da is not None) else None)
+                    self.seat.adapt(alpha_meas, r, dt, drive=drive)
+
+            # Adaptive pole angle, on the SAME achieved-accel vector the seat's
+            # observer already built. Applies no rotation - it takes effect through
+            # M_dyn on the next tick.
+            if self.pole_adapter is not None:
+                M2 = np.array([[-mag * c, -mag * s_], [mag * s_, -mag * c]])
+                self.pole_adapter.adapt(M2 @ np.array([p, q]),
+                                        self.seat_observer.last_xa, r, dt)
+
+            if self.seat is not None:
+                tau[:2] = self.seat.rotate(tau)
+                # Re-clip: the rotation can push an axis past the ceiling, and PX4's
+                # allocator would truncate it there too.
+                if self.torque_max is not None:
+                    tau = np.clip(tau, -self.torque_max, self.torque_max)
+
         # motor_thrusts logs what the vehicle ACTUALLY applies, not this
         # mixer's idealisation of it. The old code clipped each u_i at
         # max_total_thrust (80 N) — the *total* limit, ~8x the true per-rotor
@@ -577,3 +656,8 @@ class EigenController(Backend):
         self.thrust_over_time.append(float(np.sum(motor_thrusts)))
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())
+        self.seat_theta_over_time.append(self.seat.theta_s if self.seat else 0.0)
+        self.seat_alpha_over_time.append(self.seat.alpha if self.seat else float("nan"))
+        pa = self.pole_adapter
+        self.pole_theta_over_time.append(pa.theta_b if pa else 0.0)
+        self.pole_alpha_over_time.append(pa.alpha_b if pa else float("nan"))
