@@ -94,6 +94,8 @@ class EigenController(Backend):
         wn_mdyn=37.5706,
         b_mdyn=0.0,         # legacy cross-coupling; see theta_mdyn
         theta_mdyn=None,    # degrees; when set, M_dyn = wn_mdyn * R(theta)
+        max_lateral_accel=0.0,# [m/s^2] clamp on the resulting horizontal accel demand
+        waypoint_radius=0.0,  # >0 advances the trajectory on ARRIVAL, not on the clock
         seat=None,          # examples/utils/seat.Seat, or None for no seat at all
         pole_adapter=None,  # examples/utils/seat.PoleAdapter, or None
     ):
@@ -202,16 +204,20 @@ class EigenController(Backend):
         # Command-frame rotation of the wrench (brief v2). None means there is no
         # seat: update() never calls into seat.py, so an A/B against it compares two
         # code paths rather than one path with a flag in it.
+        self.max_lateral_accel = max(float(max_lateral_accel), 0.0)
+        self.waypoint_radius = max(float(waypoint_radius), 0.0)
         self.seat = seat
         # Adaptive pole angle (brief v3 §4). Independent of the seat: it rotates
         # nothing, it moves M_dyn's angle. Either, both, or neither may be present.
         self.pole_adapter = pole_adapter
         self.seat_observer = (SeatWrenchObserver()
                               if (seat is not None or pole_adapter is not None) else None)
+        self._v_prev = None                 # world xy velocity, for the extremum law
         self.seat_theta_over_time = []      # [rad] angle applied to the wrench
         self.seat_alpha_over_time = []      # [rad] measured misalignment, NaN when gated
         self.pole_theta_over_time = []      # [rad] adaptive offset on M_dyn's angle
         self.pole_alpha_over_time = []      # [rad] alpha_b, NaN when gated
+        self.pole_cost_over_time = []       # [rad] extremum law's lateral-tracking cost
 
     def _sync_physical_params_from_vehicle(self):
         """Install the vehicle's real mass/inertia; keep defaults on failure.
@@ -278,6 +284,7 @@ class EigenController(Backend):
             "seat_alpha": np.array(self.seat_alpha_over_time),
             "pole_theta": np.array(self.pole_theta_over_time),
             "pole_alpha": np.array(self.pole_alpha_over_time),
+            "pole_cost": np.array(self.pole_cost_over_time),
         }
 
         import os
@@ -331,8 +338,10 @@ class EigenController(Backend):
         self.motor_thrusts_over_time = []
         self.seat_theta_over_time = []
         self.seat_alpha_over_time = []
+        self._v_prev = None
         self.pole_theta_over_time = []
         self.pole_alpha_over_time = []
+        self.pole_cost_over_time = []
         if self.pole_adapter is not None:
             self.pole_adapter.reset()
         # The sweeps reuse one controller across passes, so a converged angle must
@@ -377,11 +386,39 @@ class EigenController(Backend):
         return self.input_ref
 
     def _reference_from_trajectory(self):
+        """Current position reference: hover target, timed trajectory, or waypoints.
+
+        TWO ADVANCE RULES, and the difference matters under spin.
+
+          TIME (waypoint_radius = 0, the original): the reference marches on the CSV's
+          own clock whatever the vehicle does. If the vehicle falls behind, the
+          reference keeps going, the error grows, the demand grows with it, and the
+          thing diverges. Measured at 25 rad/s with 20 ms of rotor lag: the climb held
+          to 5 mm, then the timed translate ran away and the vehicle was on the ground
+          by t = 20 s with 3.2 m of error.
+
+          WAYPOINT (waypoint_radius > 0): advance only once the vehicle is actually
+          within waypoint_radius of the current point. The reference WAITS. That caps
+          the position error at roughly the acceptance radius by construction, so the
+          tilt demand stays bounded no matter how slowly the vehicle is tracking - which
+          is the property a spinning, lag-limited vehicle needs.
+        """
         p_ref = self.hover_target.copy()
         if self.trajectory is None:
             return p_ref
-        if self.index < self.max_index - 1 and self.total_time >= self.trajectory[self.index + 1, 0]:
+
+        if self.waypoint_radius > 0.0:
+            # Advance past every point already satisfied, so a cluster of close waypoints
+            # does not take one tick each.
+            while self.index < self.max_index - 1:
+                row = self.trajectory[self.index]
+                target = np.array([row[1], row[2], row[3]])
+                if np.linalg.norm(np.asarray(self.p, dtype=float) - target) > self.waypoint_radius:
+                    break
+                self.index += 1
+        elif self.index < self.max_index - 1 and self.total_time >= self.trajectory[self.index + 1, 0]:
             self.index += 1
+
         row = self.trajectory[self.index]
         return np.array([row[1], row[2], row[3]])
 
@@ -410,20 +447,55 @@ class EigenController(Backend):
 
         pos_error_world = target_pos - self.p
 
+        # OUTER-LOOP AUTHORITY LIMIT. The position PD is a pure gain on distance, so a
+        # far goal asks for an acceleration the airframe cannot produce: at kp_pos =
+        # 3.1469 a 20 m error demands 63 m/s^2, against a real ceiling of g*tan(tilt) ~
+        # 5.7 m/s^2 at 30 deg. The controller then commands a tilt it cannot hold, the
+        # thrust vector leaves the vertical, altitude collapses and the spin decays -
+        # which is how a distant waypoint turns into a crash that looks like a control
+        # failure but is really a saturation failure. Clamping the ERROR (not the output)
+        # keeps the demand inside the envelope while preserving its DIRECTION, so a far
+        # goal becomes 'fly at the cruise this tilt affords', not 'fall over trying'.
+        pos_error_unclamped = np.array(pos_error_world, dtype=float)
+
         # On the very first step, seed prev_error from current error so that the
         # finite-difference derivative is zero rather than (error - 0) / dt,
         # which would produce an enormous phantom velocity spike at t=0.
         if self._first_update:
-            self.prev_error_world_x = pos_error_world[0]
-            self.prev_error_world_y = pos_error_world[1]
+            self.prev_error_world_x = pos_error_unclamped[0]
+            self.prev_error_world_y = pos_error_unclamped[1]
 
-        error_rate_world_x = (pos_error_world[0] - self.prev_error_world_x) / dt_safe
-        error_rate_world_y = (pos_error_world[1] - self.prev_error_world_y) / dt_safe
-        self.prev_error_world_x = pos_error_world[0]
-        self.prev_error_world_y = pos_error_world[1]
+        error_rate_world_x = (pos_error_unclamped[0] - self.prev_error_world_x) / dt_safe
+        error_rate_world_y = (pos_error_unclamped[1] - self.prev_error_world_y) / dt_safe
+        self.prev_error_world_x = pos_error_unclamped[0]
+        self.prev_error_world_y = pos_error_unclamped[1]
 
         acc_world_x_desired = self.kp_pos * pos_error_world[0] + self.kd_pos * error_rate_world_x
         acc_world_y_desired = self.kp_pos * pos_error_world[1] + self.kd_pos * error_rate_world_y
+
+        # OUTER-LOOP AUTHORITY LIMIT, applied to the OUTPUT only.
+        #
+        # The position PD is a pure gain on distance, so a far goal asks for an
+        # acceleration the airframe cannot make: at kp_pos = 3.1469 a 20 m error demands
+        # 63 m/s^2 against a real ceiling of g*tan(tilt) ~ 5.7 m/s^2 at 30 deg. The
+        # controller then commands a tilt it cannot hold, the thrust vector leaves the
+        # vertical, altitude collapses and the spin decays - a saturation failure wearing
+        # the costume of a control failure.
+        #
+        # Limiting the OUTPUT rather than the error is what keeps the PD intact: clamping
+        # the error would also flatten the derivative it is taken from, removing the
+        # damping. Measured when that was tried: 8.6 m/s on a 30 m leg instead of a 1.2 m/s
+        # cruise, and a 2 m overshoot past the goal.
+        #
+        # Scaled as a VECTOR so the commanded direction survives. Clipping per-axis would
+        # rotate the demand, which is precisely the error the rest of this file exists to
+        # avoid.
+        if self.max_lateral_accel > 0.0:
+            an = float(np.hypot(acc_world_x_desired, acc_world_y_desired))
+            if an > self.max_lateral_accel:
+                sc = self.max_lateral_accel / an
+                acc_world_x_desired *= sc
+                acc_world_y_desired *= sc
 
         desired_roll = ((np.sin(yaw) * acc_world_x_desired) - (np.cos(yaw) * acc_world_y_desired)) / self.g
         desired_pitch = ((np.cos(yaw) * acc_world_x_desired) + (np.sin(yaw) * acc_world_y_desired)) / self.g
@@ -614,13 +686,27 @@ class EigenController(Backend):
                              if (dx is not None and da is not None) else None)
                     self.seat.adapt(alpha_meas, r, dt, drive=drive)
 
-            # Adaptive pole angle, on the SAME achieved-accel vector the seat's
-            # observer already built. Applies no rotation - it takes effect through
-            # M_dyn on the next tick.
+            # Adaptive pole angle. Applies no rotation either way - it takes effect
+            # through M_dyn on the next tick.
             if self.pole_adapter is not None:
-                M2 = np.array([[-mag * c, -mag * s_], [mag * s_, -mag * c]])
-                self.pole_adapter.adapt(M2 @ np.array([p, q]),
-                                        self.seat_observer.last_xa, r, dt)
+                if getattr(self.pole_adapter, "law", "gradient") == "extremum":
+                    # EXTREMUM: the pair is TRANSLATIONAL, and that is the whole point.
+                    # a_cmd comes from the position loop, so unlike the GRADIENT law's
+                    # M_dyn.x it does not move when theta_b moves and cannot cancel
+                    # itself out of the cost. Achieved accel is differenced from the
+                    # world velocity - the only such signal this backend has.
+                    a_cmd = np.array([acc_world_x_desired, acc_world_y_desired])
+                    if self._v_prev is None:
+                        a_meas = np.zeros(2)
+                    else:
+                        a_meas = (np.asarray(self.v, dtype=float)[:2]
+                                  - self._v_prev) / max(dt, 1e-6)
+                    self._v_prev = np.asarray(self.v, dtype=float)[:2].copy()
+                    self.pole_adapter.adapt_extremum(a_cmd, a_meas, r, dt)
+                else:
+                    M2 = np.array([[-mag * c, -mag * s_], [mag * s_, -mag * c]])
+                    self.pole_adapter.adapt(M2 @ np.array([p, q]),
+                                            self.seat_observer.last_xa, r, dt)
 
             if self.seat is not None:
                 tau[:2] = self.seat.rotate(tau)
@@ -658,6 +744,9 @@ class EigenController(Backend):
         self.motor_thrusts_over_time.append(motor_thrusts.copy())
         self.seat_theta_over_time.append(self.seat.theta_s if self.seat else 0.0)
         self.seat_alpha_over_time.append(self.seat.alpha if self.seat else float("nan"))
+        self.pole_cost_over_time.append(
+            getattr(self.pole_adapter, "cost", float("nan"))
+            if self.pole_adapter else float("nan"))
         pa = self.pole_adapter
         self.pole_theta_over_time.append(pa.theta_b if pa else 0.0)
         self.pole_alpha_over_time.append(pa.alpha_b if pa else float("nan"))

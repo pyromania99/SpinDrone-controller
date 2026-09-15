@@ -122,9 +122,14 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--failure-mode", choices=("manual", "auto", "off"), default=None)
     g1.add_argument("--rotor", type=int, choices=[0, 1, 2, 3], default=None)
     g1.add_argument("--seed", type=int, default=None)
-    g1.add_argument("--rotor-tau", type=float, default=None, metavar="S",
-                    help="Level 1 rotor/ESC lag [s]; 0 for instant response, matching "
-                         "archives older than 2026-08-15.")
+    p.add_argument("--rotor-tau", type=float, default=None, metavar="S",
+                   help="Rotor/ESC lag [s], the PLANT lag, applied at EVERY level - it "
+                        "lives in Pegasus's thrust curve, which is under PX4 on levels 2 "
+                        "and 3 just as it is under the Python law on level 1. Omitting "
+                        "this does NOT mean no lag: it defaults to the 0.020 placeholder. "
+                        "Pass 0 for instant rotors, which leaves only the lag PX4 gives "
+                        "itself (loop rate, mixer, transport) and matches archives older "
+                        "than 2026-08-15.")
     g1.add_argument("--seat", choices=("off", "fixed", "adaptive"), default=None,
                     metavar="MODE",
                     help="Level 1: command-frame rotation of the roll/pitch wrench "
@@ -135,6 +140,12 @@ def parse_args() -> argparse.Namespace:
     g1.add_argument("--adapt-b", action="store_true",
                     help="Level 1: adapt M_dyn's pole angle (brief v3 §4). Independent "
                          "of --seat; pair with --seat off to run b alone.")
+    g1.add_argument("--max-lateral-accel", type=float, default=None,
+                    help="Level 1: clamp horizontal acceleration demand [m/s^2].")
+    g1.add_argument("--waypoint-radius", type=float, default=None,
+                    help="Level 1: with --trajectory, advance on ARRIVAL within this radius [m] rather than on the clock.")
+    g1.add_argument("--trajectory", default=None,
+                    help="Level 1: CSV of time,x,y,z to follow instead of holding the goal.")
     g1.add_argument("--pole-gains", nargs="*", default=[], metavar="K=V",
                     help="Level 1: PoleAdapter overrides, e.g. k_b=0.2.")
     g1.add_argument("--seat-gains", nargs="*", default=[], metavar="K=V",
@@ -171,6 +182,22 @@ def parse_args() -> argparse.Namespace:
                     help="PX4 parameter overrides, e.g. MC_EIG_WN=34.18.")
     g2.add_argument("--boot-timeout", type=float, default=240.0)
 
+    g2.add_argument("--l2-trajectory", default=None,
+
+                    help="Levels 2/3: CSV of time,x,y,z to fly (same format as level 1's --trajectory), so both rungs fly the same path.")
+
+    g2.add_argument("--l2-waypoint-radius", type=float, default=0.0,
+
+                    help="Levels 2/3: advance the trajectory on ARRIVAL within this radius [m]. 0 = timed.")
+
+    g2.add_argument("--lateral-amp", type=float, default=None,
+
+                    help="Levels 2/3: lateral square-wave half-amplitude [m] during the hold. Needed by MC_POLE_EN=2, whose observable is a translation direction.")
+
+    g2.add_argument("--lateral-period", type=float, default=None,
+
+                    help="Levels 2/3: seconds per lateral leg (default 20).")
+
     g2.add_argument("--no-land", action="store_true")
     g2.add_argument("--abort-on-loss", action="store_true",
                     help="Stop early if telemetry shows altitude lost. Off by default: "
@@ -193,6 +220,12 @@ def fly_level_1(a: argparse.Namespace) -> int:
         args.append("--headless")
     if a.rotor_tau is not None:
         args += ["--rotor-tau", repr(a.rotor_tau)]
+    if a.trajectory is not None:
+        args += ["--trajectory", str(a.trajectory)]
+    if a.waypoint_radius is not None:
+        args += ["--waypoint-radius", repr(a.waypoint_radius)]
+    if a.max_lateral_accel is not None:
+        args += ["--max-lateral-accel", repr(a.max_lateral_accel)]
     if a.controller_gains:
         args += ["--gains"] + list(a.controller_gains)
     if a.seat is not None:
@@ -261,7 +294,13 @@ def fly_px4(a: argparse.Namespace) -> int:
         log(f"sim output    -> {sim_log}")
         proc = simlaunch.launch_px4_sim(
             run_dir, a.motor_moment, duration,
-            extra=["--desaturation", a.desaturation],
+            extra=["--desaturation", a.desaturation]
+                  # The PLANT lag lives in Pegasus at every level, so it has to be
+                  # forwarded here too. sim_px4.py defaults it to the 20 ms
+                  # placeholder when unset, so "no added lag" is --rotor-tau 0 and
+                  # NOT simply omitting the flag - omitting it gives you 20 ms.
+                  + ([] if a.rotor_tau is None
+                     else ["--rotor-tau", repr(a.rotor_tau)]),
             log_path=sim_log,
             headless=a.headless,
             on_port_busy=lambda port: log(
@@ -278,7 +317,10 @@ def fly_px4(a: argparse.Namespace) -> int:
     opts = argparse.Namespace(
         run_dir=str(run_dir), altitude=a.altitude, hold=a.hold,
         boot_timeout=a.boot_timeout, ground_truth=ground_truth, gains=a.gains,
-        abort_on_loss=a.abort_on_loss, no_land=a.no_land, ctrl_alg=a.ctrl_alg)
+        abort_on_loss=a.abort_on_loss, no_land=a.no_land, ctrl_alg=a.ctrl_alg,
+        trajectory=a.l2_trajectory, waypoint_radius=a.l2_waypoint_radius,
+        lateral_amp=(0.0 if a.lateral_amp is None else a.lateral_amp),
+        lateral_period=(20.0 if a.lateral_period is None else a.lateral_period))
     try:
         return offboard.fly(opts)
     except SystemExit as exc:
@@ -302,10 +344,12 @@ def fly_px4(a: argparse.Namespace) -> int:
 # Flags that only do something on one rung. Passing one to the other rung is
 # silently ignored by argparse, which is how "--hold 90" on level 1 looks like a
 # 90 second flight and produces an unbounded one.
-_LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral",
-                "rotor_tau", "controller_gains", "seat", "seat_gains", "adapt_b", "pole_gains", "seat_law")
+_LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral", "trajectory", "waypoint_radius", "max_lateral_accel",
+                "controller_gains", "seat", "seat_gains", "adapt_b", "pole_gains", "seat_law")
 _LEVEL23_ONLY = ("hold", "altitude", "attach", "gains", "ctrl_alg", "run_dir",
-                 "boot_timeout", "no_land", "abort_on_loss")
+                 "boot_timeout", "no_land", "abort_on_loss",
+                 "lateral_amp", "lateral_period",
+                 "l2_trajectory", "l2_waypoint_radius")
 
 
 def _warn_wrong_level(a, argv=None) -> None:

@@ -68,6 +68,25 @@ def parse_args() -> argparse.Namespace:
                    help="Cut the hold short if MAVLink telemetry says altitude was lost. "
                         "OFF by default: that telemetry proved unreliable enough to abort "
                         "two healthy flights. Judge from the ulog instead.")
+    p.add_argument("--trajectory", default=None,
+                   help="CSV of time,x,y,z (z POSITIVE up, converted to NED here) to fly "
+                        "instead of holding the takeoff point. Same file format the level-1 "
+                        "runs use, so the two rungs fly the SAME path.")
+    p.add_argument("--waypoint-radius", type=float, default=0.0,
+                   help="With --trajectory: advance to the next point on ARRIVAL within this "
+                        "radius [m] instead of on the CSV clock. 0 = timed (use only for a "
+                        "smooth densely-sampled path).")
+    p.add_argument("--lateral-amp", type=float, default=0.0,
+                   help="Fly a slow lateral square-wave of this half-amplitude [m] during "
+                        "the hold instead of holding the takeoff point. Needed by laws "
+                        "whose observable is a TRANSLATION direction (MC_POLE_EN=2): with "
+                        "no lateral demand the commanded horizontal acceleration is zero "
+                        "and there is no direction to measure. 0 keeps the archived "
+                        "hold-the-point profile, so existing comparisons are unaffected.")
+    p.add_argument("--lateral-period", type=float, default=20.0,
+                   help="Seconds per lateral leg. Must be long compared with the position "
+                        "loop and with MC_POLE_FDIT's dither period, or the two excitations "
+                        "alias into each other.")
     p.add_argument("--no-land", action="store_true",
                    help="Leave it hovering instead of landing, to keep watching.")
     return p.parse_args()
@@ -144,13 +163,46 @@ def fly(ARGS) -> int:
     if not drv.takeoff(alt=ARGS.altitude, climb_time=14.0):
         sys.exit("takeoff failed")
 
-    log(f"holding {ARGS.altitude} m for {ARGS.hold:.0f} s")
+    if ARGS.trajectory:
+        import numpy as _np
+        _tr = _np.genfromtxt(ARGS.trajectory, delimiter=",")
+        # CSV carries altitude POSITIVE UP (level-1 convention); MAVLink wants NED down.
+        _traj = _np.column_stack([_tr[:, 0], _tr[:, 1], _tr[:, 2], -_tr[:, 3]])
+        _mode = (f"arrival-based, radius {ARGS.waypoint_radius} m"
+                 if ARGS.waypoint_radius > 0 else "timed")
+        log(f"flying trajectory {ARGS.trajectory} ({len(_traj)} points, {_mode})")
+        drv.fly_trajectory(_traj, waypoint_radius=ARGS.waypoint_radius,
+                           max_seconds=max(ARGS.hold, 60.0))
+        log("trajectory complete")
+        if not ARGS.no_land:
+            drv.land()
+            time.sleep(8.0)
+        drv.disarm()
+        return 0
+
+    if ARGS.lateral_amp > 0.0:
+        log(f"holding {ARGS.altitude} m for {ARGS.hold:.0f} s, with a "
+            f"+/-{ARGS.lateral_amp:.1f} m lateral square-wave every "
+            f"{ARGS.lateral_period:.0f} s (translation-observable laws need it)")
+    else:
+        log(f"holding {ARGS.altitude} m for {ARGS.hold:.0f} s")
     # Split the hold so divergence is reported as it happens rather than after the fact -
     # the point of watching a headed run is seeing WHEN it lets go, not just that it did.
     step = 5.0
     t0 = time.time()
     while time.time() - t0 < ARGS.hold:
-        drv.hold(0.0, 0.0, -ARGS.altitude, min(step, ARGS.hold - (time.time() - t0)))
+        # North setpoint alternates each leg when --lateral-amp is set. A square wave
+        # rather than a smooth sweep on purpose: the position loop's response to a STEP is
+        # what produces a sustained, clearly-directed horizontal acceleration demand, which
+        # is the signal a translation-direction observable needs. A slow sinusoid spends
+        # most of its time near zero demand, gated off.
+        n_sp = 0.0
+
+        if ARGS.lateral_amp > 0.0:
+            leg = int((time.time() - t0) / max(ARGS.lateral_period, 1e-3))
+            n_sp = ARGS.lateral_amp * (1.0 if (leg % 2 == 0) else -1.0)
+
+        drv.hold(n_sp, 0.0, -ARGS.altitude, min(step, ARGS.hold - (time.time() - t0)))
         el = time.time() - t0
 
         # is_diverging() alone is NOT enough. It trips on tilt > 60 deg or rate > 3 rad/s,

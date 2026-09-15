@@ -61,6 +61,12 @@ def parse_args():
                    help="Adapt the pole angle inside M_dyn (brief v3 §4). Independent "
                         "of --seat: it rotates nothing, it moves where the designed "
                         "closed-loop pole sits. Use with --seat off to run b alone.")
+    p.add_argument("--max-lateral-accel", type=float, default=0.0,
+                   help="Clamp the horizontal acceleration demand [m/s^2], scaled as a vector so the direction is preserved. 0 = unlimited (original).")
+    p.add_argument("--waypoint-radius", type=float, default=0.0,
+                   help="With --trajectory: advance to the next point on ARRIVAL within this radius [m] instead of on the CSV clock. The reference then waits for the vehicle, which caps position error at the radius and keeps the tilt demand bounded. 0 keeps the original time-based behaviour.")
+    p.add_argument("--trajectory", default=None,
+                   help="CSV of time,x,y,z to follow instead of holding the goal. Gives the SUSTAINED lateral demand a translation-direction observable needs - a one-shot move to a goal excites it for only a few seconds.")
     p.add_argument("--pole-gains", nargs="*", default=[], metavar="K=V",
                    help="PoleAdapter overrides, e.g. k_b=0.2 theta_b_max=1.4.")
     p.add_argument("--seat-gains", nargs="*", default=[], metavar="K=V",
@@ -116,14 +122,21 @@ def parse_args():
     args.seat_gains = seat_parsed
 
     pole_parsed = {}
+    # 'law' selects between the two pole adaptations and is a NAME, not a number, so it
+    # has to survive the float() the other keys go through.
+    _POLE_STR_KEYS = ("law",)
     for kv in args.pole_gains:
         key, sep, val = kv.partition("=")
         if not sep:
             p.error(f"--pole-gains expects K=V, got {kv!r}")
+        key = key.strip()
+        if key in _POLE_STR_KEYS:
+            pole_parsed[key] = val.strip()
+            continue
         try:
-            pole_parsed[key.strip()] = float(val)
+            pole_parsed[key] = float(val)
         except ValueError:
-            p.error(f"--pole-gains {key.strip()}: {val!r} is not a number")
+            p.error(f"--pole-gains {key}: {val!r} is not a number")
     args.pole_gains = pole_parsed
     return args
 
@@ -558,19 +571,25 @@ def build_controller(controller_key: str, eval_dir, gains=None, km=None,
             results_file=str(eval_dir / "cascaded_pd" / "statistics" / "cascaded_pd_statistics.npz"),
         ),
         "nonlinear": lambda: NonlinearController(
-            trajectory_file=None,  # Use built-in exponential trajectory
+            trajectory_file=ARGS.trajectory,
+            waypoint_radius=ARGS.waypoint_radius,
+            max_lateral_accel=ARGS.max_lateral_accel,
             results_file=str(eval_dir / "nonlinear" / "statistics" / "nonlinear_statistics.npz"),
             Ki=[0.5, 0.5, 0.5],
             Kr=[2.0, 2.0, 2.0],
         ),
         "eigen": lambda: EigenController(
-            trajectory_file=None,  # Use built-in exponential trajectory
+            trajectory_file=ARGS.trajectory,
+            waypoint_radius=ARGS.waypoint_radius,
+            max_lateral_accel=ARGS.max_lateral_accel,
             results_file=str(eval_dir / "eigen" / "statistics" / "eigen_statistics.npz"),
             seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law),
             pole_adapter=_make_pole_adapter(adapt_b, pole_gains, controller_key),
         ),
         "mpc": lambda: LPVMPCController(
-            trajectory_file=None,
+            trajectory_file=ARGS.trajectory,
+            waypoint_radius=ARGS.waypoint_radius,
+            max_lateral_accel=ARGS.max_lateral_accel,
             results_file=str(eval_dir / "lpv_mpc" / "statistics" / "lpv_mpc_statistics.npz"),
             N=12,            # Horizon Window Length
             q_weight=15.0,   # Tracking state weight

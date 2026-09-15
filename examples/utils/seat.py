@@ -347,17 +347,102 @@ class PoleAdapter:
     k_b = 0 reproduces the unmodified controller exactly.
     """
 
+    GRADIENT = "gradient"   #: brief v3 s4. Ill-formed - see the note above.
+    EXTREMUM = "extremum"   #: dithered gradient on the LATERAL TRACKING cost.
+
     def __init__(self, k_b: float = 0.2, theta_b_max: float = 1.4,
-                 r_min: float = 5.0, eps: float = 1e-9):
+                 r_min: float = 5.0, eps: float = 1e-9, law: str = GRADIENT,
+                 dither_amp: float = 0.12, dither_hz: float = 0.4,
+                 k_es: float = 2.0, a_min: float = 0.3):
         self.k_b = max(float(k_b), 0.0)
         self.theta_b_max = float(np.clip(theta_b_max, 0.0, Seat.THETA_CEILING))
         self.r_min = max(float(r_min), 0.0)
         self.eps = float(eps)
+        self.saturated = False
+        if law not in (self.GRADIENT, self.EXTREMUM):
+            raise ValueError(f"unknown pole law {law!r}")
+        self.law = law
+        self.dither_amp = max(float(dither_amp), 0.0)
+        self.dither_w = 2.0 * math.pi * max(float(dither_hz), 0.0)
+        self.k_es = max(float(k_es), 0.0)
+        self.a_min = max(float(a_min), 0.0)
         self.reset()
 
     def reset(self):
-        self.theta_b = 0.0        # offset from the configured pole angle
+        self.theta_b = 0.0        # offset APPLIED (includes the dither in EXTREMUM)
+        self.theta_b_hat = 0.0    # the converged estimate, dither excluded
         self.alpha_b = float("nan")
+        self.cost = float("nan")
+        self._phase = 0.0
+        self._cost_lp = float("nan")
+        self._grad_lp = 0.0
+        self._acmd_lp = None
+        self._ames_lp = None
+
+    def adapt_extremum(self, a_cmd, a_meas, r: float, dt: float) -> bool:
+        """EXTREMUM law. Descends the lateral-tracking cost by a MEASURED gradient.
+
+        Why this is not brief v3 s4 again, in one line each:
+
+          EXOGENOUS REFERENCE. a_cmd is the position loop's commanded horizontal
+          acceleration. It does not rotate when theta_b rotates, so it cannot
+          cancel itself out of the cost the way s4's M_dyn.x reference does -
+          which is the structural reason s4's alpha_b is strictly positive in the
+          interior and zero only at +/-pi/2.
+
+          MEASURED SIGN. theta_b is dithered and the cost demodulated against that
+          dither, so d(cost)/d(theta_b) is estimated, sign included. Nothing here
+          assumes which way b should move. s4 derived a direction and it pointed
+          at the rail; at level 2 it drove theta_b NEGATIVE while the archived
+          b_vs_tau sweep says the optimum is POSITIVE (+0.11 to +0.40 rad).
+
+        SPIN-SYNCHRONOUS REJECTION is not optional. Measured at level 2, r=29.5:
+        commanded |a| averaged 0.064 m/s^2 while ACHIEVED averaged 4.40 - 70x
+        larger, and almost all of it a residual tilt sweeping round at the spin
+        frequency. An angle between the raw pair measures the spin, not the
+        tracking. Both vectors are therefore averaged over ~4 spin periods first:
+        the spin-synchronous part integrates away over a revolution, the
+        translational response does not.
+        """
+        a_cmd = np.asarray(a_cmd, dtype=float)[:2]
+        a_meas = np.asarray(a_meas, dtype=float)[:2]
+        if not (np.all(np.isfinite(a_cmd)) and np.all(np.isfinite(a_meas))) or not dt > 0.0:
+            self.cost = float("nan")
+            return False
+
+        self._phase = (self._phase + self.dither_w * dt) % (2.0 * math.pi)
+        dither = self.dither_amp * math.sin(self._phase)
+
+        spin_T = 2.0 * math.pi / max(abs(r), 1e-3)
+        a_lp = float(np.clip(dt / max(4.0 * spin_T, 0.2), 0.0, 1.0))
+        if self._acmd_lp is None:
+            self._acmd_lp, self._ames_lp = a_cmd.copy(), a_meas.copy()
+        self._acmd_lp += (a_cmd - self._acmd_lp) * a_lp
+        self._ames_lp += (a_meas - self._ames_lp) * a_lp
+
+        self.cost = float("nan")
+        excited = (np.hypot(*self._acmd_lp) > self.a_min
+                   and np.hypot(*self._ames_lp) > self.a_min)
+        stepped = False
+        if (not self.saturated) and abs(r) > self.r_min and excited:
+            J = abs(signed_angle(self._acmd_lp, self._ames_lp, self.eps))
+            if math.isfinite(J):
+                self.cost = J
+                lp = float(np.clip(dt / 2.0, 0.0, 1.0))
+                if not math.isfinite(self._cost_lp):
+                    self._cost_lp = J
+                self._cost_lp += lp * (J - self._cost_lp)
+                grad = (J - self._cost_lp) * math.sin(self._phase)
+                gl = float(np.clip(dt / 1.0, 0.0, 1.0))
+                self._grad_lp += gl * (grad - self._grad_lp)
+                self.theta_b_hat = float(np.clip(
+                    self.theta_b_hat - self.k_es * self._grad_lp * dt,
+                    -self.theta_b_max, self.theta_b_max))
+                stepped = True
+
+        self.theta_b = float(np.clip(self.theta_b_hat + dither,
+                                     -self.theta_b_max, self.theta_b_max))
+        return stepped
 
     def adapt(self, M_dyn_x, xa, r: float, dt: float) -> bool:
         if xa is None or not dt > 0.0 or abs(r) <= self.r_min:

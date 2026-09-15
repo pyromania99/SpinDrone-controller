@@ -70,8 +70,9 @@ class GPS(Sensor):
 
         # Save the current state measured by the GPS (and initialize at the origin)
         self._state = {
-            "latitude": np.radians(self._origin_lat),
-            "longitude": np.radians(self._origin_lon),
+            # DEGREES, matching the update() path below and the degE7 the backends expect.
+            "latitude": self._origin_lat,
+            "longitude": self._origin_lon,
             "altitude": self._origin_alt,
             "eph": 1.0,
             "epv": 1.0,
@@ -85,8 +86,13 @@ class GPS(Sensor):
             "epv": self._epv,
             "cog": 0.0,
             "sattelites_visible": self._sattelites_visible,
-            "latitude_gt": np.radians(self._origin_lat),
-            "longitude_gt": np.radians(self._origin_lon),
+            # DEGREES, like "latitude"/"longitude" above. These are consumed by
+            # px4_mavlink_backend and ardupilot_mavlink_backend as
+            # int(latitude_gt * 1e7), i.e. degE7 - the MAVLink scaled-integer convention.
+            # They were radians here, so ground truth reached the autopilot 180/pi =
+            # 57.2958x too small in the horizontal plane.
+            "latitude_gt": self._origin_lat,
+            "longitude_gt": self._origin_lon,
             "altitude_gt": self._origin_alt,
         }
 
@@ -180,8 +186,14 @@ class GPS(Sensor):
             "epv": self._epv,
             "cog": 0.0,  # cog,
             "sattelites_visible": self._sattelites_visible,
-            "latitude_gt": latitude_gt,
-            "longitude_gt": longitude_gt,
+            # reprojection() returns RADIANS. The noisy "latitude"/"longitude" above are
+            # converted with np.degrees(); these were not, and the backends scale both by
+            # 1e7 as degE7 - so vehicle_local_position_groundtruth.x/y came out 57.2958x
+            # too small while .z was correct (altitude_gt is metres and never reprojected).
+            # Measured 2026-09-13: EKF reported 408.4 m travelled against ground truth's
+            # 7.1 m, ratio 57.358.
+            "latitude_gt": np.degrees(latitude_gt),
+            "longitude_gt": np.degrees(longitude_gt),
             "altitude_gt": state.position[2] + self._origin_alt,
         }
 
