@@ -24,6 +24,14 @@ re-aiming at each new point, not a phase error: no monotonic drift to either sid
 **Later found incomplete** — this test never isolated a single continuous transit long
 enough to show a bias if one existed (see §2).
 
+![theta_b and speed along the straight line](traj_thetab_convergence.png)
+
+θ_b on the same flight, with ground speed underneath. θ_b climbs from 0 into the archived
+sweep's predicted band over ~40 s and stays there, the fine ripple being the waypoint weave
+feeding through into the cost. Ground speed cycles 0.5–1.45 m/s once per 2 m leg — the same
+weave, seen in the other variable. Both arms' speed traces lie on top of each other, which
+is the first hint of §4 and §5's conclusion that b does not change tracking.
+
 ---
 
 ## 2. Single distant goal — misalignment scales with speed
@@ -58,8 +66,17 @@ the same 16-pointed star: this geometry is not sensitive to b.
 
 θ_b rises into the archived sweep's predicted band despite the constant weaving; ground
 speed cycles 0.5–1.4 m/s once per waypoint leg — the oscillation visible in the xy path
-above. (Misalignment lines up with each waypoint acceptance and decays before the next:
-mean **+2.2°**, sd 26°, 30% negative — no consistent sign.)
+above.
+
+![what the misalignment reacts to](traj_heading_vs_desired.png)
+
+Three panels on one time axis, and the one that settles what the misalignment *is*: θ_b on
+top, **a tick for every waypoint acceptance** in the middle, misalignment at the bottom.
+Every excursion in the bottom panel lines up with a tick above it and decays before the
+next one arrives — mean **+2.2°**, sd 26°, 30% negative. **A sd seven times the mean, with
+no consistent sign, is not a bias; it is the transient response to a step, sampled at
+random phase.** The middle panel is what makes that legible — without the acceptance ticks
+the bottom panel looks like unexplained 30° noise.
 
 ![zoomed, 3 waypoints](traj_heading_zoom_3wp.png)
 

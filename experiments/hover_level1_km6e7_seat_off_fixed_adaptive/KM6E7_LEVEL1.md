@@ -79,6 +79,15 @@ screaming, not the vehicle acting.
 
 ## 2. Why FIXED is *worse than off* — the most useful thing on the page
 
+> **Corrected 2026-09-17.** This section explains FIXED's failure as an *over-rotation* of
+> ~0.36 rad. Measured on the re-flight, it is worse than that: **FIXED and ADAPTIVE apply
+> opposite signs.** `Seat.update_fixed` evaluates `psi_model` at the *signed* spin rate, and
+> r is negative here, so FIXED holds **−0.567 rad** while the adaptation converges to
+> **+0.067 rad**. Against a correct answer of +0.067, seat-off's error is 0.067 rad and
+> FIXED's is 0.63 rad — an order of magnitude, and in the wrong direction rather than merely
+> too far. The conclusion of this section is unchanged and strengthened; the mechanism below
+> is not right. See the re-flight section at the end.
+
 FIXED is handed the true `T` and computes the textbook lag phase. It dies in 5.3 s, less
 than half the time the *uncompensated* vehicle survives. Rotating by the right amount is
 worse than not rotating at all.
@@ -337,3 +346,134 @@ a desired one.
   used before comparing θ_s against it.
 - **The filled bands in every attitude panel are ~4.7 Hz spin content, not plot noise.**
   Anything measured against them needs averaging over several spin periods first.
+
+---
+
+# RE-FLIGHT, 2026-09-17 — read this before quoting any number above
+
+The original logs were gone, so the trio was re-flown to replace the pixel-read numbers in
+§4a with measured ones. **It did not reproduce.** The qualitative result stands; several
+specific numbers do not, and the archived figures above describe a **different build of the
+controller** from the one in the tree today.
+
+`examples/utils/eigen_controller.py`, `seat.py` and `sim_pegasus.py` changed by 213 lines in
+commit `8c48c10` — *after* the 2026-09-10 flights and *before* this re-flight. The
+`--max-lateral-accel` clamp and a rework of the position loop's D term both landed there.
+
+## What reproduced, and what did not
+
+| | archived (2026-09-10, pixel-read) | re-flown (2026-09-17, measured) | |
+|---|---|---|---|
+| **adaptive flies the full 120 s** | yes | **yes** | ✅ |
+| **fixed is the worst arm** | crashes 5.3 s | **crashes ~4.4 s** | ✅ |
+| settled spin rate | −29.5 rad/s | **−29.48 rad/s** | ✅ |
+| envelope damping ζ | ≈0.09 | **0.103** | ✅ |
+| envelope floor | 0.33° | **0.308°** | ✅ |
+| first lobe peak | 1.67° | **1.75°** | ✅ |
+| still decaying at t=120 s | yes | **yes** (0.385° → 0.249°) | ✅ |
+| envelope lobe period | 7.2 s | **5.94 ± 0.38 s** | ❌ |
+| θ_s overshoot peak | 0.38 rad @ 7.5 s | **0.286 rad @ 8.1 s** | ❌ |
+| **θ_s converged** | **0.157 rad** | **0.0672 ± 0.0004 rad** | ❌ **2.3× apart** |
+| seat OFF outcome | crashes at 13.7 s, stays down | **departs at 24.0 s, then repeatedly recovers and departs again** for the rest of the run | ❌ |
+
+**The structure of §4a is confirmed by data** — it really is a lobed, lightly-damped
+ringdown (ζ ≈ 0.10) on a floor that is still decaying when the run ends. **The specific
+values are not.**
+
+## The two consequences that matter
+
+1. **§2's argument survives and is slightly strengthened.** θ_s converges to 0.067 rad while
+   `--seat fixed` holds ψ_model = 0.533 rad, and fixed still dies fastest of the three. The
+   gap between the adapted angle and the model angle is now *larger*, not smaller. "The
+   model is available, exact, and still wrong" holds.
+2. **§4a's "θ_s ≈ 30 % of atan(r·T)" does not hold.** Measured on the current build the
+   ratio is **0.126**, not 0.295. The apparent agreement with level 2's independently
+   measured 0.301 was a coincidence between a *pixel-read number from a superseded build*
+   and a real one. See the correction in
+   [level 2 §4](../trajectory_level2_px4_groundtruth_fast_circle/LEVEL2_TRACKING.md).
+
+## The re-flight figures
+
+![re-flown compare](km6e7_refly_compare.png)
+
+Same eight panels as `km6e7_compare.png`, current build.
+
+**These three are plotted with `--no-crash-cut`, unlike every other figure in this tree,
+and the reason is the finding.** The seat-off arm never reaches a terminal crash to cut at.
+It holds 1.49 m to t ≈ 20 s, departs at **t = 24.0 s**, and then *oscillates between
+departure and recovery* for the remaining 96 s:
+
+| t [s] | 10–20 | 20–30 | 30–40 | **40–50** | 50–60 | 60–70 | **90–100** | 110–120 |
+|---|---|---|---|---|---|---|---|---|
+| mean altitude [m] | 1.49 | 1.00 | 0.48 | **1.49** | 0.44 | 0.28 | **1.35** | 0.60 |
+| mean \|p,q\| [rad/s] | 0.06 | 1.35 | 2.17 | **0.22** | 2.33 | 2.38 | **0.65** | 2.32 |
+
+At t = 40–50 s it is back at hover altitude with body rates of 0.22 rad/s — genuinely
+recovered, not bouncing — and then loses it again. **Marginal stability with a limit cycle,
+not a crash.** Cutting the trace at the first departure would hide exactly the thing that
+distinguishes this build from the archived one.
+
+![re-flown attitude](km6e7_refly_attitude.png)
+![re-flown seat](km6e7_refly_seat.png)
+
+![re-flown attitude, adaptive only](km6e7_refly_attitude_adaptive.png)
+
+The adaptive arm on its own axes — the re-flight's counterpart to the archived
+`km6e7_attitude_adaptive.png`. Settled window t ≥ 60 s: **roll −0.030 ± 0.214°, pitch
++0.023 ± 0.214°**, full range 0.80°. The archived figure's annulus is still there and still
+centred slightly off origin.
+
+Note the scatter: **±0.21°, about 4× the ±0.04–0.06° that levels 2 and 3 hold at their
+comparable hover conditions.** Level 1 has no transport delay at all, so this is not a lag
+difference — it is the bare Python loop against PX4's, and it is the opposite of the
+direction one might assume.
+
+The seat figure is the one the archived set never had: θ_s on its own axes rather than
+squeezed onto a twin axis. It shows the overshoot to 0.286 rad at t = 8.1 s and the ringdown
+to 0.0672 ± **0.0004** rad — a far tighter convergence than the archived plot suggested.
+
+## The sharpest thing the re-flight found: FIXED has the wrong *sign*
+
+The archived figures could not show this, because θ_s was squeezed onto a twin axis and
+FIXED's trace lasts five seconds. On its own axes it is unmistakable:
+
+| arm | θ_s applied | |
+|---|---|---|
+| seat OFF | 0 | survives 24 s |
+| **seat FIXED** | **−0.5674 rad** | dies at 4.1 s |
+| **seat ADAPTIVE** | **+0.0672 rad** | flies 120 s |
+
+`Seat.update_fixed` computes `k_sign * psi_model(r)` with `psi_model(r) = r*tau_a +
+atan(r*T)` evaluated at the **signed** spin rate. Here r = −29.5, so it returns
+−0.059 + (−0.533) = **−0.592 rad**. The adaptation, given the same vehicle, walks the other
+way and settles at **+0.067**.
+
+So the failure is not "the model over-rotates". It is that **the model-driven arm rotates
+the wrong way**, and by ten times the magnitude the adaptation judges correct. That is why
+FIXED is not merely worse than ADAPTIVE but worse than doing nothing at all: zero is a much
+better approximation to +0.067 than −0.59 is.
+
+Whether the sign convention in `update_fixed` is itself a bug, or whether `psi_model` is
+meant to be evaluated at |r| with the direction supplied elsewhere, is **not settled here**
+— but it is the first thing to check before FIXED is used or cited again.
+
+## A note on α: it does not converge to zero, and should not
+
+The α panel's 1 s rolling mean settles near **−0.5 rad**, not 0. That is the documented
+behaviour of the CROSS law, not a failure: its fixed point is where the time-average of
+`|xd||xa| sin(α)` vanishes, which is *not* where α vanishes. `Seat.adapt`'s docstring says
+so explicitly ("CROSS actually carries MORE bias... the win is variance, not bias").
+Reading a non-zero mean α as non-convergence would be a mistake — θ_s is flat to
+±0.0004 rad over the same window.
+
+## What to do with this
+
+- **Cite the re-flown numbers, not the archived ones**, for anything about the current code.
+- **Keep the archived figures**: they are the record of the build the `a592ed3` commit
+  message refers to, and §2's FIXED-vs-OFF result was measured on that build.
+- **The seat-off discrepancy is not explained.** Departure moved 13.7 s → 24.0 s and the
+  failure mode changed from terminal to bouncing. `8c48c10` is the only candidate and it was
+  not bisected. If the exact seat-off failure time matters to a conclusion, bisect it.
+- The `--seat-gains` for the adaptive arm are *still* unrecorded for the archived flights,
+  so part of the θ_s gap may simply be a different `k`. The re-flight used `Seat` defaults
+  (`k=2.0, theta_max=1.4, r_min=5.0, law=cross, k_sign=+1`).

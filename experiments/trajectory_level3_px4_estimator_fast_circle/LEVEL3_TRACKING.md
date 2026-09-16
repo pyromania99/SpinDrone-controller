@@ -1,10 +1,10 @@
 # Trajectory tracking under spin — level 3 (PX4 + estimator)
 
-Companion to [TRAJECTORY_TRACKING.md](TRAJECTORY_TRACKING.md) (level 1). Level 3 is the
+Companion to [TRAJECTORY_TRACKING.md](../trajectory_level1_seat_b_geometry_sweep/TRAJECTORY_TRACKING.md) (level 1). Level 3 is the
 rung that matters for hardware: the controller closes the loop entirely on its own
 estimator (`MC_CTRL_GT=0`) rather than simulator ground truth. It only became usable once
 the EKF2 output-predictor spin bug was fixed — see
-[`notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md`](../../../notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md).
+[`notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md`](../../notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md).
 All runs below post-date that fix.
 
 Trajectory throughout: `fast_circle_l2.csv`, R=10 m, 5 m/s, cosine ramp on the orbital
@@ -55,6 +55,90 @@ tried differentiating the raw setpoint stream for the tangent; that only added n
 (sd 17° vs 0.4°) without removing the bias, because differentiating a coarsely-sampled
 position stream is ill-conditioned. Use the analytic form whenever the reference geometry
 is known.
+
+---
+
+## 1b. The standard figure set — comparable with levels 1 and 2
+
+Added 2026-09-17 from the same ulogs, so level 3 now carries the same four views as
+[level 1](../hover_level1_km6e7_seat_off_fixed_adaptive/) and
+[level 2](../trajectory_level2_px4_groundtruth_fast_circle/LEVEL2_TRACKING.md).
+`rotor_tau = 0`, three arms: seat OFF / seat ON / seat + adaptive b.
+
+![level 3 compare](l3_nolag_compare.png)
+
+All three arms fly ~52 s and are close to indistinguishable — which is §3's point made
+visually. The spin rate and altitude traces lie on top of each other; the seat is not
+carrying this flight, because at `rotor_tau = 0` there is little for it to correct.
+
+![level 3 attitude](l3_nolag_attitude.png)
+
+The phase portrait is an **annulus at ~19° radius** — a near-constant world-frame tilt (the
+centripetal demand) with the body spinning underneath at 25 rad/s. **Identical in structure
+to level 2's and to level 1's hover portrait**; only the radius differs, and the radius is
+just the commanded tilt. Seat-off's annulus is visibly the most ragged of the three.
+
+![level 3 trajectory](l3_nolag_trajectory.png)
+
+All three paths overlay to within the linewidth, following distance holds ~5 m for each, and
+the speed traces are the same — the tracking view of "indistinguishable arms".
+
+![level 3 seat](l3_nolag_seat.png)
+
+θ_s on its own axes. Converged values in cruise:
+
+| arm | θ_s | orbit radius | altitude sd |
+|---|---|---|---|
+| seat OFF | 0 (by construction) | 10.926 ± 0.426 m | 17.9 mm |
+| seat ON | **−0.489 ± 0.017 rad** | 11.256 ± 0.432 m | 18.6 mm |
+| seat + adaptive b | **−0.503 ± 0.016 rad** | 11.251 ± 0.368 m | 17.3 mm |
+
+θ_s finds ~−0.49 rad with **no rotor lag at all** — PX4's own pipeline. Compare level 2's
+−0.411 rad on the same trajectory at a lower spin: the seat is measuring a real, always-
+present lag, and more of it at higher spin. Adaptive b moves θ_s by 0.014 rad and the
+tracking numbers by well under a percent, consistent with §6.
+
+![level 3 adaptive attitude](l3_nolag_attitude_adaptive.png)
+
+The seat+b arm alone, rescaled: the same ~19° annulus, drawn cleanly because nothing else
+shares the axes.
+
+### `rotor_tau = 0.02` — the figures for §4's negative result
+
+![level 3, 20 ms lag](l3_lag20ms_compare.png)
+
+**Plotted only up to each arm's loss of control** — seat OFF at **t = 15.3 s**, seat ON at
+**t = 20.7 s** (dotted lines; the altitude trace runs 2 s further so the fall is visible).
+The post-impact data is not shown: it is ground contact, an order of magnitude larger than
+anything in flight, and it sets the axis limits of every panel if left in.
+
+The **12 altitude crossings** quoted for seat OFF still come from the *full* log — the
+crossing count is computed before any trimming, precisely because it is the evidence that
+"flew 41.6 s" is a misreading of a bounce sequence. What the figure shows is the part that
+was flight: a clean exponential rate divergence from t ≈ 11 s.
+
+**The seat buys about 5 seconds and nothing more.** Both arms hold tilt near 0.005 rad
+until their own departure; seat ON simply departs later. θ_s holds ≈ −0.35 rad up to
+t ≈ 15 s and then rails to −1.4 as the vehicle tumbles — the observable is measuring the
+departure by then, not the actuator.
+
+![level 3 attitude, 20 ms lag](l3_lag20ms_attitude.png)
+![level 3 seat, 20 ms lag](l3_lag20ms_seat.png)
+![level 3 trajectory, 20 ms lag](l3_lag20ms_trajectory.png)
+
+![level 3 adaptive attitude, 20 ms lag](l3_lag20ms_attitude_adaptive.png)
+
+The seat-on arm alone. Where the `rotor_tau = 0` figure above shows a clean 19° annulus,
+this one is a smeared spiral — the annulus never forms, because the vehicle departs before
+it settles into the orbit.
+
+The attitude traces show the two failures are *different*: seat OFF tumbles, recovers
+partially and tumbles again with each bounce, while seat ON departs once and stays down. The
+seat figure shows θ_s still moving when the vehicle is lost — it never gets the settled
+window it had at `rotor_tau = 0`, which is the same "the adaptation needs longer than the
+vehicle survives" margin problem measured at
+[level 1](../hover_level1_km6e7_seat_off_fixed_adaptive/KM6E7_LEVEL1.md) §4a. The trajectory
+panel is included for completeness; neither arm tracks anything.
 
 ---
 
