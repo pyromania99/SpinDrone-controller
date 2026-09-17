@@ -247,6 +247,31 @@ def _seat_is_active(theta):
     return bool(ok.any() and np.abs(t[ok]).max() > 1e-9)
 
 
+def _crash_t(d):
+    """This arm's crash time, or None if it never crashed. Uses the cut that was already
+    applied, and recomputes it from the raw altitude when it was not (`--no-crash-cut`)."""
+    return d["t_crash"] if "t_crash" in d else crash_time(d)
+
+
+def pick_adaptive_arm(arms):
+    """The arm to draw on its own axes: the one whose seat is running AND flying.
+
+    NOT simply the first arm with a live seat. A FIXED arm holds a non-zero theta_s too,
+    and in an off/fixed/adaptive trio it comes first - so that rule drew the arm that
+    crashed at 4 s, labelled the figure with its own name, and published it as the
+    adaptive one (km6e7_refly_attitude_adaptive.png, caught 2026-09-17).
+
+    Prefer a live-seat arm that never crashed, first one given (so a run with two
+    survivors - e.g. level 3's OFF / ON / ON+b trio - keeps picking the same one it
+    always did). If every live-seat arm crashed, take the one that flew longest.
+    """
+    live = [(lb, d) for lb, d in arms if _seat_is_active(d.get("seat_theta"))]
+    if not live:
+        return arms[-1]
+    flew = [kv for kv in live if _crash_t(kv[1]) is None]
+    return flew[0] if flew else max(live, key=lambda kv: float(_crash_t(kv[1])))
+
+
 def unwrap_nan(y):
     """np.unwrap, but NaN-safe.
 
@@ -585,10 +610,7 @@ def main():
         made.append(fig_trajectory(arms, f"{a.out}/{a.prefix}_trajectory.png",
                                    f"{base} — trajectory tracking", a.settle_from))
     if "adaptive" in want:
-        # the arm whose seat is actually running; falls back to the last one given
-        pick = next(((lb, d) for lb, d in arms
-                     if _seat_is_active(d.get("seat_theta"))),
-                    arms[-1])
+        pick = pick_adaptive_arm(arms)
         got = fig_attitude_adaptive(pick[0], pick[1],
                                     f"{a.out}/{a.prefix}_attitude_adaptive.png",
                                     f"{base} — {pick[0]}, attitude on its own axes",

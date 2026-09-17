@@ -103,8 +103,7 @@ def main():
     # The adaptive arm on its own axes. On a shared-axis attitude figure the arms that
     # diverge reach +/-180 deg and squash the survivor to a flat line; this is the whole
     # reason the archived km6e7_attitude_adaptive.png exists.
-    pick = next(((lb, d) for lb, d in arms
-                 if P._seat_is_active(d.get("seat_theta"))), arms[-1])
+    pick = P.pick_adaptive_arm(arms)
     got = P.fig_attitude_adaptive(pick[0], pick[1],
                                   f"{a.out}/{a.prefix}_attitude_adaptive.png",
                                   f"{base} — {pick[0]}, attitude on its own axes",

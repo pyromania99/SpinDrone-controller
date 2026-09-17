@@ -1,0 +1,27 @@
+# distilled from px4_runs/L3_eigen_20260917_040133/sim.log
+# Isaac/carb boot output, ROS and GPU warnings and repeated MAVLink
+# noise removed; these are the lines that say what was flown.
+# suppressed: 175 x 'waiting for MAVLink heartbeat'
+
+INFO  [px4] instance: 0
+INFO  [px4] startup script: /bin/sh /home/ani/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/rcS 0
+[13,733ms] [Warning] [__main__] PX4 rootfs kept at '/home/ani/PegasusSimulator/px4_runs/L3_eigen_20260917_040133' - ulog will be under /home/ani/PegasusSimulator/px4_runs/L3_eigen_20260917_040133/log/
+[13,734ms] [Warning] [__main__] run config written to /home/ani/PegasusSimulator/px4_runs/L3_eigen_20260917_040133/run_config.json: {'motor_moment': 4.0816e-07, 'expected_spin_rad_s': 19.999840000000003, 'rotor_tau': 0.02, 'rotor_tau_is_placeholder': False, 'px4_airframe': 'none_iris', 'physics_rate_hz': 250.0, 'vehicle_id': 0, 'duration_s': 240.0}
+[13,734ms] [Warning] [__main__] motor_moment = 4.082e-07 -> expected steady yaw spin ~ 20.0 rad/s
+[13,734ms] [Warning] [__main__] desaturation = uniform
+[13,734ms] [Warning] [__main__] rotor_tau = 20.0 ms (explicit)
+[16,481ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] [PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL=none_iris, rootfs=/home/ani/PegasusSimulator/px4_runs/L3_eigen_20260917_040133
+INFO  [simulator_mavlink] Waiting for simulator to accept connection on TCP port 4560
+INFO  [simulator_mavlink] Simulator connected on TCP port 4560.
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [mc_controller] controller: cascaded_pd (MC_CTRL_ALG=1), levels=0x0e
+INFO  [px4] Startup script returned successfully
+WARN  [mc_controller] MC_CTRL_ALG change to 3 deferred until disarm
+INFO  [mc_controller] controller: eigen (MC_CTRL_ALG=3), levels=0x0e
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+INFO  [commander] [32mReady for takeoff![0m
+INFO  [commander] Armed by external command	
+INFO  [commander] Takeoff detected	
+INFO  [commander] Landing at current position	
+PX4 Exiting...
+Exiting NOW.

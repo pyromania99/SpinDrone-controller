@@ -1,0 +1,32 @@
+# distilled from px4_runs/L3_cascaded_pd_20260914_214031/sim.log
+# Isaac/carb boot output, ROS and GPU warnings and repeated MAVLink
+# noise removed; these are the lines that say what was flown.
+# suppressed: 161 x 'waiting for MAVLink heartbeat'
+# suppressed: 27 x 'groundtruth MAVLink send failed'
+
+INFO  [px4] instance: 0
+INFO  [px4] startup script: /bin/sh /home/ani/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/rcS 0
+[9,745ms] [Warning] [__main__] PX4 rootfs kept at '/home/ani/PegasusSimulator/px4_runs/L3_cascaded_pd_20260914_214031' - ulog will be under /home/ani/PegasusSimulator/px4_runs/L3_cascaded_pd_20260914_214031/log/
+[9,745ms] [Warning] [__main__] run config written to /home/ani/PegasusSimulator/px4_runs/L3_cascaded_pd_20260914_214031/run_config.json: {'motor_moment': 5.102e-07, 'expected_spin_rad_s': 24.9998, 'rotor_tau': 0.0, 'rotor_tau_is_placeholder': False, 'px4_airframe': 'none_iris', 'physics_rate_hz': 250.0, 'vehicle_id': 0, 'duration_s': 270.0}
+[9,745ms] [Warning] [__main__] motor_moment = 5.102e-07 -> expected steady yaw spin ~ 25.0 rad/s
+[9,745ms] [Warning] [__main__] desaturation = uniform
+[9,745ms] [Warning] [__main__] rotor_tau = 0: INSTANTANEOUS rotor model. The plant is missing the ESC/motor lag hardware has; gains will not transfer.
+[12,554ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] [PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL=none_iris, rootfs=/home/ani/PegasusSimulator/px4_runs/L3_cascaded_pd_20260914_214031
+INFO  [simulator_mavlink] Waiting for simulator to accept connection on TCP port 4560
+INFO  [simulator_mavlink] Simulator connected on TCP port 4560.
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [mc_controller] controller: cascaded_pd (MC_CTRL_ALG=1), levels=0x0e
+INFO  [px4] Startup script returned successfully
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+INFO  [commander] [32mReady for takeoff![0m
+INFO  [commander] Armed by external command	
+INFO  [commander] Takeoff detected	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+INFO  [commander] Landing at current position	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+PX4 Exiting...
+Exiting NOW.

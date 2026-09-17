@@ -100,3 +100,17 @@ circle — which is why that result is flagged as unreplicated.
 The `L2_eigen_20260914_203427/203618/203810` triple *is* a clean seat-off / seat-on /
 seat+b comparison at km = 5.102e-7, and is the level-2 half of level 3's §6. It is plotted
 in the level-3 folder rather than duplicated here.
+
+---
+
+## Flight logs, in this folder
+
+Every run listed above now has **its ulog** in [`logs/<run>/`](logs/), beside a
+`run_config.json` and a `console.txt` — the Isaac + PX4 console distilled to the ~25 lines
+that say what was flown. The raw `sim.log` is not kept: it is ~75 KB of carb/GPU/ROS boot
+noise and repeated MAVLink heartbeat warnings, and the counts of what was dropped are in
+each `console.txt` header. This experiment no longer depends on `px4_runs/` surviving.
+
+[`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
+reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
+nowhere else.

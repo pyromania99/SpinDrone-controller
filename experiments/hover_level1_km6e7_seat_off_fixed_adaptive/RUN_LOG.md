@@ -144,6 +144,13 @@ examples/results/controller_eval/eigen/statistics/km6e7_refly/
     off.log  fixed.log  adaptive.log                        (Isaac console)
 ```
 
+**All three are also copied into [`logs/km6e7_refly/`](logs/km6e7_refly/) in this folder**,
+so the experiment carries its own flight data — the `.npz` verbatim, and the Isaac console
+distilled to the handful of lines that say what was flown (`*_console.txt`). Those include
+`[seat] seat=adaptive law=cross k=2 thmax=1.40 rmin=5 ksign=+1`, which is the gain record
+this log complains is missing for the 2026-09-10 flights. **Those originals have no
+surviving data at all** — see "Raw data — GONE" above.
+
 Copying the npz out after **each** arm is the whole practice. The archived flights were lost
 to exactly this.
 
@@ -155,11 +162,47 @@ python3 experiments/tools/plot_level1.py \
     --arm "seat FIXED:.../eigen_fixed.npz" \
     --arm "seat ADAPTIVE:.../eigen_adaptive.npz" \
     --out experiments/hover_level1_km6e7_seat_off_fixed_adaptive --prefix km6e7_refly \
+    --no-crash-cut \
     --rotor-tau 0.02 --zoom 0 30 --settle-from 60 --alt-threshold 1.0 \
-    --title "Level 1 hover, km=6e-7, rotor_tau 20 ms — RE-FLOWN 2026-09-17 (current build)"
+    --title "Level 1 hover, km=6e-7, rotor_tau 20 ms — RE-FLOWN 2026-09-17 (full record, see note)"
 
 python3 experiments/tools/analyse_envelope.py .../eigen_adaptive.npz --rotor-tau 0.02
 ```
+
+**`--no-crash-cut` and this exact title are what the committed figures carry** — the
+seat-off arm never reaches a terminal crash to cut at (see the findings document). An
+earlier version of this log recorded the command without them.
+
+### The adaptive figure was wrong until 2026-09-17, and the bug was in the plotter
+
+`km6e7_refly_attitude_adaptive.png` as first committed **plotted the FIXED arm**, its own
+title said `seat FIXED`, and its footer read `roll -175.17 ± 0.00°` — the vehicle upside
+down on the ground for 115 s. `plot_level1.py` picked the arm to draw with
+`next(arm for arm in arms if _seat_is_active(arm.seat_theta))`, and **FIXED holds a
+non-zero θ_s too** (−0.5674 rad, §"FIXED has the wrong sign"), so in an off/fixed/adaptive
+trio it is matched first. The prose quoting this figure was never wrong — its
+roll −0.030 ± 0.214° / full range 0.80° came from the data, and the corrected figure
+reproduces them exactly.
+
+Fixed by `plot_run.pick_adaptive_arm`, now used by both `plot_level1.py` and
+`plot_run.py`: it takes the first live-seat arm that **never crashed**, and falls back to
+the longest-flying one. **Only this figure was affected** — every other
+`*_attitude_adaptive.png` in this tree comes from a two-arm OFF/ON run, or from level 3's
+OFF/ON/ON+b trio where the first live-seat arm also flew.
+
+The time-coloured phase portrait is a separate tool, since it duplicates one panel:
+
+```bash
+python3 experiments/tools/plot_phase_time.py \
+    --npz .../km6e7_refly/eigen_adaptive.npz \
+    --out experiments/hover_level1_km6e7_seat_off_fixed_adaptive \
+    --name km6e7_refly_phase_time --label "seat ADAPTIVE" --settle-from 60 \
+    --title "Level 1 hover, km=6e-7, rotor_tau 20 ms — RE-FLOWN 2026-09-17"
+```
+
+It takes a level-1 npz directly (`--full` for the whole flight instead of the settled
+window). The colour is one hue light→dark, deliberately not a rainbow map: hue changes
+would read as categories where the quantity is continuous.
 
 `--alt-threshold 1.0` matters: level 1 hovers at 1.5 m, so the level-2/3 default of 4 m
 would report every arm as never airborne.

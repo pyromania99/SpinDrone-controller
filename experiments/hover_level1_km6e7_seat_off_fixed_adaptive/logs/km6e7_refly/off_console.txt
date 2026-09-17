@@ -1,0 +1,14 @@
+# distilled from examples/results/controller_eval/eigen/statistics/km6e7_refly/off.log
+# Isaac/carb boot output, ROS and GPU warnings removed; these are the
+# lines that say what was flown - including the [seat] gains line, which
+# is the thing the 2026-09-10 originals failed to record.
+
+[px4] level 1 - Pegasus + Python (no PX4, no estimator)
+[18,665ms] [Warning] [__main__] Using controller: eigen
+[18,665ms] [Warning] [__main__] [plant] rotor_tau = 20.0 ms
+[18,702ms] [Warning] [__main__] [profile] vertical only: climb to 1.50 m over the spawn and hold. Matches levels 2/3. --lateral to translate.
+[21,299ms] [Warning] [eigen_controller] [EigenController] model synced: m=1.618615 kg  I=(0.034853, 0.031256, 0.062659) kg·m²  hover=15.8786 N
+[21,852ms] [Warning] [__main__] [duration] stopping after 120 simulated s
+[165,662ms] [Warning] [__main__] [duration] reached 120.00 s; stopping
+[165,663ms] [Warning] [__main__] PegasusApp Simulation App is closing.
+[166,024ms] [Warning] [eigen_controller] Eigen Controller Statistics saved to: /home/ani/PegasusSimulator/examples/results/controller_eval/eigen/statistics/eigen_statistics.npz

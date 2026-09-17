@@ -89,3 +89,17 @@ which is why its numbers carry the departure and should not be read as cruise va
 (km = 6e-7, chosen to match level 1's hover); the circle experiments run r ≈ 20.7 (level 2)
 and r ≈ 25 (level 3). A separate batch at km = 4.0816e-7 was flown to separate "hover" from
 "higher spin" — see the findings document.
+
+---
+
+## Flight logs, in this folder
+
+Every run listed above now has **its ulog** in [`logs/<run>/`](logs/), beside a
+`run_config.json` and a `console.txt` — the Isaac + PX4 console distilled to the ~25 lines
+that say what was flown. The raw `sim.log` is not kept: it is ~75 KB of carb/GPU/ROS boot
+noise and repeated MAVLink heartbeat warnings, and the counts of what was dropped are in
+each `console.txt` header. This experiment no longer depends on `px4_runs/` surviving.
+
+[`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
+reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
+nowhere else.

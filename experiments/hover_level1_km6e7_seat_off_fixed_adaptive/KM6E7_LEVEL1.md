@@ -418,10 +418,35 @@ distinguishes this build from the archived one.
 
 ![re-flown attitude, adaptive only](km6e7_refly_attitude_adaptive.png)
 
+> **Regenerated 2026-09-17.** The version first committed here plotted the **FIXED** arm —
+> `plot_level1.py` chose the first arm with a non-zero θ_s, and FIXED holds one. The numbers
+> below always came from the data and are unchanged; the image now matches them. See the
+> run log.
+
 The adaptive arm on its own axes — the re-flight's counterpart to the archived
 `km6e7_attitude_adaptive.png`. Settled window t ≥ 60 s: **roll −0.030 ± 0.214°, pitch
 +0.023 ± 0.214°**, full range 0.80°. The archived figure's annulus is still there and still
 centred slightly off origin.
+
+### The same portrait, coloured by time
+
+![phase portrait coloured by time](km6e7_refly_phase_time.png)
+
+The bottom-right panel above, duplicated on its own axes with time carried by colour
+(light → dark, early → late). Drawn flat, ~280 orbits lie on top of each other and a
+ringdown is indistinguishable from a steady limit cycle. Coloured, the decay is the whole
+picture: the annulus shrinks smoothly from a mean radius of **0.376° at t = 60–70 s to
+0.226° at t = 110–120 s**, a 40 % decay with a single local maximum in the 1-s envelope
+(at t = 61 s) and none after — the lobe structure of §4a has died out by this window and
+what is left is a clean exponential. This is the figure that makes "**still decaying at
+t = 120 s**" visible rather than a number in a table.
+
+It also shows the offset directly: the annulus is centred on
+**(roll −0.030°, pitch +0.023°)**, not the origin — the same numbers the footer reports as
+the settled means, which is what "centred slightly off origin" means.
+
+`--full` draws the whole 120 s instead of the settled window, where the opening 1.75°
+transient dominates the scale.
 
 Note the scatter: **±0.21°, about 4× the ±0.04–0.06° that levels 2 and 3 hold at their
 comparable hover conditions.** Level 1 has no transport delay at all, so this is not a lag

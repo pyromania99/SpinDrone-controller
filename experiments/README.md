@@ -127,6 +127,13 @@ and the fact that *holding* the model value outright is worse than no seat at al
 
 ## Raw data, and what survives
 
+Every experiment folder also carries a `logs/` directory holding **the flight data of each
+run it uses** — the `.ulg` at levels 2 and 3, the `.npz` at level 1 — plus that run's
+`run_config.json` and a `console.txt`: the Isaac + PX4 console reduced to the ~25 lines that
+say what was flown. The raw consoles are not kept; they are almost entirely carb/GPU/ROS
+boot noise, and each `console.txt` header counts what was dropped. The table below still
+names where the originals live.
+
 | experiment | raw data | status |
 |---|---|---|
 | level 1, archived figures | `examples/results/controller_eval/eigen/statistics/eigen_statistics.npz` | **Overwritten by every subsequent level-1 run.** None of the original level-1 logs exist. Each `RUN_LOG.md` carries the commands to regenerate. |
@@ -134,6 +141,12 @@ and the fact that *holding* the model value outright is worse than no seat at al
 | level 2 | `px4_runs/L2_eigen_20260913_*/log/*/*.ulg` | **Intact.** 21 valid post-GT-fix runs; the four used are mapped in that folder's `RUN_LOG.md`. |
 | level 3 (and its level-2 comparisons) | `px4_runs/L{2,3}_*_20260914_*/log/*/*.ulg` | **Intact**, ~30 MB each. Mapped run-by-run in that folder's `RUN_LOG.md`. |
 | archived b-vs-lag sweep | `examples/results/b_vs_tau/mm_6.0e-07/b_vs_tau.csv` | Intact. |
+
+`px4_runs/`, `examples/results/` and anything named `logs/` or `*.log` are gitignored, so
+none of that raw data is in the repository *except* the per-experiment `logs/` copies, which
+an explicit un-ignore at the bottom of `.gitignore` keeps. **That is ~760 MB of ulog and
+npz** — the price of each folder standing on its own. If cloning ever becomes painful, these
+are the files to move to git-lfs; nothing else in the tree is large.
 
 **If you re-run anything at level 1, copy the npz out immediately** — the next run destroys
 it. This is the single most annoying property of this setup and it has already cost every

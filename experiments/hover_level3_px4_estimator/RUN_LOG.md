@@ -118,3 +118,17 @@ coning at 13.7° with 1.6 rad/s body rates. Score attitude, not just survival.
 
 Plus, from the archived logs: level 2 circle r = 20.7 (crash 16.5 s → flies 48.7 s) and
 level 3 circle r = 25 (crash 15.3 s → crash 20.7 s).
+
+---
+
+## Flight logs, in this folder
+
+Every run listed above now has **its ulog** in [`logs/<run>/`](logs/), beside a
+`run_config.json` and a `console.txt` — the Isaac + PX4 console distilled to the ~25 lines
+that say what was flown. The raw `sim.log` is not kept: it is ~75 KB of carb/GPU/ROS boot
+noise and repeated MAVLink heartbeat warnings, and the counts of what was dropped are in
+each `console.txt` header. This experiment no longer depends on `px4_runs/` surviving.
+
+[`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
+reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
+nowhere else.
