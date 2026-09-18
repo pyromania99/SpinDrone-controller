@@ -139,9 +139,20 @@ python3 experiments/tools/plot_run.py \
     --arm "seat OFF:px4_runs/L3_eigen_20260914_214502" \
     --arm "seat ON:px4_runs/L3_eigen_20260914_214653" \
     --out experiments/trajectory_level3_px4_estimator_fast_circle \
-    --prefix l3_lag20ms --zoom 0 30 --settle-from 25 \
-    --title "Level 3, same circle, rotor_tau 20 ms — neither arm survives"
+    --prefix l3_lag20ms --zoom 0 25 --settle-from 12 \
+    --title "Level 3, same circle, rotor_tau 20 ms - neither arm survives"
 ```
+
+Both are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh), and both
+were verified by reproduction on 2026-09-17 — each regenerates the committed PNG byte for
+byte. The `l3_lag20ms` arguments printed here until then (`--zoom 0 30 --settle-from 25`)
+did not; the values above are the ones that do.
+
+**`nolag` does not mean zero lag.** It means `rotor_tau = 0` — no rotor pole. PX4 still
+carries ~17 ms of transport delay plus ~14 ms of pipeline filtering, so read the `nolag`
+arms as **~17 ms of loop delay** and the `lag20ms` arms as that same ~17 ms plus a 20 ms
+rotor pole, i.e. **~37 ms**. The names are kept; only the reading changes. The side-by-side
+sheets in [`../analysis/`](../analysis/) label the columns that way.
 
 **§4's bounce count is confirmed by the tool independently:** seat OFF at `rotor_tau=0.02`
 reports *42.3 s above 4 m with 12 crossings*, seat ON *12.4 s with 2*. The 42.3 s number is
@@ -169,3 +180,75 @@ each `console.txt` header. This experiment no longer depends on `px4_runs/` surv
 [`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
 reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
 nowhere else.
+
+---
+
+## Re-flight, 2026-09-18 — the `nolag` trio only
+
+Re-flown so that **α is measured on the seat-OFF arm**; until this date PX4 did not compute
+it with the seat off. **The `l3_nolag_*` figures now come from** `L3_eigen_20260918_000004`
+(off), `_000208` (seat on) and `_000420` (seat + adaptive b). `l3_lag20ms_*` is untouched,
+so §4's bounce count still stands on its original logs.
+
+| | old (2026-09-14) | re-flown (2026-09-18) |
+|---|---|---|
+| θ_s, seat ON | −0.4792 ± 0.0942 | **−0.5054 ± 0.0780** |
+| θ_s, seat + b | −0.4890 ± 0.0862 | **−0.4568 ± 0.0908** |
+| tilt, off / on / on+b | 17.51° / 18.07° / 18.18° | 18.10° / 19.09° / 18.89° |
+| alt sd, off | 120 mm | 43 mm |
+| circular-mean α, off → on | **not recorded** → −0.13 | **+0.45 → −0.13** |
+
+All three arms fly in both batches. θ_s moved 5 % on the seat-ON arm and 7 % on seat + b,
+which is the same order as the gap between them — **the b arm's θ_s offset is not resolved
+by single runs.** The cruise statistics in §1b were taken from the old logs and have not
+been re-derived.
+
+**What the re-flight adds:** the seat-OFF arm now carries a measured misalignment of
++0.45 rad where the seat-ON arms sit at −0.13. That comparison was impossible before.
+
+---
+
+## 2026-09-18 — THE TRAJECTORY RESCUE, at r ≈ 29.5 with no rotor pole
+
+The `nolag` trio above flies on **all three arms** at r ≈ 25.9, so it shows no rescue. Push
+the spin to r ≈ 29.5 on the same circle and the arms separate:
+
+| run | seat | outcome | following distance | att err | θ_s |
+|---|---|---|---|---|---|
+| `px4_runs/L3_eigen_20260918_061740` | off | **crash 35.4 s**, 4 crossings | **32.62 m off path** | 39.27° | 0 |
+| `px4_runs/L3_eigen_20260918_065020` | adaptive | **FLIES 52.2 s**, 2 crossings | **5.04 m** | **4.48°** | −0.5516 |
+
+```bash
+for SEAT in 0 2; do
+  python3 examples/flight/fly.py --level 3 --controller eigen --ctrl-alg 3 \
+      --motor-moment 6e-7 --rotor-tau 0 --headless \
+      --l2-trajectory examples/results/fast_circle_l2.csv \
+      --gains MC_CTRL_ALG=3 MC_POLE_EN=0 IMU_DGYRO_CUTOFF=60 MC_CTRL_GT=0 "MC_SEAT_MODE=$SEAT"
+done
+
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L3_eigen_20260918_061740" \
+    --arm "seat ON (adaptive):px4_runs/L3_eigen_20260918_065020" \
+    --out experiments/trajectory_level3_px4_estimator_fast_circle --prefix l3_r29_nolag \
+    --zoom 0 30 --settle-from 25 \
+    --title "Level 3, fast circle, r~29.5, no rotor pole (~19.5 ms PX4 lag) — seat OFF crashes, seat ON tracks"
+```
+
+**Why this cell separates when the 20 ms cells do not.** With no rotor pole there is no
+amplitude droop — the actuator only rotates, and rotation is exactly what the seat cancels.
+Add a 20 ms pole and you add attenuation (droop 0.86 at this spin), which the seat cannot
+undo: at 20 ms **both** arms die at every speed from 2 to 5 m/s. The seat's contribution is
+phase, not authority.
+
+The seat-ON arm is not merely surviving — 5.04 m following distance and 4.48° attitude
+error are the same numbers it posts at r = 25.9 where everything flies, so it is tracking
+normally at a spin that grounds the unassisted vehicle.
+
+**n = 1 on both arms.** The level-2 circle rescue at 20 ms looked equally clean at n = 1 and
+turned out to be 1-in-4 (see that folder's RUN_LOG). Repeat both arms 3–4× before quoting
+this. The seat-OFF arm failed by 32 m of path error rather than marginally, which is a
+reason to expect it to hold, not evidence that it does.
+
+Logs in [`logs/L3_eigen_20260918_061740/`](logs/L3_eigen_20260918_061740/) and
+[`logs/L3_eigen_20260918_065020/`](logs/L3_eigen_20260918_065020/).
+

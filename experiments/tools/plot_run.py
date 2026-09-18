@@ -4,7 +4,8 @@ plot_run.py - the standard figure set for a PX4 run (level 2 or level 3), from i
 
 Produces the same four views for every arm/level so they can be laid side by side:
 
-    <prefix>_compare.png      8 panels: altitude, |p,q|, tilt error, xy error, torque, r + theta_s
+    <prefix>_compare.png      8 panels: altitude, |p,q|, ATTITUDE ERROR, tilt vs commanded,
+                              xy error, torque, r + theta_s
     <prefix>_attitude.png     roll / pitch / yaw / roll-pitch phase portrait
     <prefix>_seat.png         theta_s on its own axes, with alpha and the model angle
     <prefix>_trajectory.png   flown vs commanded path, following distance, speed
@@ -68,6 +69,13 @@ def _series(ulog, topic, fields):
     return t, out
 
 
+def _body_z(qw, qx, qy, qz):
+    """The body z axis expressed in world coordinates, from a PX4 (w, x, y, z) quaternion."""
+    return np.stack([2 * (qw * qy + qx * qz),
+                     2 * (qy * qz - qw * qx),
+                     1 - 2 * (qx * qx + qy * qy)], axis=-1)
+
+
 def _euler(qw, qx, qy, qz):
     """roll, pitch, yaw [rad] from a PX4 (w, x, y, z) quaternion."""
     roll = np.arctan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy))
@@ -99,7 +107,7 @@ def load(run_dir):
     ta, att = _series(u, "vehicle_attitude_groundtruth", ["q[0]", "q[1]", "q[2]", "q[3]"])
     tw, w = _series(u, "vehicle_angular_velocity_groundtruth", ["xyz[0]", "xyz[1]", "xyz[2]"])
     tc, cs = _series(u, "mc_controller_status",
-                     ["seat_theta", "seat_alpha", "pole_theta_b",
+                     ["seat_theta", "seat_alpha", "seat_stepped", "pole_theta_b",
                       "torque_sp[0]", "torque_sp[1]"])
     ts_, sp = _series(u, "trajectory_setpoint", ["position[0]", "position[1]", "position[2]"])
 
@@ -110,16 +118,36 @@ def load(run_dir):
 
     if att:
         roll, pitch, yaw = _euler(att["q[0]"], att["q[1]"], att["q[2]"], att["q[3]"])
-        # tilt = angle between body z and world z; the frame-independent attitude error
-        # for a vehicle whose yaw is deliberately spinning.
+        # tilt = angle between body z and world z. In HOVER that is the attitude error,
+        # because the commanded tilt is ~0. ON A TRAJECTORY IT IS NOT: the circle needs
+        # ~21 deg of lean to make its lateral acceleration, so tilt is dominated by what
+        # was ASKED FOR. Measured on the level-3 circle: commanded 21.11 deg, flown 19.52,
+        # actual error 3.78 - so reading tilt as error overstates it fivefold. Labelling
+        # this panel "attitude error" was wrong for every trajectory figure until
+        # 2026-09-18.
         tilt = np.arccos(np.clip(1 - 2 * (att["q[1]"] ** 2 + att["q[2]"] ** 2), -1, 1))
         d.update(t_att=(ta - t0) / 1e6, roll=roll, pitch=pitch, yaw=yaw, tilt=tilt)
+
+        # The error proper: the angle between the commanded body z and the flown one.
+        # Yaw is deliberately spinning and is not part of it, which is why this is an
+        # angle between axes rather than a quaternion difference.
+        tsp, spq = _series(u, "vehicle_attitude_setpoint",
+                           ["q_d[0]", "q_d[1]", "q_d[2]", "q_d[3]"])
+        if spq and len(tsp) > 2:
+            zc = _body_z(spq["q_d[0]"], spq["q_d[1]"], spq["q_d[2]"], spq["q_d[3]"])
+            zi = np.stack([np.interp(ta, tsp, zc[:, k]) for k in range(3)], axis=-1)
+            n = np.linalg.norm(zi, axis=1, keepdims=True)
+            zi = np.divide(zi, n, out=np.full_like(zi, np.nan), where=n > 1e-9)
+            za = _body_z(att["q[0]"], att["q[1]"], att["q[2]"], att["q[3]"])
+            d["tilt_cmd"] = np.arccos(np.clip(zi[:, 2], -1, 1))
+            d["att_err"] = np.arccos(np.clip(np.sum(zi * za, axis=1), -1, 1))
     if w:
         d.update(t_w=(tw - t0) / 1e6,
                  pq=np.hypot(w["xyz[0]"], w["xyz[1]"]), r=w["xyz[2]"])
     if cs:
         d.update(t_cs=(tc - t0) / 1e6,
                  seat_theta=cs.get("seat_theta"), seat_alpha=cs.get("seat_alpha"),
+                 seat_stepped=cs.get("seat_stepped"),
                  pole_theta=cs.get("pole_theta_b"),
                  tau_xy=np.hypot(cs.get("torque_sp[0]", np.zeros_like(tc)),
                                  cs.get("torque_sp[1]", np.zeros_like(tc))))
@@ -214,8 +242,10 @@ def apply_crash_cut(d, t_cut, alt_tail=2.0, t_start=None):
     post-impact data, not to hide that a crash happened."""
     if t_cut is None and t_start is None:
         return d
-    pairs = [("t_pos", ("x", "y", "speed", "ep")), ("t_att", ("roll", "pitch", "yaw", "tilt")),
-             ("t_w", ("pq", "r")), ("t_cs", ("seat_theta", "seat_alpha", "pole_theta", "tau_xy"))]
+    pairs = [("t_pos", ("x", "y", "speed", "ep")),
+             ("t_att", ("roll", "pitch", "yaw", "tilt", "tilt_cmd", "att_err")),
+             ("t_w", ("pq", "r")),
+             ("t_cs", ("seat_theta", "seat_alpha", "seat_stepped", "pole_theta", "tau_xy"))]
     for tkey, fields in pairs:
         if tkey not in d:
             continue
@@ -306,6 +336,41 @@ def _roll_nanmean(y, t, win_s):
     return np.where(den > 0, num / np.maximum(den, 1e-9), np.nan)
 
 
+def _roll_circ(y, t, win_s):
+    """Rolling CIRCULAR mean of an angle, and the resultant length R that goes with it.
+
+    NOT an arithmetic mean. alpha is an angle on [-pi, pi], and averaging it linearly is
+    wrong in a way that is worse than imprecise: it is confidently wrong in the direction
+    of "no misalignment". A uniformly distributed alpha - which is exactly what an
+    unexcited or crashed vehicle produces - has an arithmetic mean of ~0, so the trace sits
+    on the zero line and reads as PERFECT ALIGNMENT when it means the opposite. Caught
+    2026-09-18 on the level-1 FIXED arm, which crashes at 4.4 s and then showed a flat ~0
+    misalignment for the remaining 110 s of ground contact (measured R = 0.004, histogram
+    flat across the full circle).
+
+    Returns (circular mean, R). R is the length of the mean unit vector: 1 is perfect
+    concentration, 0 is uniform. The mean direction is meaningless as R approaches 0, so
+    the caller must not draw it there.
+    """
+    y = np.asarray(y, dtype=float)
+    ok = np.isfinite(y)
+    c = np.where(ok, np.cos(y), 0.0)
+    s = np.where(ok, np.sin(y), 0.0)
+    dt = np.median(np.diff(t)) if len(t) > 2 else 1.0
+    n = max(int(win_s / max(dt, 1e-9)), 1)
+    k = np.ones(n)
+    den = np.convolve(ok.astype(float), k, mode="same")
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mc = np.where(den > 0, np.convolve(c, k, mode="same") / den, np.nan)
+        ms = np.where(den > 0, np.convolve(s, k, mode="same") / den, np.nan)
+    return np.arctan2(ms, mc), np.hypot(mc, ms)
+
+
+#: Below this resultant length the mean direction of alpha is not a direction, and the
+#: seat figure leaves a gap rather than drawing a line through the middle of the circle.
+R_MIN = 0.10
+
+
 def psi_model(r, tau_a, T):
     return abs(r) * tau_a + math.atan(abs(r) * T)
 
@@ -351,9 +416,16 @@ def fig_compare(arms, out, title, zoom):
         ax[0, 1].plot(d["t_pos"], d["alt"], c, lw=0.9, label=label)
         if "pq" in d:
             _semilog(ax[1, 0], d["t_w"], d["pq"], color=c, lw=0.5, label=label)
-            _semilog(ax[1, 1], d["t_w"], d["pq"], color=c, lw=0.5, label=label)
+        # The panel that used to hold a |p,q| zoom. A second copy of the panel beside it
+        # said little; the attitude ERROR says what tilt cannot, because on a trajectory
+        # tilt is mostly the commanded lean.
+        if "att_err" in d:
+            _semilog(ax[1, 1], d["t_att"], d["att_err"], color=c, lw=0.6, label=label)
         if "tilt" in d:
-            _semilog(ax[2, 0], d["t_att"], d["tilt"], color=c, lw=0.5, label=label)
+            _semilog(ax[2, 0], d["t_att"], d["tilt"], color=c, lw=0.5, label=f"flown, {label}")
+        if "tilt_cmd" in d:
+            _semilog(ax[2, 0], d["t_att"], d["tilt_cmd"], color=c, lw=1.0, ls="--",
+                     label=f"commanded, {label}")
         if "ep" in d:
             _semilog(ax[2, 1], d["t_pos"], d["ep"], color=c, lw=0.7, label=label)
         if "tau_xy" in d:
@@ -381,17 +453,18 @@ def fig_compare(arms, out, title, zoom):
                      transform=axr.get_yaxis_transform(), fontsize=8, va="bottom", color="0.3")
 
     t_lo, t_hi = flight_window(arms)
-    for a in (ax[0, 0], ax[1, 0], ax[2, 0], ax[2, 1], ax[3, 0], ax[3, 1]):
+    for a in (ax[0, 0], ax[1, 0], ax[1, 1], ax[2, 0], ax[2, 1], ax[3, 0], ax[3, 1]):
         a.set_xlim(t_lo, t_hi)
     for a, t in ((ax[0, 0], "altitude — full flight"), (ax[0, 1], f"altitude — first {zoom[1]:g} s"),
-                 (ax[1, 0], "roll/pitch rate |p,q|"), (ax[1, 1], f"|p,q| — first {zoom[1]:g} s"),
-                 (ax[2, 0], "tilt from vertical (attitude error)"), (ax[2, 1], "horizontal position error"),
+                 (ax[1, 0], "roll/pitch rate |p,q|"),
+                 (ax[1, 1], "ATTITUDE ERROR — angle from the commanded attitude"),
+                 (ax[2, 0], "tilt from vertical — flown (solid) and commanded (dashed)"),
+                 (ax[2, 1], "horizontal position error"),
                  (ax[3, 0], "roll/pitch torque"), (ax[3, 1], "spin rate (solid) and $\\theta_s$ (dashed)")):
         a.set_title(t, fontsize=10); a.grid(alpha=.3, which="both"); a.set_xlabel("t [s]")
-    for a in (ax[0, 1], ax[1, 1]):
-        a.set_xlim(*zoom)
+    ax[0, 1].set_xlim(*zoom)
     ax[0, 0].set_ylabel("altitude [m]"); ax[0, 1].set_ylabel("altitude [m]")
-    ax[1, 0].set_ylabel("|p,q| [rad/s]"); ax[1, 1].set_ylabel("|p,q| [rad/s]")
+    ax[1, 0].set_ylabel("|p,q| [rad/s]"); ax[1, 1].set_ylabel("attitude error [rad]")
     ax[2, 0].set_ylabel("tilt [rad]"); ax[2, 1].set_ylabel("xy error [m]")
     ax[3, 0].set_ylabel(r"$|\tau_{xy}|$ [N m]"); ax[3, 1].set_ylabel("yaw rate r [rad/s]")
     for a in ax.ravel():
@@ -425,8 +498,7 @@ def fig_attitude(arms, out, title, zoom, settle_from):
     t_lo, t_hi = flight_window(arms)
     for a in (ax[0, 0], ax[1, 0], ax[2, 0]):
         a.set_xlim(t_lo, t_hi)
-    for a in (ax[0, 1], ax[1, 1]):
-        a.set_xlim(*zoom)
+    ax[0, 1].set_xlim(*zoom)
     for a in (ax[0, 0], ax[0, 1]): a.set_ylabel("roll [deg]")
     for a in (ax[1, 0], ax[1, 1]): a.set_ylabel("pitch [deg]")
     ax[2, 0].set_ylabel("yaw [deg]")
@@ -498,13 +570,62 @@ def fig_seat(arms, out, title):
         if d.get("seat_theta") is not None:
             ax[0].plot(d["t_cs"], d["seat_theta"], c, lw=1.1, label=label)
             a = np.asarray(d["seat_alpha"], dtype=float)
-            ax[1].plot(d["t_cs"], a, c, lw=0.3, alpha=.18)
-            # Per-tick alpha is a dense band at this spin rate; the trend is what says
-            # whether the seat is converging, so overlay a ~1 s NaN-aware rolling mean.
-            ax[1].plot(d["t_cs"], _roll_nanmean(a, d["t_cs"], 1.0), c, lw=1.4,
-                       label=f"{label} (1 s mean)")
-            frozen = 100.0 * np.mean(~np.isfinite(a))
-            ax[1].plot([], [], " ", label=f"{label}: gate froze {frozen:.0f}% of ticks")
+            # alpha exists ONLY for an arm whose adaptation is running.
+            #
+            # Both implementations log the SEAT's alpha, which is set when the law steps,
+            # not the OBSERVER's measurement. With the seat off the observer is not even
+            # constructed (eigen_controller.py: `seat_observer = ... if seat is not None`;
+            # EigenController.cpp: `if (_seat.mode() != Off || _pole.enabled())`), and in
+            # FIXED mode the observer does run but `update_fixed` writes NaN over the
+            # value. Either way an all-NaN trace here means
+            # THE QUANTITY WAS NEVER COMPUTED - it is not a gated measurement, and saying
+            # "the gate froze" about it, as this panel did until 2026-09-17, is wrong.
+            # Getting alpha for those arms needs a controller change and a re-fly, not a
+            # plotting change; see experiments/analysis/README.md.
+            if not np.isfinite(a).any():
+                ax[1].plot([], [], " ",
+                           label=f"{label}: α not recorded in this seat mode "
+                                 f"— no measurement exists to plot")
+            else:
+                ax[1].plot(d["t_cs"], a, c, lw=0.3, alpha=.18)
+                # Per-tick alpha is a dense band at this spin rate; the trend is what says
+                # whether the seat is converging, so overlay a ~1 s CIRCULAR mean - see
+                # _roll_circ for why an arithmetic one reads uniform noise as zero
+                # misalignment. Blanked wherever the samples carry no direction, so a gap
+                # here means "nothing to average", never "aligned".
+                mean_a, R = _roll_circ(a, d["t_cs"], 1.0)
+                weak = ~(R >= R_MIN)
+                ax[1].plot(d["t_cs"], np.where(weak, np.nan, mean_a), c, lw=1.4,
+                           label=f"{label} (1 s circular mean)")
+                live = np.isfinite(R)
+                if live.any() and weak[live].mean() > 0.02:
+                    ax[1].plot([], [], " ",
+                               label=f"{label}: no direction (R<{R_MIN:g}) "
+                                     f"{100 * weak[live].mean():.0f}% of the time")
+                # "Frozen" means the LAW declined to step. Since 2026-09-17 that is its
+                # own logged field, because alpha is now the measurement and stays finite
+                # on ticks the law skipped - so the two can no longer be read off each
+                # other.
+                #
+                # seat_stepped is NaN wherever no law is running, which is the whole of a
+                # seat-OFF or seat-FIXED flight (FIXED recomputes from r, it never steps).
+                # It is also zero-filled for the first second or so of a PX4 log, where
+                # the boot-default cascaded controller publishes the status without
+                # touching the seat fields; the flight-window trim removes that, and
+                # basing the label on "are there finite samples" rather than "are there
+                # zeros" means a stray one could not be read as a gated tick anyway.
+                st = d.get("seat_stepped")
+                st = np.asarray(st, dtype=float) if st is not None else None
+                if st is not None and np.isfinite(st).any():
+                    live = np.isfinite(st)
+                    frozen = 100.0 * np.mean(st[live] == 0.0)
+                    note = f"{label}: law gated on {frozen:.0f}% of ticks"
+                elif st is not None:
+                    note = f"{label}: α measured, no adaptation stepping in this mode"
+                else:
+                    frozen = 100.0 * np.mean(~np.isfinite(a))
+                    note = f"{label}: gate froze {frozen:.0f}% of ticks"
+                ax[1].plot([], [], " ", label=note)
         if d.get("pole_theta") is not None and np.any(d["pole_theta"] != 0):
             ax[2].plot(d["t_cs"], d["pole_theta"], c, lw=1.0, label=f"$\\theta_b$, {label}")
     rss = cruise_spin(arms)
@@ -518,7 +639,9 @@ def fig_seat(arms, out, title):
     ax[0].set_ylabel(r"$\theta_s$ [rad]")
     ax[0].set_title("seat angle — what the adaptation converged to", fontsize=10)
     ax[1].set_ylabel(r"$\alpha$ [rad]")
-    ax[1].set_title(r"measured misalignment $\alpha$ (gaps = allocator gate froze the update, NOT unmeasurable)", fontsize=10)
+    ax[1].set_title(r"measured misalignment $\alpha$ — every arm, seat on or off "
+                    r"(logs written before 2026-09-17 have it only for the adapting arm)",
+                    fontsize=10)
     ax[2].set_ylabel(r"$\theta_b$ [rad]")
     ax[2].set_title("adaptive pole angle", fontsize=10)
     if not ax[2].get_legend_handles_labels()[0]:

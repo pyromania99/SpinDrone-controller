@@ -27,3 +27,26 @@ for ts, name, val in u.changed_parameters:     # the driver sets most of these p
 | [`L2_airframe_20260917_034631/`](L2_airframe_20260917_034631/) | seat ADAPTIVE, `rotor_tau` 0 — flies | `0.0` | `22_16_52.ulg` (28 MB) |
 
 These are copies; the originals stay in `px4_runs/<run>/`, which is gitignored.
+
+## Re-flown 2026-09-18 — the runs the current figures use
+
+Added, not substituted. **The originals above are still here**, because the numbers quoted
+in the findings document were measured on them; these are what the committed PNGs are drawn
+from. The difference is that PX4 now measures the misalignment α on the seat-OFF arm, which
+it never did before.
+
+| run | arm / condition | ulog |
+|---|---|---|
+| [`L2_airframe_20260917_234829/`](L2_airframe_20260917_234829/) | seat OFF, rotor_tau 0 — re-flown 2026-09-18, α now measured | `18_18_53.ulg` (27 MB) |
+| [`L2_airframe_20260917_235022/`](L2_airframe_20260917_235022/) | seat ADAPTIVE, rotor_tau 0 — re-flown 2026-09-18, θ_s −0.860 | `18_20_46.ulg` (24 MB) |
+
+## The `lag20ms` / r20 arms, re-flown 2026-09-18
+
+Same reason: α was not measured on their seat-OFF arms either. Originals kept.
+
+| run | arm / condition | ulog |
+|---|---|---|
+| [`L2_airframe_20260918_003456/`](L2_airframe_20260918_003456/) | seat OFF, rotor_tau 0.02 — re-flown 2026-09-18, crash 11.9 s (was 12.1) | `19_05_16.ulg` (26 MB) |
+| [`L2_airframe_20260918_003645/`](L2_airframe_20260918_003645/) | seat ADAPTIVE, rotor_tau 0.02 — re-flown, crash 21.4 s (was 22.1) | `19_07_02.ulg` (27 MB) |
+| [`L2_airframe_20260918_004209/`](L2_airframe_20260918_004209/) | seat OFF, r≈20 — re-flown, crash 36.6 s (was 26.1) | `19_12_32.ulg` (26 MB) |
+| [`L2_airframe_20260918_004401/`](L2_airframe_20260918_004401/) | seat ADAPTIVE, r≈20 — re-flown, flies 46.8 s | `19_14_22.ulg` (26 MB) |

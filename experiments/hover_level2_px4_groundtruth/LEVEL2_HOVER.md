@@ -1,5 +1,10 @@
 # Hover under spin — level 2 (PX4 + ground truth)
 
+> **Re-flight, 2026-09-18.** The `l2_hover_nolag_*` figures were regenerated from re-flown
+> runs so that α is measured on the seat-OFF arm. θ_s on the seat-ON arm moved 5 %
+> (−0.906 → −0.860); alt sd, tilt and |p,q| are unchanged. **Numbers quoted below for that
+> pair are the originals.** See [`RUN_LOG.md`](RUN_LOG.md#re-flight-2026-09-18--the-nolag-pair-only).
+
 Climb to 6 m and hold, no trajectory. `MC_CTRL_GT=1`, eigen controller. Flown 2026-09-17
 alongside an identical level-3 batch
 ([`../hover_level3_px4_estimator/LEVEL3_HOVER.md`](../hover_level3_px4_estimator/LEVEL3_HOVER.md))

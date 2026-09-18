@@ -34,3 +34,25 @@ for ts, name, val in u.changed_parameters:     # the driver sets most of these p
 | [`L2_eigen_20260914_203810/`](L2_eigen_20260914_203810/) | L2 seat + b — §6 | `0.0` | `15_08_24.ulg` (30 MB) |
 
 These are copies; the originals stay in `px4_runs/<run>/`, which is gitignored.
+
+## Re-flown 2026-09-18 — the runs the current figures use
+
+Added, not substituted. **The originals above are still here**, because the numbers quoted
+in the findings document were measured on them; these are what the committed PNGs are drawn
+from. The difference is that PX4 now measures the misalignment α on the seat-OFF arm, which
+it never did before.
+
+| run | arm / condition | ulog |
+|---|---|---|
+| [`L3_eigen_20260918_000004/`](L3_eigen_20260918_000004/) | seat OFF, rotor_tau 0 — re-flown 2026-09-18, α now measured | `18_30_26.ulg` (28 MB) |
+| [`L3_eigen_20260918_000208/`](L3_eigen_20260918_000208/) | seat ON, rotor_tau 0 — re-flown 2026-09-18, θ_s −0.505 | `18_32_33.ulg` (29 MB) |
+| [`L3_eigen_20260918_000420/`](L3_eigen_20260918_000420/) | seat + adaptive b, rotor_tau 0 — re-flown 2026-09-18, θ_s −0.457 | `18_34_45.ulg` (28 MB) |
+
+## The `lag20ms` / r20 arms, re-flown 2026-09-18
+
+Same reason: α was not measured on their seat-OFF arms either. Originals kept.
+
+| run | arm / condition | ulog |
+|---|---|---|
+| [`L3_eigen_20260918_005324/`](L3_eigen_20260918_005324/) | seat OFF, rotor_tau 0.02 — re-flown 2026-09-18, crash 13.9 s (was 15.3) | `19_23_44.ulg` (28 MB) |
+| [`L3_eigen_20260918_005519/`](L3_eigen_20260918_005519/) | seat ON, rotor_tau 0.02 — re-flown, crash 22.4 s (was 20.7) | `19_25_41.ulg` (29 MB) |

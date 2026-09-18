@@ -210,11 +210,24 @@ class EigenController(Backend):
         # Adaptive pole angle (brief v3 §4). Independent of the seat: it rotates
         # nothing, it moves M_dyn's angle. Either, both, or neither may be present.
         self.pole_adapter = pole_adapter
-        self.seat_observer = (SeatWrenchObserver()
-                              if (seat is not None or pole_adapter is not None) else None)
+        # The observer is a MEASUREMENT: it rotates nothing, feeds nothing back, and
+        # touches no control path (see WrenchObserver.observe - it returns an angle and
+        # mutates only its own history). So it runs on EVERY arm, including seat OFF.
+        #
+        # Until 2026-09-17 it was built only when a seat or a pole adapter existed, which
+        # kept the seat-OFF arm out of seat.py entirely - a deliberate clean A/B, noted
+        # above. The cost was that alpha, the thing the seat is supposed to be driving to
+        # zero, was UNRECORDED on exactly the arm you want to compare against: the OFF
+        # column of every seat figure was empty and there was no way to tell whether the
+        # seat was reducing a misalignment that was there in the first place. Measuring it
+        # on both arms is worth more than the A/B purity, because the measurement provably
+        # cannot change the flight - which the re-fly checks by comparing the OFF arm
+        # against its previous log.
+        self.seat_observer = SeatWrenchObserver()
         self._v_prev = None                 # world xy velocity, for the extremum law
         self.seat_theta_over_time = []      # [rad] angle applied to the wrench
-        self.seat_alpha_over_time = []      # [rad] measured misalignment, NaN when gated
+        self.seat_alpha_over_time = []      # [rad] measured misalignment, every arm
+        self.seat_stepped_over_time = []    # 1 = the law stepped, 0 = gated, NaN = no law
         self.pole_theta_over_time = []      # [rad] adaptive offset on M_dyn's angle
         self.pole_alpha_over_time = []      # [rad] alpha_b, NaN when gated
         self.pole_cost_over_time = []       # [rad] extremum law's lateral-tracking cost
@@ -282,6 +295,7 @@ class EigenController(Backend):
             "motor_thrusts": np.vstack(self.motor_thrusts_over_time) if self.motor_thrusts_over_time else np.zeros((0, 4)),
             "seat_theta": np.array(self.seat_theta_over_time),
             "seat_alpha": np.array(self.seat_alpha_over_time),
+            "seat_stepped": np.array(self.seat_stepped_over_time),
             "pole_theta": np.array(self.pole_theta_over_time),
             "pole_alpha": np.array(self.pole_alpha_over_time),
             "pole_cost": np.array(self.pole_cost_over_time),
@@ -338,6 +352,7 @@ class EigenController(Backend):
         self.motor_thrusts_over_time = []
         self.seat_theta_over_time = []
         self.seat_alpha_over_time = []
+        self.seat_stepped_over_time = []
         self._v_prev = None
         self.pole_theta_over_time = []
         self.pole_alpha_over_time = []
@@ -348,7 +363,10 @@ class EigenController(Backend):
         # not survive into the next flight.
         if self.seat is not None:
             self.seat.reset()
-            self.seat_observer.reset()
+        # Unconditional: the observer now runs on every arm, so a seat-OFF pass in a
+        # sweep would otherwise carry the previous pass's rate history into its first
+        # few ticks.
+        self.seat_observer.reset()
 
         self.prev_error_world_x = 0.0
         self.prev_error_world_y = 0.0
@@ -669,22 +687,22 @@ class EigenController(Backend):
         # linearization above already uses, so no new dependence enters. See
         # seat.WrenchObserver for why that reconstruction is what a vehicle can do
         # and what it costs.
+        alpha_meas = float("nan")      # the MEASUREMENT, logged on every arm
+        seat_stepped = float("nan")    # whether the adaptation moved theta_s this tick
         if self.seat_observer is not None:
             xd = np.array([tau[0] / self.Ixx, tau[1] / self.Iyy])
             drift_x = np.array([-self.alpha * p + gyro_pq * q,
                                 gyro_qp * p - self.alpha * q])
+            alpha_meas = self.seat_observer.observe(xd, (p, q), drift_x, dt)
             if self.seat is not None and self.seat.mode == self.seat.FIXED:
                 self.seat.update_fixed(r)
-                self.seat_observer.observe(xd, (p, q), drift_x, dt)  # logged only
-            else:
-                alpha_meas = self.seat_observer.observe(xd, (p, q), drift_x, dt)
-                if self.seat is not None:
-                    # The raw cross product, for the CROSS law: |xd||xa| sin(alpha),
-                    # built from the SAME aligned pair the angle came from.
-                    dx, da = self.seat_observer.last_xd, self.seat_observer.last_xa
-                    drive = (float(dx[0] * da[1] - dx[1] * da[0])
-                             if (dx is not None and da is not None) else None)
-                    self.seat.adapt(alpha_meas, r, dt, drive=drive)
+            elif self.seat is not None:
+                # The raw cross product, for the CROSS law: |xd||xa| sin(alpha),
+                # built from the SAME aligned pair the angle came from.
+                dx, da = self.seat_observer.last_xd, self.seat_observer.last_xa
+                drive = (float(dx[0] * da[1] - dx[1] * da[0])
+                         if (dx is not None and da is not None) else None)
+                seat_stepped = float(self.seat.adapt(alpha_meas, r, dt, drive=drive))
 
             # Adaptive pole angle. Applies no rotation either way - it takes effect
             # through M_dyn on the next tick.
@@ -743,7 +761,12 @@ class EigenController(Backend):
         self.torque_over_time.append(tau.copy())
         self.motor_thrusts_over_time.append(motor_thrusts.copy())
         self.seat_theta_over_time.append(self.seat.theta_s if self.seat else 0.0)
-        self.seat_alpha_over_time.append(self.seat.alpha if self.seat else float("nan"))
+        # The MEASURED misalignment, on every arm. NOT self.seat.alpha: that is a record
+        # of whether the law stepped (update_fixed and every gated path write NaN over
+        # it), so logging it made alpha look unmeasurable on the OFF and FIXED arms when
+        # it had simply never been asked for.
+        self.seat_alpha_over_time.append(alpha_meas)
+        self.seat_stepped_over_time.append(seat_stepped)
         self.pole_cost_over_time.append(
             getattr(self.pole_adapter, "cost", float("nan"))
             if self.pole_adapter else float("nan"))

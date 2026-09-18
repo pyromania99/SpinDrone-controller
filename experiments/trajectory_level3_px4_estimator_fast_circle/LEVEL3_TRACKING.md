@@ -1,5 +1,19 @@
 # Trajectory tracking under spin — level 3 (PX4 + estimator)
 
+> **2026-09-18 — the trajectory rescue is at r ≈ 29.5, not at the r ≈ 25 documented below.**
+> On this same circle with no rotor pole, seat OFF crashes at 35.4 s (32.6 m off path,
+> 39.3° attitude error) while seat ON flies the full 52.2 s at 5.04 m and 4.48°. The
+> `nolag` trio in §1–§3 is at r ≈ 25.9 where **all three arms fly**, so it shows tracking
+> differences, not a rescue. Figures: `l3_r29_nolag_*`. See
+> [`RUN_LOG.md`](RUN_LOG.md#2026-09-18--the-trajectory-rescue-at-r--295-with-no-rotor-pole).
+
+> **Re-flight, 2026-09-18.** The `l3_nolag_*` figures were regenerated from re-flown runs
+> so that α is measured on the seat-OFF arm. All three arms still fly; θ_s moved 5 % on
+> seat-ON (−0.479 → −0.505) and 7 % on seat + b (−0.489 → −0.457), which is the same size as
+> the gap between those two arms — **that offset is not resolved by single runs.** The §1b
+> cruise statistics come from the original logs and have not been re-derived. `l3_lag20ms_*`
+> and §4 are untouched. See [`RUN_LOG.md`](RUN_LOG.md#re-flight-2026-09-18--the-nolag-trio-only).
+
 Companion to [TRAJECTORY_TRACKING.md](../trajectory_level1_seat_b_geometry_sweep/TRAJECTORY_TRACKING.md) (level 1). Level 3 is the
 rung that matters for hardware: the controller closes the loop entirely on its own
 estimator (`MC_CTRL_GT=0`) rather than simulator ground truth. It only became usable once

@@ -1,5 +1,24 @@
 # Trajectory tracking under spin — level 2 (PX4 + ground truth)
 
+> **Re-flight, 2026-09-18 — two results below do not reproduce. Read this first.**
+>
+> Every figure on this page was regenerated from re-flown runs so that α is measured on the
+> seat-OFF arm as well. Two things came out differently:
+>
+> 1. **The §1 headline — "seat off 7.8 s, seat on 48.7 s" — reproduces once in four.**
+>    Flying the seat-ON arm four more times on the identical command gave crash 19.9 s,
+>    **flew 52.2 s**, crash 22.4 s, crash 24.6 s. The seat-OFF arm reproduces exactly
+>    (16.5 s → 16.4 s), so the direction of the effect stands; **its reliability does not.**
+>    All four are plotted in `l2_lag20ms_repeats_compare.png`, and the figures on this page
+>    use the first re-flight, which crashed — not the one that matches the old narrative.
+> 2. **The `nolag` seat-OFF double dip did not reproduce**: where the 2026-09-13 run fell to
+>    0.11 m twice (the "4 altitude crossings" below), the re-flight stayed above 4.02 m with
+>    2 crossings. θ_s is unchanged (−0.404 → −0.401).
+>
+> Also on this page: the tilt panel was labelled "attitude error". On a circle that is the
+> **commanded** ~21° lean, not an error — the error is ~3.8° and now has its own panel.
+> See [`RUN_LOG.md`](RUN_LOG.md#re-flight-2026-09-18--the-nolag-pair-only).
+
 The middle rung, and the one that was missing a write-up. Level 2 is PX4 flying the real
 control stack but closing the loop on **simulator ground truth** (`MC_CTRL_GT=1`) rather
 than its own estimator — so it isolates "does the PX4 port of the law work" from "does the

@@ -1,5 +1,10 @@
 # Hover under spin — level 3 (PX4 + estimator)
 
+> **Re-flight, 2026-09-18.** The `l3_hover_nolag_*` figures were regenerated from re-flown
+> runs so that α is measured on the seat-OFF arm. θ_s on the seat-ON arm moved 9 %
+> (−0.870 → −0.782); alt sd, tilt and |p,q| are unchanged. **Numbers quoted below for that
+> pair are the originals.** See [`RUN_LOG.md`](RUN_LOG.md#re-flight-2026-09-18--the-nolag-pair-only).
+
 The hover row at the rung that resembles hardware. Climb to 6 m and hold, no trajectory,
 r ≈ 29.4 rad/s, `MC_CTRL_GT=0` so the controller closes the loop on PX4's own estimator.
 

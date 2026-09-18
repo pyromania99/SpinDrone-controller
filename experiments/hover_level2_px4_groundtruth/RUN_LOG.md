@@ -64,8 +64,35 @@ python3 experiments/tools/plot_run.py \
     --out experiments/hover_level2_px4_groundtruth --prefix l2_hover_lag20ms \
     --zoom 0 25 --settle-from 13 \
     --title "Level 2 hover (PX4 + ground truth), km=6e-7 (r~29.5), rotor_tau 20 ms"
-# ... and the same for the rotor_tau=0 pair with --prefix l2_hover_nolag --settle-from 20
+
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L2_airframe_20260917_034444" \
+    --arm "seat ON (adaptive):px4_runs/L2_airframe_20260917_034631" \
+    --out experiments/hover_level2_px4_groundtruth --prefix l2_hover_nolag \
+    --zoom 0 25 --settle-from 20 \
+    --title "Level 2 hover, same spin, rotor_tau 0 (PX4 pipeline lag only)"
 ```
+
+The r = 20 pair (`l2_hover_r20_lag20ms_*`, the addendum below) is:
+
+```bash
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L2_eigen_20260917_035604" \
+    --arm "seat ON (adaptive):px4_runs/L2_eigen_20260917_035752" \
+    --out experiments/hover_level2_px4_groundtruth --prefix l2_hover_r20_lag20ms \
+    --zoom 0 30 --settle-from 20 \
+    --title "Level 2 hover at r=20 (the circle's spin), rotor_tau 20 ms — the seat RESCUES"
+```
+
+All three are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh),
+which regenerates every figure in the tree in one pass, and all three were **verified by
+reproduction on 2026-09-17** — each regenerates the committed PNG byte for byte.
+
+**`nolag` does not mean zero lag.** It means `rotor_tau = 0` — no rotor pole. PX4 still
+carries ~17 ms of transport delay plus ~14 ms of pipeline filtering, so read the `nolag`
+arms as **~17 ms of loop delay** and the `lag20ms` arms as that same ~17 ms plus a 20 ms
+rotor pole, i.e. **~37 ms**. The names are kept; only the reading changes. The side-by-side
+sheets in [`../analysis/`](../analysis/) label the columns that way.
 
 Figures are trimmed to the flight: pre-takeoff and post-crash data is not plotted. Crossing
 counts are computed **before** trimming and stay truthful.
@@ -90,6 +117,19 @@ which is why its numbers carry the departure and should not be read as cruise va
 and r ≈ 25 (level 3). A separate batch at km = 4.0816e-7 was flown to separate "hover" from
 "higher spin" — see the findings document.
 
+## Addendum — the r = 20 pair
+
+Flown in the same session at `km = 4.0816e-7` (the fast circle's spin) to separate "hover"
+from "higher spin", after the 2×2 above failed at r ≈ 29.5. Same `rotor_tau = 0.02`.
+
+| run directory | spin | seat | outcome |
+|---|---|---|---|
+| `px4_runs/L2_eigen_20260917_035604` | 20.0 | off | crash 26.1 s |
+| `px4_runs/L2_eigen_20260917_035752` | 20.0 | adaptive | flies 47.5 s |
+
+**These two are not in [`logs/`](logs/)** — unlike every other run in this folder, their
+ulogs live only in the gitignored `px4_runs/`. Copy them out before that tree is cleaned.
+
 ---
 
 ## Flight logs, in this folder
@@ -103,3 +143,29 @@ each `console.txt` header. This experiment no longer depends on `px4_runs/` surv
 [`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
 reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
 nowhere else.
+
+---
+
+## Re-flight, 2026-09-18 — the `nolag` pair only
+
+Re-flown so that **α is measured on the seat-OFF arm**. Until this date neither controller
+computed it with the seat off (level 1 did not build the observer; PX4 skipped the block),
+so the misalignment the seat exists to cancel was unrecorded on the arm you compare it
+against. The measurement applies nothing — the level-1 re-flight came back bit-for-bit
+identical — but PX4 is not reproducible to the bit, so these arms moved a little.
+
+**The figures in this folder now come from the re-flown runs.** The `lag20ms` and r = 20
+arms were not re-flown and keep their original logs.
+
+| | old run (L2_airframe_20260917_034444 / L2_airframe_20260917_034631) | re-flown (L2_airframe_20260917_234829 / L2_airframe_20260917_235022) |
+|---|---|---|
+| θ_s, seat ON | −0.9061 ± 0.1204 | **−0.8601 ± 0.1178** |
+| alt sd, off / on | 1.6 / 1.5 mm | 1.6 / 1.5 mm |
+| tilt, off / on | 0.19° / 0.12° | 0.19° / 0.13° |
+| \|p,q\|, off / on | 0.097 / 0.081 | 0.096 / 0.081 |
+| α on the seat-OFF arm | **not recorded** | **mean \|α\| 1.05 rad** |
+
+θ_s moved by 5 %; everything else is inside run-to-run scatter. Window and definitions
+as in "How the steady-state numbers were taken" above. The old ulogs are still under
+`px4_runs/` and the numbers they produced are the ones quoted in the findings document,
+which has not been re-derived.

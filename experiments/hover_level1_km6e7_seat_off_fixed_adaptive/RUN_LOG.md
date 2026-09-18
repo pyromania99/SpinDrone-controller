@@ -239,3 +239,91 @@ bisected.** If an exact seat-off failure time ever matters, bisect `8c48c10`.
 
 The archived `--seat-gains` are still unrecorded, so part of the θ_s gap (0.157 → 0.067) may
 be a different `k` rather than the code change. `k` is dimensional for the CROSS law.
+
+---
+
+## Re-flight, 2026-09-18 — α on every arm, flights bit-for-bit unchanged
+
+Re-flown after `eigen_controller.py` was changed to build the wrench observer on **every**
+arm rather than only when a seat exists. Before this, `seat_alpha` was 100 % NaN on the OFF
+and FIXED arms — the observer was never constructed for OFF, and `update_fixed` wrote NaN
+over the value for FIXED — so the misalignment the seat exists to cancel was unrecorded on
+both arms you compare the adaptive one against.
+
+**The observer applies nothing, and that is measured, not assumed.** All three arms were
+re-flown with the identical command and diffed against their previous npz:
+
+| arm | position | torque | angular velocity | motor thrusts | θ_s |
+|---|---|---|---|---|---|
+| OFF | **0** | **0** | **0** | **0** | **0** |
+| FIXED | **0** | **0** | **0** | **0** | **0** |
+| ADAPTIVE | **0** | **0** | **0** | **0** | **0** |
+
+max abs difference, every sample. Level 1 is deterministic, so this is an exact result: the
+measurement cannot reach the control path. θ_s on the adaptive arm reproduces at 0.06692
+against the 0.0672 in the findings document.
+
+What the arms now carry. **α is an angle, so these are circular statistics** — R is the
+resultant length, 1 being perfect concentration and 0 uniform, and the mean direction means
+nothing as R approaches 0:
+
+| arm | window | circular-mean α | R |
+|---|---|---|---|
+| OFF | t 60–120 s (settled) | −0.595 | 0.933 |
+| FIXED | **t 1.0–4.4 s (while airborne)** | +1.940 | 0.341 |
+| ADAPTIVE | t 60–120 s (settled) | −0.271 | 0.205 |
+
+**The FIXED row must be taken before its crash at 4.4 s.** Over t > 20 s it reads
+circular-mean −2.646 at **R = 0.004** — a uniform distribution around the whole circle,
+which is what a vehicle lying on the ground produces. An earlier version of this section
+quoted that window as though it were a measurement; it is not one.
+
+`seat_stepped` was added beside α: 1 where the law stepped, 0 where it was gated, NaN where
+no law runs. It is NaN throughout for OFF and FIXED — FIXED recomputes θ_s from r and never
+steps — and shows the adaptive arm gated on 0.1 % of ticks.
+
+**α on the FIXED and ADAPTIVE arms is not a residual.** The observer's commanded vector is
+built from the torque *before* `seat.rotate` is applied, so it measures the misalignment the
+seat is correcting, not what is left after it.
+
+---
+
+## Diagnostic, 2026-09-18 — the rotor pole is what the seat is for
+
+`seat OFF` departs at 24.0 s in the batch above. Re-flown with **the rotor pole removed**
+and nothing else changed:
+
+| | `rotor_tau = 0.02` | **`rotor_tau = 0`** |
+|---|---|---|
+| altitude, t 10–30 s | 1.247 m ± 451 mm | **1.495 m ± 0.0 mm** |
+| altitude, t 90–120 s | 0.744 m ± 540 mm | **1.495 m ± 0.0 mm** |
+| tilt, t 10–30 s | 12.4° | **0.039°** |
+| tilt, t 90–120 s | 34.1° | **0.039°** |
+| outcome | departs and keeps re-departing | flies the full 120 s, untroubled |
+
+```bash
+python3 examples/flight/fly.py --level 1 --controller eigen --failure-mode off \
+    --motor-moment 6e-7 --rotor-tau 0 --duration 120 --seat off --headless
+```
+
+**Level 1 is not fragile at spin. It is fragile at spin WITH a rotor pole**, and with the
+pole gone it holds station to the millimetre at r = 29.5 with no seat at all.
+
+That resolves a cross-level puzzle worth stating plainly, because the figures invite the
+opposite reading. Levels 2 and 3 look like they "do not need the seat", but their `nolag`
+arms are the **no-rotor-pole** case — the same case in which level 1 also flies fine. Line
+the rungs up by whether a rotor pole is present and they agree completely:
+
+| | rotor pole absent | rotor pole present |
+|---|---|---|
+| level 1 | flies clean (0.039° tilt) | departs |
+| level 2 | flies clean | crash 11.9 s |
+| level 3 | flies clean | crash 12.7 s |
+
+**Seat-off survives at every rung without a rotor pole and fails at every rung with one.**
+PX4's own ~17 ms pipeline delay, whatever phase it contributes, does not destabilise at
+these spins — and the seat still finds it, converging to θ_s ≈ −0.87 in the no-pole hovers
+while changing nothing about the outcome. The pole is what breaks the vehicle.
+
+Kept in [`logs/km6e7_refly/hover_off_notau.npz`](logs/km6e7_refly/).
+

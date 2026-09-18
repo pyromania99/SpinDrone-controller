@@ -50,6 +50,41 @@ for TAU in 0.020 0; do for SEAT in 0 2; do
 done; done
 ```
 
+## Figures
+
+```bash
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L3_airframe_20260917_034821" \
+    --arm "seat ON (adaptive):px4_runs/L3_airframe_20260917_035010" \
+    --out experiments/hover_level3_px4_estimator --prefix l3_hover_lag20ms \
+    --zoom 0 25 --settle-from 15 \
+    --title "Level 3 hover (PX4 + estimator), km=6e-7 (r~29.5), rotor_tau 20 ms"
+
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L3_airframe_20260917_035201" \
+    --arm "seat ON (adaptive):px4_runs/L3_airframe_20260917_035353" \
+    --out experiments/hover_level3_px4_estimator --prefix l3_hover_nolag \
+    --zoom 0 25 --settle-from 20 \
+    --title "Level 3 hover, same spin, rotor_tau 0 (PX4 pipeline lag only)"
+
+python3 experiments/tools/plot_run.py \
+    --arm "seat OFF:px4_runs/L3_eigen_20260917_035942" \
+    --arm "seat ON (adaptive):px4_runs/L3_eigen_20260917_040133" \
+    --out experiments/hover_level3_px4_estimator --prefix l3_hover_r20_lag20ms \
+    --zoom 0 30 --settle-from 20 \
+    --title "Level 3 hover at r=20, rotor_tau 20 ms — both survive, but only one holds attitude"
+```
+
+**`nolag` does not mean zero lag.** It means `rotor_tau = 0` — no rotor pole. PX4 still
+carries ~17 ms of transport delay plus ~14 ms of pipeline filtering, so read the `nolag`
+arms as **~17 ms of loop delay** and the `lag20ms` arms as that same ~17 ms plus a 20 ms
+rotor pole, i.e. **~37 ms**. The names are kept; only the reading changes. The side-by-side
+sheets in [`../analysis/`](../analysis/) label the columns that way.
+
+All three are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh),
+which regenerates every figure in the tree in one pass, and all three were **verified by
+reproduction on 2026-09-17** — each regenerates the committed PNG byte for byte.
+
 ## Measured steady state
 
 Window: from 5 s after first reaching 4 m to 1 s before crash (or 3 s before the last
@@ -132,3 +167,52 @@ each `console.txt` header. This experiment no longer depends on `px4_runs/` surv
 [`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
 reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
 nowhere else.
+
+---
+
+## Re-flight, 2026-09-18 — the `nolag` pair only
+
+Re-flown so that **α is measured on the seat-OFF arm**. Until this date neither controller
+computed it with the seat off (level 1 did not build the observer; PX4 skipped the block),
+so the misalignment the seat exists to cancel was unrecorded on the arm you compare it
+against. The measurement applies nothing — the level-1 re-flight came back bit-for-bit
+identical — but PX4 is not reproducible to the bit, so these arms moved a little.
+
+**The figures in this folder now come from the re-flown runs.** The `lag20ms` and r = 20
+arms were not re-flown and keep their original logs.
+
+| | old run (L3_airframe_20260917_035201 / L3_airframe_20260917_035353) | re-flown (L3_eigen_20260917_235215 / L3_eigen_20260917_235407) |
+|---|---|---|
+| θ_s, seat ON | −0.8698 ± 0.0992 | **−0.7815 ± 0.0821** |
+| alt sd, off / on | 7.6 / 7.4 mm | 7.3 / 8.2 mm |
+| tilt, off / on | 0.19° / 0.13° | 0.19° / 0.13° |
+| \|p,q\|, off / on | 0.098 / 0.081 | 0.097 / 0.083 |
+| α on the seat-OFF arm | **not recorded** | **mean \|α\| 1.09 rad** |
+
+θ_s moved by 9 %; everything else is inside run-to-run scatter. Window and definitions
+as in "How the steady-state numbers were taken" above. The old ulogs are still under
+`px4_runs/` and the numbers they produced are the ones quoted in the findings document,
+which has not been re-derived.
+
+## The `lag20ms` seat-ON rescue at n = 5 (2026-09-18)
+
+The level-2 circle rescue turned out to be 1-in-4 bimodal, so this one was repeated rather
+than trusted. Identical command, five independent runs:
+
+| run | outcome | attitude error | θ_s |
+|---|---|---|---|
+| `L3_airframe_20260917_035010` (original) | no crash | 0.373° | −0.4749 |
+| `px4_runs/L3_eigen_20260918_004016` | no crash | 0.285° | −0.4727 |
+| `px4_runs/L3_eigen_20260918_011215` | no crash | 0.327° | −0.4729 |
+| `px4_runs/L3_eigen_20260918_011406` | no crash | 0.316° | −0.4725 |
+| `px4_runs/L3_eigen_20260918_011558` | no crash | 0.254° | −0.4726 |
+
+**θ_s = −0.4731 ± 0.0009 — 0.19 % over five runs.** Seat OFF at the same condition crashes
+at 12.8 s and 12.7 s.
+
+Compare the level-2 circle's seat-ON arm, where the same measurement scattered −0.505,
+−0.848, −0.561, −0.535 across four runs. That 40 % spread was the signature of a
+bifurcation; 0.19 % is the adaptation landing on the same fixed point every time. **This is
+the best-established result in the tree**, and the attitude error stays inside 0.25–0.37°,
+so it is not surviving narrowly at a boundary.
+

@@ -42,6 +42,23 @@ def load_npz(path, rotor_tau):
     roll = da[:, 0] - eR[:, 0]
     pitch = da[:, 1] - eR[:, 1]
     yaw = da[:, 2]
+
+    def _zb(phi, th, psi):
+        """Body z in world, ZYX yaw-pitch-roll. Commanded and actual share the MEASURED
+        yaw, so the angle between them is a roll/pitch error and not a yaw difference -
+        which matters here, because yaw is deliberately spinning."""
+        return np.stack([np.cos(phi) * np.sin(th) * np.cos(psi) + np.sin(phi) * np.sin(psi),
+                         np.cos(phi) * np.sin(th) * np.sin(psi) - np.sin(phi) * np.cos(psi),
+                         np.cos(phi) * np.cos(th)], axis=-1)
+
+    # tilt is what the vehicle did; att_err is what it was asked for minus that. In this
+    # hover they are the same to a hundredth of a degree, but the trajectory figures at
+    # levels 2 and 3 showed a ~19 deg COMMANDED lean labelled as error, so both are
+    # carried everywhere now. See plot_run.load.
+    za = _zb(roll, pitch, yaw)
+    zc = _zb(da[:, 0], da[:, 1], yaw)
+    tilt_cmd = np.arccos(np.clip(zc[:, 2], -1, 1))
+    att_err = np.arccos(np.clip(np.sum(za * zc, axis=1), -1, 1))
     # tilt from vertical, the same frame-independent quantity plot_run.py takes from the
     # quaternion. For small-to-moderate angles cos(tilt) = cos(roll)cos(pitch).
     tilt = np.arccos(np.clip(np.cos(roll) * np.cos(pitch), -1, 1))
@@ -56,10 +73,12 @@ def load_npz(path, rotor_tau):
         "speed": np.hypot(v[:, 0], v[:, 1]),
         "ep": np.hypot(ep[:, 0], ep[:, 1]),
         "t_att": t, "roll": roll, "pitch": pitch, "yaw": yaw, "tilt": tilt,
+        "tilt_cmd": tilt_cmd, "att_err": att_err,
         "t_w": t, "pq": np.hypot(w[:, 0], w[:, 1]), "r": np.asarray(d["yaw_rate"], float),
         "t_cs": t, "tau_xy": np.hypot(tau[:, 0], tau[:, 1]),
         "seat_theta": np.asarray(d["seat_theta"], float) if "seat_theta" in d else None,
         "seat_alpha": np.asarray(d["seat_alpha"], float) if "seat_alpha" in d else None,
+        "seat_stepped": np.asarray(d["seat_stepped"], float) if "seat_stepped" in d else None,
         "pole_theta": np.asarray(d["pole_theta"], float) if "pole_theta" in d else None,
     }
     dp = np.asarray(d["desired_p"], dtype=float)
@@ -100,6 +119,13 @@ def main():
         P.fig_attitude(arms, f"{a.out}/{a.prefix}_attitude.png", f"{base} — attitude vs time", a.zoom, a.settle_from),
         P.fig_seat(arms, f"{a.out}/{a.prefix}_seat.png", f"{base} — seat angle and observable"),
     ]
+    # Station keeping. The npz carries desired_p, so level 1 can answer the same "did it
+    # track?" question as levels 2 and 3 - on a hover the commanded path is a point and the
+    # panel reads as drift about it. This was missing until 2026-09-17, which is why the
+    # level-1 column was absent from the trajectory comparison sheet.
+    if any("sp_x" in d for _l, d in arms):
+        made.append(P.fig_trajectory(arms, f"{a.out}/{a.prefix}_trajectory.png",
+                                     f"{base} — trajectory tracking", a.settle_from))
     # The adaptive arm on its own axes. On a shared-axis attitude figure the arms that
     # diverge reach +/-180 deg and squash the survivor to a flat line; this is the whole
     # reason the archived km6e7_attitude_adaptive.png exists.

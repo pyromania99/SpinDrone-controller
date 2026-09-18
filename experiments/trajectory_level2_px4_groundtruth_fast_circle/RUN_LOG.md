@@ -53,6 +53,12 @@ python3 experiments/tools/plot_run.py \
     --title "Level 2, same circle, rotor_tau 0 (PX4 pipeline lag only)"
 ```
 
+**`nolag` does not mean zero lag.** It means `rotor_tau = 0` — no rotor pole. PX4 still
+carries ~17 ms of transport delay plus ~14 ms of pipeline filtering, so read the `nolag`
+arms as **~17 ms of loop delay** and the `lag20ms` arms as that same ~17 ms plus a 20 ms
+rotor pole, i.e. **~37 ms**. The names are kept; only the reading changes. The side-by-side
+sheets in [`../analysis/`](../analysis/) label the columns that way.
+
 Deterministic — re-running reproduces the committed PNGs.
 
 ## Flight commands
@@ -114,3 +120,61 @@ each `console.txt` header. This experiment no longer depends on `px4_runs/` surv
 [`logs/README.md`](logs/README.md) maps each run to its arm and gives the snippet for
 reading the parameters (`MC_SEAT_*`, `MC_POLE_*`) back out of a ulog — they are recorded
 nowhere else.
+
+---
+
+## Re-flight, 2026-09-18 — the `nolag` pair only
+
+Re-flown so that **α is measured on the seat-OFF arm**; until this date PX4 did not compute
+it with the seat off, so the misalignment the seat exists to cancel was unrecorded on the
+arm you compare it against. **The `l2_nolag_*` figures now come from the re-flown runs**
+`L2_airframe_20260917_235601` (off) and `_235804` (adaptive). `l2_lag20ms_*` is untouched.
+
+**One documented result did not reproduce.** The old seat-OFF run
+(`L2_eigen_20260913_200501`) dipped to 0.11 m twice — the "4 altitude crossings" this
+document reports. The re-flight of the same command never went below 4.02 m and logged 2
+crossings, the same as the seat-ON arm.
+
+| | old (2026-09-13) | re-flown (2026-09-18) |
+|---|---|---|
+| seat OFF | 48.8 s, **4 crossings**, min 0.11 m | 52.1 s, **2 crossings**, min 4.02 m |
+| seat ON | 48.8 s, 2 crossings | 52.0 s, 2 crossings |
+| θ_s, seat ON | −0.4037 ± 0.0869 | **−0.4013 ± 0.1424** |
+| tilt, off / on | 20.84° / 18.21° | 17.97° / 18.72° |
+| circular-mean α, off → on | **not recorded** → −0.13 | **+0.35 → −0.13** |
+
+θ_s is unchanged to 0.6 %. The dip is the thing that moved, and its absence says the
+seat-OFF signature at this condition is **not reproducible** — do not cite it as a property
+of the condition. §-level claims resting on it need re-checking.
+
+## Repeatability of the `lag20ms` seat-ON arm — 1 in 4 (2026-09-18)
+
+The §1 headline rests on one run. Four more of the identical command:
+
+| run directory | outcome | θ_s in cruise |
+|---|---|---|
+| `L2_eigen_20260913_201321` (original) | flew 48.7 s | −0.5051 |
+| `px4_runs/L2_airframe_20260918_005128` | **crash 19.9 s**, 4 crossings | −0.8484 |
+| `px4_runs/L2_airframe_20260918_005844` | flew 52.2 s, no crash | −0.5046 |
+| `px4_runs/L2_airframe_20260918_010040` | **crash 22.4 s**, 4 crossings | −0.5611 |
+| `px4_runs/L2_airframe_20260918_010234` | **crash 24.6 s**, 4 crossings | −0.5355 |
+
+```bash
+# the command, run four times
+python3 examples/flight/fly.py --level 2 --controller eigen --motor-moment 4.0816e-7 \
+    --rotor-tau 0.020 --headless --l2-trajectory examples/results/fast_circle_l2.csv \
+    --gains MC_CTRL_ALG=3 MC_POLE_EN=0 IMU_DGYRO_CUTOFF=60 MC_CTRL_GT=1 MC_SEAT_MODE=2
+```
+
+**The two that flew both converged to θ_s = −0.505; the three that crashed went to −0.54,
+−0.56 and −0.85.** That is a testable lead — the outcome may follow which fixed point the
+adaptation lands on — and it is untested.
+
+`l2_lag20ms_*` uses the **first** re-fly (`_005128`, which crashed), chosen because it is the
+unbiased first draw rather than the one that matches the old write-up.
+`l2_lag20ms_repeats_*` plots all four.
+
+**This is not an artifact of the 2026-09-18 firmware change.** Re-fly 2 reproduces the
+original almost exactly (θ_s −0.5046 against −0.5051, flies the whole trajectory) on the
+same build, and the change only adds logging.
+

@@ -25,46 +25,60 @@ python3 $E/tools/plot_level1.py \
 
 echo "== level 2 hover =="
 H2=$E/hover_level2_px4_groundtruth
-px4 --arm "seat OFF:$R/L2_airframe_20260917_034108" --arm "seat ON (adaptive):$R/L2_airframe_20260917_034255" \
+px4 --arm "seat OFF:$R/L2_airframe_20260918_003456" --arm "seat ON (adaptive):$R/L2_airframe_20260918_003645" \
     --out $H2 --prefix l2_hover_lag20ms --zoom 0 25 --settle-from 13 \
     --title "Level 2 hover (PX4 + ground truth), km=6e-7 (r~29.5), rotor_tau 20 ms"
-px4 --arm "seat OFF:$R/L2_airframe_20260917_034444" --arm "seat ON (adaptive):$R/L2_airframe_20260917_034631" \
+px4 --arm "seat OFF:$R/L2_airframe_20260917_234829" --arm "seat ON (adaptive):$R/L2_airframe_20260917_235022" \
     --out $H2 --prefix l2_hover_nolag --zoom 0 25 --settle-from 20 \
     --title "Level 2 hover, same spin, rotor_tau 0 (PX4 pipeline lag only)"
-px4 --arm "seat OFF:$R/L2_eigen_20260917_035604" --arm "seat ON (adaptive):$R/L2_eigen_20260917_035752" \
+px4 --arm "seat OFF:$R/L2_airframe_20260918_004209" --arm "seat ON (adaptive):$R/L2_airframe_20260918_004401" \
     --out $H2 --prefix l2_hover_r20_lag20ms --zoom 0 30 --settle-from 20 \
     --title "Level 2 hover at r=20 (the circle's spin), rotor_tau 20 ms — the seat RESCUES"
 
 echo "== level 3 hover =="
 H3=$E/hover_level3_px4_estimator
-px4 --arm "seat OFF:$R/L3_airframe_20260917_034821" --arm "seat ON (adaptive):$R/L3_airframe_20260917_035010" \
+px4 --arm "seat OFF:$R/L3_eigen_20260918_003829" --arm "seat ON (adaptive):$R/L3_eigen_20260918_004016" \
     --out $H3 --prefix l3_hover_lag20ms --zoom 0 25 --settle-from 15 \
     --title "Level 3 hover (PX4 + estimator), km=6e-7 (r~29.5), rotor_tau 20 ms"
-px4 --arm "seat OFF:$R/L3_airframe_20260917_035201" --arm "seat ON (adaptive):$R/L3_airframe_20260917_035353" \
+px4 --arm "seat OFF:$R/L3_eigen_20260917_235215" --arm "seat ON (adaptive):$R/L3_eigen_20260917_235407" \
     --out $H3 --prefix l3_hover_nolag --zoom 0 25 --settle-from 20 \
     --title "Level 3 hover, same spin, rotor_tau 0 (PX4 pipeline lag only)"
-px4 --arm "seat OFF:$R/L3_eigen_20260917_035942" --arm "seat ON (adaptive):$R/L3_eigen_20260917_040133" \
+px4 --arm "seat OFF:$R/L3_eigen_20260918_004550" --arm "seat ON (adaptive):$R/L3_eigen_20260918_004741" \
     --out $H3 --prefix l3_hover_r20_lag20ms --zoom 0 30 --settle-from 20 \
     --title "Level 3 hover at r=20, rotor_tau 20 ms — both survive, but only one holds attitude"
 
 echo "== level 2 trajectory (fast circle) =="
 T2=$E/trajectory_level2_px4_groundtruth_fast_circle
-px4 --arm "seat OFF:$R/L2_eigen_20260913_201119" --arm "seat ON (adaptive):$R/L2_eigen_20260913_201321" \
+px4 --arm "seat OFF:$R/L2_airframe_20260918_004932" --arm "seat ON (adaptive):$R/L2_airframe_20260918_005128" \
     --out $T2 --prefix l2_lag20ms --zoom 0 25 --settle-from 25 \
     --title "Level 2 (PX4 + ground truth), fast circle, r=20 rad/s, rotor_tau 20 ms"
-px4 --arm "seat OFF:$R/L2_eigen_20260913_200501" --arm "seat ON (adaptive):$R/L2_eigen_20260913_200711" \
+px4 --arm "seat OFF:$R/L2_airframe_20260917_235601" --arm "seat ON (adaptive):$R/L2_airframe_20260917_235804" \
     --out $T2 --prefix l2_nolag --zoom 0 25 --settle-from 25 \
     --title "Level 2, same circle, rotor_tau 0 (PX4 pipeline lag only)"
 
 echo "== level 3 trajectory (fast circle) =="
 T3=$E/trajectory_level3_px4_estimator_fast_circle
-px4 --arm "seat OFF:$R/L3_eigen_20260914_202618" --arm "seat ON:$R/L3_eigen_20260914_202810" \
-    --arm "seat + adaptive b:$R/L3_eigen_20260914_203001" \
+px4 --arm "seat OFF:$R/L3_eigen_20260918_000004" --arm "seat ON:$R/L3_eigen_20260918_000208" \
+    --arm "seat + adaptive b:$R/L3_eigen_20260918_000420" \
     --out $T3 --prefix l3_nolag --zoom 0 25 --settle-from 25 \
     --title "Level 3 (PX4 + estimator), fast circle, r=25 rad/s, rotor_tau 0"
-px4 --arm "seat OFF:$R/L3_eigen_20260914_214502" --arm "seat ON:$R/L3_eigen_20260914_214653" \
+px4 --arm "seat OFF:$R/L3_eigen_20260918_005324" --arm "seat ON:$R/L3_eigen_20260918_005519" \
     --out $T3 --prefix l3_lag20ms --zoom 0 25 --settle-from 12 \
     --title "Level 3, same circle, rotor_tau 20 ms - neither arm survives"
+
+echo "== level 2 circle, rotor_tau 0.02, seat ON: the SAME COMMAND four times =="
+# The "seat rescues level 2" headline reproduces once in four. Plotting the repeats
+# together is the only honest way to show a bimodal outcome.
+px4 --arm "run 1 - crashed 19.9s:$R/L2_airframe_20260918_005128" \
+    --arm "run 2 - FLEW:$R/L2_airframe_20260918_005844" \
+    --arm "run 3 - crashed 22.4s:$R/L2_airframe_20260918_010040" \
+    --arm "run 4 - crashed 24.6s:$R/L2_airframe_20260918_010234" \
+    --out $T2 --prefix l2_lag20ms_repeats --zoom 0 30 --settle-from 25 --no-crash-cut \
+    --title "Level 2 circle, rotor_tau 20 ms, seat ADAPTIVE - four runs of one command"
+
+echo
+echo "== analysis sheets (tiles the PNGs above, reads no logs) =="
+python3 $E/tools/make_analysis_grids.py
 
 echo
 echo "NOT regenerated (no raw data survives, or not produced by these tools):"
