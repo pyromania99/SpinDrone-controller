@@ -87,6 +87,19 @@ def parse_args() -> argparse.Namespace:
                    help="Seconds per lateral leg. Must be long compared with the position "
                         "loop and with MC_POLE_FDIT's dither period, or the two excitations "
                         "alias into each other.")
+    p.add_argument("--fail-rotor", type=int, default=None, metavar="N",
+                   help="Stop PX4 motor N (1-based, as the `failure` console command "
+                        "numbers them; 0 = all) partway through the flight, using PX4's "
+                        "own injector. This is the level-2/3 equivalent of level 1's "
+                        "motor_failure.py, and unlike that one it goes through the "
+                        "allocator rather than around it.")
+    p.add_argument("--fail-at", type=float, default=20.0, metavar="S",
+                   help="Seconds into the hold (or the trajectory) at which --fail-rotor "
+                        "fires. Default 20, which is past the spin-up and inside the "
+                        "settled window every hover experiment scores over. The command "
+                        "is timed, not settle-triggered: commander republishes the stop "
+                        "mask at 2 Hz, so the motor actually stops up to 0.5 s later - "
+                        "take the failure time from the ulog, not from this number.")
     p.add_argument("--no-land", action="store_true",
                    help="Leave it hovering instead of landing, to keep watching.")
     return p.parse_args()
@@ -152,6 +165,24 @@ def fly(ARGS) -> int:
             over[k.strip()] = float(v)
         drv.set_gains(**over)
 
+    if getattr(ARGS, "fail_rotor", None) is not None:
+        # Both of these are read by PX4 in places that make a silent failure look
+        # like a successful flight, so check rather than set-and-hope.
+        en = drv.param_get("SYS_FAILURE_EN")
+        if en is None or int(en) != 1:
+            sys.exit(f"SYS_FAILURE_EN={en}, must be 1 for --fail-rotor. It is read once "
+                     "in FailureInjector's constructor, so setting it now would not take "
+                     "effect until PX4 restarts - set it before boot (init.d-posix/rcS "
+                     "already defaults it to 1).")
+        drv.set_gains(CA_FAILURE_MODE=1)
+        fd_act = drv.param_get("FD_ACT_EN")
+        if fd_act is not None and int(fd_act) != 0:
+            log(f"WARNING: FD_ACT_EN={int(fd_act)} - the allocator will DETECT the stopped "
+                "motor and re-allocate around it. That is a different experiment from the "
+                "level-1 one, where the controller is never told.")
+        log(f"failure injection armed: motor {ARGS.fail_rotor} off at t+{ARGS.fail_at:.0f}s "
+            "of the hold (CA_FAILURE_MODE=1, SYS_FAILURE_EN=1)")
+
     flown = {k: drv.param_get(k) for k in
              ("MC_EIG_WN", "MC_EIG_B", "MC_EIG_ATT_P", "MC_EIG_ATT_D", "MC_CTRL_GT")}
     log("flying: " + "  ".join(f"{k}={v}" for k, v in flown.items()))
@@ -163,6 +194,21 @@ def fly(ARGS) -> int:
     if not drv.takeoff(alt=ARGS.altitude, climb_time=14.0):
         sys.exit("takeoff failed")
 
+    # One closure, shared by the trajectory branch and the hold loop, so the two
+    # profiles cannot drift into injecting the failure differently.
+    _failed = {"done": False}
+
+    def _maybe_fail(elapsed: float) -> None:
+        if getattr(ARGS, "fail_rotor", None) is None or _failed["done"]:
+            return
+        if elapsed < ARGS.fail_at:
+            return
+        _failed["done"] = True
+        acks = drv.inject_motor_failure(ARGS.fail_rotor)
+        log(f"*** INJECTED motor {ARGS.fail_rotor} OFF at t+{elapsed:.1f}s "
+            f"(acks={acks}; 1=UNSUPPORTED from commander's default branch is expected "
+            "alongside 0=ACCEPTED from the injector)")
+
     if ARGS.trajectory:
         import numpy as _np
         _tr = _np.genfromtxt(ARGS.trajectory, delimiter=",")
@@ -172,7 +218,8 @@ def fly(ARGS) -> int:
                  if ARGS.waypoint_radius > 0 else "timed")
         log(f"flying trajectory {ARGS.trajectory} ({len(_traj)} points, {_mode})")
         drv.fly_trajectory(_traj, waypoint_radius=ARGS.waypoint_radius,
-                           max_seconds=max(ARGS.hold, 60.0))
+                           max_seconds=max(ARGS.hold, 60.0),
+                           on_sample=lambda el, _pos, _row: _maybe_fail(el))
         log("trajectory complete")
         if not ARGS.no_land:
             drv.land()
@@ -197,6 +244,10 @@ def fly(ARGS) -> int:
         # is the signal a translation-direction observable needs. A slow sinusoid spends
         # most of its time near zero demand, gated off.
         n_sp = 0.0
+
+        # Fire before the step rather than after: hold() blocks for up to `step`
+        # seconds, so testing afterwards would quantise the failure to a 5 s grid.
+        _maybe_fail(time.time() - t0)
 
         if ARGS.lateral_amp > 0.0:
             leg = int((time.time() - t0) / max(ARGS.lateral_period, 1e-3))

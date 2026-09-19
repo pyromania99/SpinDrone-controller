@@ -198,6 +198,16 @@ def parse_args() -> argparse.Namespace:
 
                     help="Levels 2/3: seconds per lateral leg (default 20).")
 
+    g2.add_argument("--fail-rotor", type=int, default=None, metavar="N",
+                    help="Levels 2/3: stop PX4 motor N (1-based; 0 = all) mid-flight "
+                         "through PX4's own failure injector. Sets CA_FAILURE_MODE=1, "
+                         "without which the stop mask is silently dropped by the "
+                         "allocator. Level 1's equivalent is --failure-mode.")
+    g2.add_argument("--fail-at", type=float, default=20.0, metavar="S",
+                    help="Levels 2/3: seconds into the hold at which --fail-rotor fires "
+                         "(default 20). The motor stops up to 0.5 s later - commander "
+                         "republishes the mask at 2 Hz - so read the failure time off "
+                         "the ulog.")
     g2.add_argument("--no-land", action="store_true")
     g2.add_argument("--abort-on-loss", action="store_true",
                     help="Stop early if telemetry shows altitude lost. Off by default: "
@@ -320,7 +330,8 @@ def fly_px4(a: argparse.Namespace) -> int:
         abort_on_loss=a.abort_on_loss, no_land=a.no_land, ctrl_alg=a.ctrl_alg,
         trajectory=a.l2_trajectory, waypoint_radius=a.l2_waypoint_radius,
         lateral_amp=(0.0 if a.lateral_amp is None else a.lateral_amp),
-        lateral_period=(20.0 if a.lateral_period is None else a.lateral_period))
+        lateral_period=(20.0 if a.lateral_period is None else a.lateral_period),
+        fail_rotor=a.fail_rotor, fail_at=a.fail_at)
     try:
         return offboard.fly(opts)
     except SystemExit as exc:
@@ -348,7 +359,7 @@ _LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral", "traje
                 "controller_gains", "seat", "seat_gains", "adapt_b", "pole_gains", "seat_law")
 _LEVEL23_ONLY = ("hold", "altitude", "attach", "gains", "ctrl_alg", "run_dir",
                  "boot_timeout", "no_land", "abort_on_loss",
-                 "lateral_amp", "lateral_period",
+                 "lateral_amp", "lateral_period", "fail_rotor", "fail_at",
                  "l2_trajectory", "l2_waypoint_radius")
 
 

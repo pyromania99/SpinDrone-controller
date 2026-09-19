@@ -255,6 +255,57 @@ class PX4Driver:
                                      command, 0, *(list(params) + [0] * (7 - len(params))))
         return self.m.recv_match(type="COMMAND_ACK", blocking=True, timeout=5)
 
+    # ---- failure injection ----------------------------------------------
+
+    # PX4's own hook, from msg/versioned/VehicleCommand.msg. Spelled numerically
+    # because pymavlink's default dialect (ardupilotmega v1.0) does not carry
+    # MAV_CMD_INJECT_FAILURE, and importing a second dialect to name a constant
+    # is a worse trade than a comment.
+    CMD_INJECT_FAILURE = 420
+    FAILURE_UNIT_SYSTEM_MOTOR = 101
+    FAILURE_TYPE_OK = 0
+    FAILURE_TYPE_OFF = 1
+
+    def inject_motor_failure(self, instance: int, off: bool = True) -> list:
+        """Stop (or restore) one motor through PX4's failure injector.
+
+        `instance` is PX4's 1-based motor number, matching the `-i` of the `failure`
+        console command and the "motor N off" it prints; 0 means every motor.
+
+        The chain is FailureInjector (commander) -> failure_detector_status.
+        motor_stop_mask -> ControlAllocator, which NaNs that entry of
+        actuator_motors. Two preconditions, both checked by offboard.fly():
+
+          SYS_FAILURE_EN=1    read ONCE in FailureInjector's constructor, so it has
+                              to be set before commander starts. init.d-posix/rcS
+                              already defaults it to 1; hardware boards do not.
+          CA_FAILURE_MODE>0   ControlAllocator::check_for_motor_failures() returns
+                              immediately at the default of 0, silently dropping the
+                              mask. This is the one that bites.
+
+        Returns every COMMAND_ACK seen, because there are normally TWO: commander
+        does not handle 420 and answers UNSUPPORTED from its default branch, while
+        FailureInjector publishes its own ACCEPTED. Neither is proof on its own -
+        the mask reaching the allocator is what matters, and that is visible in the
+        ulog (failure_detector_status.motor_stop_mask, actuator_motors.control).
+        """
+        self.m.mav.command_long_send(
+            self.m.target_system, self.m.target_component,
+            self.CMD_INJECT_FAILURE, 0,
+            self.FAILURE_UNIT_SYSTEM_MOTOR,
+            self.FAILURE_TYPE_OFF if off else self.FAILURE_TYPE_OK,
+            float(instance), 0, 0, 0, 0)
+
+        # Collect for a bounded window rather than taking the first ack: the first
+        # one back is usually commander's UNSUPPORTED, and reporting that alone
+        # would read as a failed injection when the motor did in fact stop.
+        acks, deadline = [], time.time() + 2.0
+        while time.time() < deadline:
+            ack = self.m.recv_match(type="COMMAND_ACK", blocking=True, timeout=0.5)
+            if ack is not None and ack.command == self.CMD_INJECT_FAILURE:
+                acks.append(ack.result)
+        return acks
+
     def send_setpoint(self, n: float, e: float, d: float, yaw: float = 0.0) -> None:
         self.m.mav.set_position_target_local_ned_send(
             int(time.time() * 1e3) & 0xFFFFFFFF,

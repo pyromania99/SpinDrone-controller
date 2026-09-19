@@ -26,6 +26,7 @@ Folder naming: `{profile}_{level}_{what varied}`, where profile is `hover` or
 | [`hover_level3_px4_estimator`](hover_level3_px4_estimator/) | 2026-09-17 | L3 hover, same 2×2 | **The seat rescues hover: 12.8 s → the full 46.7 s.** Same condition as level 2, opposite outcome. |
 | [`trajectory_level2_px4_groundtruth_fast_circle`](trajectory_level2_px4_groundtruth_fast_circle/) | 2026-09-13, re-flown 2026-09-18 | L2, R=10 m 5 m/s circle, ~20.7 rad/s | **The 20 ms-lag "rescue" reproduces 1 run in 4** — see below. θ_s finds PX4's own pipeline lag (−0.40 rad) even with no rotor lag. |
 | [`trajectory_level3_px4_estimator_fast_circle`](trajectory_level3_px4_estimator_fast_circle/) | 2026-09-14 | L3, R=10 m 5 m/s circle, ~25 rad/s | Level 3 works post-EKF2-fix. **L2 and L3 diverge reproducibly** at the seat-off boundary. Neither arm survives `rotor_tau=0.02` yet — the open item. |
+| [`hover_level3_rotor_loss`](hover_level3_rotor_loss/) | 2026-09-19 | L3 hover, one rotor stopped, r ≈ 20 / 25 / 29.5, `rotor_tau=0.02` | **No base spin rate survives a single rotor loss** — 1.9 / 2.8 / 1.9 s to departure, no trend. The allocator keeps commanding the dead motor; the other three saturate. `FD_ACT_EN=1` is unusable in SITL. |
 | [`supporting_b_pole_theory_and_archive`](supporting_b_pole_theory_and_archive/) | — | not a flight | The analytic reason the original θ_b law can't work, and the archived static-b sweep that supplies the "predicted band" the other folders plot against. |
 
 ## The level-2 / level-3 divergence
