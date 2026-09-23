@@ -46,7 +46,7 @@ def parse_args() -> argparse.Namespace:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--run-dir", required=True,
                    help="The --keep-log directory the sim was launched with; the ulog is "
-                        "read from <run-dir>/log/*/*.ulg")
+                        "read from <run-dir>/log/*/*.ulg or <run-dir>/fs/log/*/*.ulg")
     p.add_argument("--altitude", type=float, default=6.0)
     p.add_argument("--hold", type=float, default=90.0,
                    help="Seconds to hold altitude. Longer than gain_search's 25 s default "
@@ -87,6 +87,10 @@ def parse_args() -> argparse.Namespace:
                    help="Seconds per lateral leg. Must be long compared with the position "
                         "loop and with MC_POLE_FDIT's dither period, or the two excitations "
                         "alias into each other.")
+    p.add_argument("--thrust-scale", type=float, default=1.0, metavar="K",
+                   help="Tell the driver the plant's rotor thrust constant was scaled by K "
+                        "(sim_px4.py --thrust-scale), so the airframe guard expects "
+                        "CA_ROTOR*_CT = 10.344*K instead of rejecting it.")
     p.add_argument("--fail-rotor", type=int, default=None, metavar="N",
                    help="Stop PX4 motor N (1-based, as the `failure` console command "
                         "numbers them; 0 = all) partway through the flight, using PX4's "
@@ -182,6 +186,16 @@ def fly(ARGS) -> int:
                 "level-1 one, where the controller is never told.")
         log(f"failure injection armed: motor {ARGS.fail_rotor} off at t+{ARGS.fail_at:.0f}s "
             "of the hold (CA_FAILURE_MODE=1, SYS_FAILURE_EN=1)")
+
+    # AFTER --gains, and deliberately not before. The first check_airframe() above runs
+    # against PX4 as it booted, where CA_ROTOR*_CT is still the airframe's own 10.344;
+    # by here --gains has moved it to 10.344*K to match sim_px4.py --thrust-scale, and
+    # it is arm()'s check that has to accept the scaled value. Setting this any earlier
+    # makes the guard reject the stock airframe it is there to confirm.
+    drv.thrust_scale = float(getattr(ARGS, "thrust_scale", 1.0) or 1.0)
+    if drv.thrust_scale != 1.0:
+        log(f"thrust authority scaled x{drv.thrust_scale} - this is an ORACLE vehicle, "
+            f"not the Pegasus Iris; expecting CA_ROTOR*_CT = {10.344 * drv.thrust_scale:.4f}")
 
     flown = {k: drv.param_get(k) for k in
              ("MC_EIG_WN", "MC_EIG_B", "MC_EIG_ATT_P", "MC_EIG_ATT_D", "MC_CTRL_GT")}
@@ -301,7 +315,10 @@ def fly(ARGS) -> int:
 
     # Give the logger a moment to close the ulog before anything reads it.
     time.sleep(5.0)
-    logs = sorted(run_dir.glob("log/*/*.ulg"))
+    # PX4 moved the ulog to <run>/fs/log/<date>/ in the 2026-09-23 upstream merge;
+    # runs older than that have it at <run>/log/<date>/. Accept both, or every
+    # post-merge run reports "no ulog" while having logged perfectly well.
+    logs = sorted(run_dir.glob("log/*/*.ulg")) + sorted(run_dir.glob("fs/log/*/*.ulg"))
     if not logs:
         log(f"no ulog under {run_dir}/log/ - was the sim launched with --keep-log {run_dir}?")
         return 1

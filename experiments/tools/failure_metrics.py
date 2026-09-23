@@ -48,7 +48,8 @@ def failure_time(run_dir, t0_us):
     t0_us is plot_run.load()'s time origin - the first ground-truth position sample -
     so these line up with every other series without a second convention to track.
     """
-    ulg = glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+    ulg = (glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+           + glob.glob(os.path.join(run_dir, "fs", "log", "*", "*.ulg")))
     if not ulg:
         raise SystemExit(f"no ulog under {run_dir}")
     u = pyulog.ULog(ulg[0])
@@ -115,7 +116,8 @@ def stats(d, lo, hi):
 
 def report(run_dir, pre, post_from, post):
     d = plot_run.load(run_dir)
-    ulg = glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+    ulg = (glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+           + glob.glob(os.path.join(run_dir, "fs", "log", "*", "*.ulg")))
     u = pyulog.ULog(ulg[0])
     tp, _ = plot_run._series(u, "vehicle_local_position_groundtruth", ["x"])
     t_mask, t_nan, idx = failure_time(run_dir, tp[0])

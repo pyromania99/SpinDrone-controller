@@ -86,7 +86,8 @@ def _euler(qw, qx, qy, qz):
 
 def load(run_dir):
     """Everything the figures need, on a common time origin (first GT position sample)."""
-    ulg = glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+    ulg = (glob.glob(os.path.join(run_dir, "log", "*", "*.ulg"))
+           + glob.glob(os.path.join(run_dir, "fs", "log", "*", "*.ulg")))
     if not ulg:
         raise SystemExit(f"no ulog under {run_dir}")
     u = pyulog.ULog(ulg[0])

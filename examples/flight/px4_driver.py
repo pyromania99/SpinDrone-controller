@@ -77,6 +77,7 @@ class PX4Driver:
     """Drives one SITL instance: connect, arm, fly offboard setpoints, set params."""
 
     def __init__(self, conn: str = DEFAULT_CONN, instance: int = 0):
+        self.thrust_scale = 1.0   # set by offboard.fly() when --thrust-scale is used
         self.instance = instance
         self.conn_str = conn
         self.m = None
@@ -214,6 +215,14 @@ class PX4Driver:
             have = got[name]
             if want is None:            # existence-only entry, already satisfied above
                 continue
+            # CA_ROTOR*_CT is the one expectation a deliberate experiment moves:
+            # sim_px4.py --thrust-scale K multiplies the plant's thrust constant, and
+            # PX4 is then told CT = 10.344*K so its model still matches. Scale the
+            # expectation with it, so the guard still catches an UNintended mismatch -
+            # which is what it is for - without blocking an intended one.
+            if name.startswith("CA_ROTOR") and name.endswith("_CT"):
+                want = want * self.thrust_scale
+                tol = max(tol, abs(want) * 1e-4)
             if abs(have - want) > tol:
                 bad.append(f"  {name}: got {have}, expected {want} -> {why}")
 

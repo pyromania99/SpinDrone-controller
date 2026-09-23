@@ -59,6 +59,14 @@ def parse_args() -> argparse.Namespace:
                         "no PX4+Pegasus flight has ever left an inspectable log. Bare "
                         "--keep-log uses ./px4_runs/<timestamp>; pass a directory to choose one. "
                         "The ulog lands in <DIR>/log/<date>/<time>.ulg.")
+    p.add_argument("--thrust-scale", type=float, default=1.0, metavar="K",
+                   help="Multiply every rotor's thrust constant by K, i.e. give the vehicle "
+                        "K times the thrust authority at the same command. 1.0 is the real "
+                        "vehicle. Use it to ask whether a result is limited by actuator "
+                        "authority or by something else - K>1 is an ORACLE, not a vehicle. "
+                        "PX4 must be told: pass CA_ROTOR*_CT = 10.344*K and "
+                        "MC_EIG_TRQ_MAX = 3.843*K in --gains, or the allocator's model of "
+                        "the vehicle no longer matches the vehicle.")
     p.add_argument("--desaturation", choices=("uniform", "collective"),
                    default="uniform",
                    help="What the mixer gives up when a rotor saturates. 'uniform' scales every rotor down together, preserving the thrust/torque ratio and collapsing the collective when one rotor pins; 'collective' holds the mean and shrinks only the moments. 'uniform' is the default and the historical behaviour - every archived sweep and tuned gain set was flown against it, so changing it moves the plant.")
@@ -243,8 +251,19 @@ class PegasusApp:
         # QuadraticThrustCurve() picks up whatever motor_moment default happens to be in
         # quadratic_thrust_curve.py, which is how a "spinning vehicle" run could silently be
         # a non-spinning one. Same call the sweeps use (batch_compare.py:251).
+        # 8.54858e-6 is QuadraticThrustCurve's own default; it is restated here
+        # because --thrust-scale has to multiply it, and reading it back off the
+        # object after construction would silently follow a changed default.
+        _k = 8.54858e-6 * ARGS.thrust_scale
         config_multirotor.thrust_curve = QuadraticThrustCurve(
-            config={"motor_moment": ARGS.motor_moment, "rotor_tau": ARGS.rotor_tau})
+            config={"motor_moment": ARGS.motor_moment, "rotor_tau": ARGS.rotor_tau,
+                    "rotor_constant": [_k, _k, _k, _k]})
+        if ARGS.thrust_scale != 1.0:
+            carb.log_warn(
+                f"thrust_scale = {ARGS.thrust_scale} -> per-rotor thrust "
+                f"{10.344 * ARGS.thrust_scale:.3f}*u^2 N (stock 10.344). THIS IS NOT THE "
+                f"VEHICLE. PX4 needs CA_ROTOR*_CT={10.344 * ARGS.thrust_scale:.4f} and "
+                f"MC_EIG_TRQ_MAX={3.843 * ARGS.thrust_scale:.4f} to match.")
         carb.log_warn(f"motor_moment = {ARGS.motor_moment:.3e} "
                       f"-> expected steady yaw spin ~ {4.9e7 * ARGS.motor_moment:.1f} rad/s")
         carb.log_warn(f"desaturation = {ARGS.desaturation}")

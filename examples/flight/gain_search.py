@@ -123,7 +123,8 @@ def kill_sim(proc: subprocess.Popen) -> None:
 def score_ulog(run_dir: Path) -> dict:
     """Score from the ulog at full rate - the reason for relaunching in the first place."""
     from pyulog import ULog
-    logs = sorted(run_dir.glob("log/*/*.ulg"))
+    # See the note in offboard.py: the ulog path moved to fs/log/ on 2026-09-23.
+    logs = sorted(run_dir.glob("log/*/*.ulg")) + sorted(run_dir.glob("fs/log/*/*.ulg"))
     if not logs:
         return {"ok": False, "reason": "no ulog", "cost": float("inf")}
 
