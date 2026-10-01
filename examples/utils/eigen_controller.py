@@ -731,7 +731,16 @@ class EigenController(Backend):
                 # Re-clip: the rotation can push an axis past the ceiling, and PX4's
                 # allocator would truncate it there too.
                 if self.torque_max is not None:
+                    tau_unclipped = tau.copy()
                     tau = np.clip(tau, -self.torque_max, self.torque_max)
+                    # Feed the clip back as the saturation flag, so this rung can run the
+                    # same law as PX4 (Seat::setSaturated from rp_saturated). Level 1 never
+                    # set it before 2026-09-19, which meant level 2 minus level 1 measured
+                    # the GATE and not PX4 - the archived PX4 arms were gated on 12-80 % of
+                    # ticks while these were gated on none. Which behaviour you get is
+                    # Seat(sat_gate=...) / --seat-satgate, default 1 to match PX4's archive.
+                    self.seat.saturated = bool(
+                        np.any(np.abs(tau_unclipped[:2]) > np.abs(tau[:2]) + 1e-12))
 
         # motor_thrusts logs what the vehicle ACTUALLY applies, not this
         # mixer's idealisation of it. The old code clipped each u_i at

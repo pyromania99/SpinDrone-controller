@@ -1,0 +1,1272 @@
+Warning: running in conda env, please deactivate before executing this script
+If conda is desired please source setup_conda_env.sh in your python 3.11 conda env and run python normally
+[Info] [carb] Logging to file: /home/ani/isaacsim/kit/logs/Kit/Isaac-Sim Python/5.1/kit_20260920_142259.log
+2026-09-20T08:52:59Z [1ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/6db10f87-8dab-4655-65f0a2ae-9706f203.dmp'
+2026-09-20T08:52:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/9b509586-f53a-486f-d8793e94-f010e1a7.dmp'
+2026-09-20T08:52:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a1153a6a-21bf-47a4-866609a0-cc723cd0.dmp'
+2026-09-20T08:52:59Z [7ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a059571c-72c9-4334-16b2b098-b6af6c97.dmp'
+2026-09-20T08:52:59Z [8ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/f4aee325-9f93-4b6c-bb292f89-0d3f8926.dmp'
+2026-09-20T08:52:59Z [8ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/49dbf299-4e25-4506-78ed0c80-7802e77e.dmp'
+2026-09-20T08:52:59Z [9ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/620084d4-0665-4b52-604939bf-bbe66266.dmp'
+2026-09-20T08:52:59Z [10ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a40e406-ee65-4ae3-5e28e38e-ee9d6ce8.dmp'
+2026-09-20T08:52:59Z [11ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/910413dc-b87f-417b-149383b8-9efa8b0d.dmp'
+2026-09-20T08:52:59Z [11ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/ca5e2bb6-917e-41df-56da39a6-be97f765.dmp'
+2026-09-20T08:52:59Z [12ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/c6297ee0-084e-4c2c-e4dfc381-c5596a82.dmp'
+2026-09-20T08:52:59Z [12ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a253464-546a-4843-26147d84-3c1d96ef.dmp'
+2026-09-20T08:52:59Z [12ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/80418541-097a-41ae-c53554a9-8319d1c2.dmp'
+2026-09-20T08:52:59Z [13ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/227f1ba5-109e-47eb-128f41bd-b796a0e6.dmp'
+2026-09-20T08:52:59Z [14ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/b1df8dcc-2a7b-4f50-5ed8ce99-ecf74335.dmp'
+2026-09-20T08:52:59Z [14ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/942e10f6-df4d-4118-199de6a0-62852751.dmp'
+2026-09-20T08:52:59Z [17ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a3fe664a-7800-43ab-888886a7-caab1e9d.dmp'
+2026-09-20T08:52:59Z [17ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/7becbd75-2225-4658-2eaa3380-e2e3890b.dmp'
+2026-09-20T08:52:59Z [19ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/e162ed80-7399-4f4a-260a66aa-25c5f26b.dmp'
+[0.072s] [ext: omni.kit.async_engine-0.0.3] startup
+[0.984s] [ext: omni.metrics.core-0.0.3] startup
+[0.984s] [ext: omni.client.lib-1.1.0] startup
+[1.004s] [ext: omni.blobkey-1.1.2] startup
+[1.004s] [ext: omni.stats-1.0.1] startup
+[1.005s] [ext: omni.datastore-0.0.0] startup
+[1.011s] [ext: omni.client-1.3.0] startup
+[1.022s] [ext: omni.ujitso.default-1.0.0] startup
+[1.025s] [ext: omni.hsscclient-1.1.2] startup
+[1.032s] [ext: omni.gpu_foundation.shadercache.vulkan-1.0.0] startup
+[1.037s] [ext: omni.assets.plugins-0.0.0] startup
+[1.038s] [ext: omni.gpu_foundation-0.0.0] startup
+[1.053s] [ext: carb.windowing.plugins-1.0.0] startup
+[1.064s] [ext: omni.kit.renderer.init-0.0.0] startup
+2026-09-20T08:53:00Z [1,384ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+2026-09-20T08:53:00Z [1,384ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4060 Laptop.. | Yes: 0 |     | 8188    MB | 10de      | 0          |
+|     |                                  |        |     |            | 28e0      | e9cf80ce.. |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | AMD Unknown (RADV GFX1103_R1)    |        |     | 5437    MB | 1002      | 0          |
+|     |                                  |        |     |            | 1900      | 00000000.. |
+|     |                                  |        |     |            | 5         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: AMD Ryzen 7 8845HS w/ Radeon 780M Graphics
+| Cores: 8 | Logical Cores: 16
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 15287 | Free Memory: 5512
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 41
+|---------------------------------------------------------------------------------------------|
+2026-09-20T08:53:00Z [1,802ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-20T08:53:00Z [1,812ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-09-20T08:53:00Z [1,812ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 197.61 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.33 
+
+   CPU     0 
+     0   2.62 
+[1.990s] [ext: omni.kit.pipapi-0.0.0] startup
+[1.992s] [ext: omni.kit.pip_archive-0.0.0] startup
+[1.992s] [ext: omni.pip.compute-1.6.3] startup
+[1.993s] [ext: omni.materialx.libs-1.0.7] startup
+[2.001s] [ext: omni.pip.cloud-1.4.3] startup
+[2.004s] [ext: omni.isaac.core_archive-3.0.0] startup
+[2.004s] [ext: omni.usd.config-1.0.6] startup
+[2.009s] [ext: omni.gpucompute.plugins-0.0.0] startup
+[2.010s] [ext: omni.usd.libs-1.0.1] startup
+[2.103s] [ext: omni.mdl-56.0.3] startup
+[2.213s] [ext: omni.iray.libs-0.0.0] startup
+[2.231s] [ext: omni.mdl.neuraylib-0.2.12] startup
+[2.236s] [ext: omni.kit.usd.mdl-1.1.5] startup
+[2.325s] [ext: omni.services.pip_archive-0.16.0] startup
+[2.326s] [ext: omni.isaac.ml_archive-3.0.4] startup
+[2.326s] [ext: omni.kit.telemetry-0.5.2] startup
+[2.352s] [ext: omni.kit.loop-isaac-1.3.7] startup
+[2.354s] [ext: omni.kit.test-2.0.1] startup
+[2.418s] [ext: omni.appwindow-1.1.10] startup
+[2.420s] [ext: omni.kit.renderer.core-1.1.0] startup
+[2.452s] [ext: omni.kit.renderer.capture-0.0.0] startup
+[2.454s] [ext: omni.kit.renderer.imgui-2.0.5] startup
+[2.526s] [ext: omni.ui-2.27.1] startup
+[2.537s] [ext: omni.kit.mainwindow-1.0.3] startup
+[2.538s] [ext: carb.audio-0.1.0] startup
+[2.543s] [ext: omni.uiaudio-1.0.0] startup
+[2.545s] [ext: omni.kit.uiapp-0.0.0] startup
+[2.545s] [ext: omni.usd.schema.metrics.assembler-107.3.1] startup
+[2.548s] [ext: omni.anim.behavior.schema-107.3.0] startup
+[2.558s] [ext: omni.usd.schema.omnigraph-1.0.0] startup
+[2.564s] [ext: omni.usd.schema.geospatial-0.0.0] startup
+[2.567s] [ext: omni.usd.schema.anim-0.0.0] startup
+[2.582s] [ext: omni.usd.schema.audio-0.0.0] startup
+[2.586s] [ext: isaacsim.robot.schema-3.6.0] startup
+[2.594s] [ext: omni.usd_resolver-1.0.0] startup
+[2.598s] [ext: omni.usd.core-1.5.3] startup
+[2.600s] [ext: omni.usd.schema.omni_sensors-0.0.0] startup
+[2.621s] [ext: omni.usd.schema.semantics-0.0.0] startup
+[2.625s] [ext: omni.usd.schema.omni_lens_distortion-0.0.0] startup
+[2.625s] [ext: omni.usd.schema.render_settings.rtx-0.0.0] startup
+[2.627s] [ext: omni.graph.exec-0.9.6] startup
+[2.627s] [ext: omni.kit.actions.core-1.0.0] startup
+[2.631s] [ext: omni.kit.usd_undo-0.1.8] startup
+[2.632s] [ext: omni.kit.exec.core-0.13.4] startup
+[2.634s] [ext: omni.kit.commands-1.4.10] startup
+[2.639s] [ext: omni.kit.window.popup_dialog-2.0.24] startup
+[2.644s] [ext: omni.activity.core-1.0.3] startup
+[2.645s] [ext: omni.resourcemonitor-107.0.1] startup
+[2.651s] [ext: omni.timeline-1.0.14] startup
+[2.654s] [ext: omni.kit.widget.nucleus_connector-2.0.1] startup
+[2.657s] [ext: usdrt.scenegraph-7.6.1] startup
+[2.699s] [ext: omni.kit.audiodeviceenum-1.0.2] startup
+[2.700s] [ext: omni.hydra.usdrt_delegate-7.5.1] startup
+[2.706s] [ext: omni.hydra.scene_delegate-0.3.4] startup
+[2.710s] [ext: omni.usd-1.13.10] startup
+[2.742s] [ext: omni.kit.asset_converter-5.0.17] startup
+[2.756s] [ext: omni.usd.schema.physx-107.3.26] startup
+[2.792s] [ext: omni.anim.navigation.schema-107.3.3] startup
+[2.796s] [ext: omni.inspect-1.0.2] startup
+[2.798s] [ext: omni.kit.notification_manager-1.0.10] startup
+[2.801s] [ext: omni.graph.core-2.184.5] startup
+[2.804s] [ext: isaacsim.core.deprecation_manager-0.2.7] startup
+[2.805s] [ext: omni.usd.schema.omniscripting-1.0.0] startup
+[2.809s] [ext: omni.usd.schema.flow-107.1.1] startup
+[2.810s] [ext: omni.anim.graph.schema-107.3.3] startup
+[2.816s] [ext: omni.usd.schema.isaac-3.0.5] startup
+[2.816s] [ext: isaacsim.core.version-2.0.6] startup
+[2.817s] [ext: omni.ui.scene-1.11.5] startup
+[2.821s] [ext: isaacsim.storage.native-1.5.1] startup
+[2.823s] [ext: omni.kit.widget.options_menu-1.1.6] startup
+[2.827s] [ext: omni.kit.menu.core-1.1.2] startup
+[2.828s] [ext: omni.graph.tools-1.79.2] startup
+[2.857s] [ext: omni.kit.widget.filter-1.1.4] startup
+[2.858s] [ext: omni.kit.menu.utils-2.0.5] startup
+[2.869s] [ext: omni.graph-1.141.2] startup
+[2.914s] [ext: omni.kit.hotkeys.core-1.3.10] startup
+[2.915s] [ext: omni.anim.curve.core-1.3.1] startup
+[2.932s] [ext: omni.kit.clipboard-1.0.5] startup
+[2.935s] [ext: omni.usdphysics-107.3.26] startup
+[2.937s] [ext: omni.physx.foundation-107.3.26] startup
+[2.940s] [ext: omni.kit.widget.context_menu-1.2.5] startup
+[2.942s] [ext: omni.kit.helper.file_utils-0.1.9] startup
+[2.945s] [ext: omni.kit.widget.path_field-2.0.11] startup
+[2.947s] [ext: omni.kvdb-107.3.26] startup
+[2.949s] [ext: omni.kit.widget.options_button-1.0.3] startup
+[2.951s] [ext: omni.kit.widget.filebrowser-2.12.3] startup
+[2.956s] [ext: omni.kit.widget.browser_bar-2.0.10] startup
+[2.958s] [ext: omni.localcache-107.3.26] startup
+[2.960s] [ext: omni.convexdecomposition-107.3.26] startup
+[2.963s] [ext: omni.kit.window.filepicker-2.13.4] startup
+[2.981s] [ext: omni.physx.cooking-107.3.26] startup
+[2.985s] [ext: omni.physics-107.3.26] startup
+[2.989s] [ext: omni.kit.window.file_exporter-1.0.33] startup
+[2.992s] [ext: omni.kit.stage_template.core-1.1.22] startup
+[2.993s] [ext: omni.physx-107.3.26] startup
+[3.003s] [ext: omni.kit.usd.layers-2.2.11] startup
+[3.012s] [ext: omni.kit.window.file_importer-1.1.18] startup
+[3.014s] [ext: omni.physics.physx-107.3.26] startup
+2026-09-20T08:53:02Z [3,001ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+[3.015s] [ext: omni.kit.numpy.common-0.1.3] startup
+[3.017s] [ext: omni.kit.window.file-2.0.5] startup
+[3.021s] [ext: omni.physics.stageupdate-107.3.26] startup
+[3.024s] [ext: omni.kit.window.drop_support-1.0.5] startup
+[3.026s] [ext: omni.kit.window.content_browser_registry-0.0.6] startup
+[3.027s] [ext: omni.isaac.dynamic_control-2.0.7] startup
+2026-09-20T08:53:02Z [3,020ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+[3.034s] [ext: omni.kit.window.content_browser-3.1.3] startup
+[3.052s] [ext: omni.graph.action_core-1.1.7] startup
+[3.054s] [ext: omni.kit.usd.collect-2.4.5] startup
+[3.058s] [ext: isaacsim.gui.content_browser-0.1.11] startup
+[3.061s] [ext: omni.graph.action_nodes-1.50.4] startup
+[3.064s] [ext: omni.kit.widget.prompt-1.0.7] startup
+[3.067s] [ext: omni.graph.action-1.130.0] startup
+[3.068s] [ext: omni.kit.tool.collect-2.2.18] startup
+[3.076s] [ext: omni.index.libs-380600.8087.0] startup
+[3.077s] [ext: omni.ujitso.client-0.0.0] startup
+[3.078s] [ext: omni.index-1.0.1] startup
+[3.079s] [ext: omni.volume-0.5.2] startup
+[3.083s] [ext: omni.hydra.rtx.shadercache.vulkan-1.0.0] startup
+[3.086s] [ext: omni.kit.context_menu-1.8.6] startup
+[3.096s] [ext: omni.hydra.rtx-1.0.0] startup
+2026-09-20T08:53:02Z [3,102ms] [Warning] [omni.log] Source: omni.hydra was already registered.
+[3.132s] [ext: omni.kit.material.library-2.0.7] startup
+[3.137s] [ext: omni.hydra.engine.stats-1.0.3] startup
+[3.141s] [ext: omni.kit.widget.stage_icons-1.0.8] startup
+[3.142s] [ext: omni.kit.viewport.scene_camera_model-1.0.6] startup
+[3.146s] [ext: omni.kit.hydra_texture-1.4.6] startup
+[3.149s] [ext: omni.kit.viewport.legacy_gizmos-1.0.19] startup
+[3.151s] [ext: omni.kit.widget.searchfield-1.1.8] startup
+[3.153s] [ext: omni.kit.widget.viewport-107.1.3] startup
+[3.159s] [ext: omni.kit.viewport.registry-104.0.6] startup
+[3.161s] [ext: omni.kit.raycast.query-1.1.0] startup
+[3.165s] [ext: omni.kit.widget.stage-3.1.4] startup
+[3.181s] [ext: omni.kit.widget.zoombar-1.0.6] startup
+[3.182s] [ext: omni.kit.viewport.window-107.2.0] startup
+[3.202s] [ext: omni.kit.window.stage-2.6.1] startup
+[3.207s] [ext: omni.kit.browser.core-2.3.13] startup
+[3.215s] [ext: omni.kit.menu.stage-1.2.7] startup
+[3.217s] [ext: omni.kit.browser.folder.core-1.10.9] startup
+[3.224s] [ext: omni.kit.property.adapter.core-1.0.2] startup
+[3.227s] [ext: omni.kit.widget.highlight_label-1.0.3] startup
+[3.229s] [ext: omni.kit.property.adapter.usd-1.0.2] startup
+[3.231s] [ext: omni.ui_query-1.1.8] startup
+[3.233s] [ext: omni.kit.window.property-1.12.1] startup
+[3.236s] [ext: omni.kit.property.adapter.fabric-1.0.3] startup
+[3.238s] [ext: omni.kit.ui_test-1.3.7] startup
+[3.240s] [ext: omni.kit.property.usd-4.5.12] startup
+[3.255s] [ext: omni.kit.viewport.utility-1.1.2] startup
+[3.257s] [ext: omni.kit.manipulator.viewport-107.0.1] startup
+[3.259s] [ext: omni.kit.usdz_export-1.0.9] startup
+[3.262s] [ext: omni.kit.window.extensions-1.4.27] startup
+[3.269s] [ext: omni.graph.visualization.nodes-2.1.3] startup
+[3.276s] [ext: omni.kit.tool.asset_importer-4.3.2] startup
+[3.290s] [ext: isaacsim.gui.components-1.2.1] startup
+[3.297s] [ext: isaacsim.examples.browser-0.2.1] startup
+[3.302s] [ext: isaacsim.asset.importer.urdf-2.4.30] startup
+[3.362s] [ext: omni.kit.menu.create-2.0.1] startup
+[3.371s] [ext: omni.physics.tensors-107.3.26] startup
+[3.379s] [ext: omni.usd.metrics.assembler-107.3.1] startup
+[3.383s] [ext: omni.kit.widget.graph-2.0.0] startup
+[3.392s] [ext: omni.kit.widget.searchable_combobox-1.0.6] startup
+[3.395s] [ext: omni.warp.core-1.8.2] startup
+[3.582s] [ext: omni.usd.metrics.assembler.physics-107.3.26] startup
+[3.585s] [ext: omni.kit.graph.delegate.default-1.2.3] startup
+[3.587s] [ext: omni.kit.scripting-107.3.2] startup
+[3.595s] [ext: omni.physx.tensors-107.3.26] startup
+[3.600s] [ext: isaacsim.core.utils-3.5.1] startup
+[3.603s] [ext: omni.anim.asset-107.3.0] startup
+[3.609s] [ext: isaacsim.core.simulation_manager-1.4.4] startup
+[5.069s] [ext: omni.graph.scriptnode-1.50.0] startup
+[5.072s] [ext: omni.kit.graph.editor.core-1.5.3] startup
+[5.078s] [ext: omni.kit.widget.settings-1.2.6] startup
+[5.082s] [ext: omni.kit.primitive.mesh-1.0.17] startup
+[5.086s] [ext: isaacsim.core.prims-0.6.1] startup
+[5.113s] [ext: omni.kit.widget.material_preview-1.0.16] startup
+[5.118s] [ext: omni.kit.graph.usd.commands-1.3.1] startup
+[5.119s] [ext: omni.graph.image.core-0.6.1] startup
+[5.120s] [ext: omni.kit.window.preferences-1.8.0] startup
+[5.127s] [ext: omni.kit.stage_templates-2.0.0] startup
+[5.130s] [ext: isaacsim.asset.browser-1.3.23] startup
+[5.189s] [ext: omni.graph.image.nodes-1.3.1] startup
+[5.191s] [ext: omni.kit.viewport.menubar.core-107.2.1] startup
+[5.205s] [ext: isaacsim.core.api-4.8.0] startup
+[5.218s] [ext: omni.kit.window.material_graph-1.9.1] startup
+[5.229s] [ext: omni.kit.viewport.actions-107.0.2] startup
+[5.234s] [ext: omni.graph.nodes-1.170.10] startup
+[5.245s] [ext: omni.syntheticdata-0.6.13] startup
+[5.269s] [ext: omni.isaac.assets_check-0.3.13] startup
+2026-09-20T08:53:04Z [5,257ms] [Warning] [omni.isaac.assets_check] omni.isaac.assets_check has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[5.271s] [ext: isaacsim.core.cloner-1.4.10] startup
+[5.277s] [ext: omni.kit.viewport.menubar.display-107.0.3] startup
+[5.281s] [ext: omni.graph.ui_nodes-1.50.5] startup
+[5.289s] [ext: omni.videoencoding-0.1.2] startup
+[5.293s] [ext: omni.isaac.cloner-1.0.7] startup
+2026-09-20T08:53:04Z [5,282ms] [Warning] [omni.isaac.cloner] omni.isaac.cloner has been deprecated in favor of isaacsim.core.cloner. Please update your code accordingly.
+[5.297s] [ext: isaacsim.gui.sensors.icon-2.0.3] startup
+[5.330s] [ext: omni.warp-1.8.2] startup
+[5.339s] [ext: omni.anim.retarget.core-107.3.3] startup
+[5.352s] [ext: omni.debugdraw-0.1.4] startup
+[5.359s] [ext: omni.replicator.core-1.12.27] startup
+2026-09-20T08:53:04Z [5,374ms] [Warning] [pxr.Semantics] pxr.Semantics is deprecated - please use Semantics instead
+2026-09-20T08:53:04Z [5,592ms] [Warning] [omni.graph.core.plugin] Found duplicate of category 'Replicator' - was 'Annotators', adding 'Fabric Reader'
+2026-09-20T08:53:04Z [5,592ms] [Warning] [omni.graph.core.plugin] Category 'Replicator' not accepted on node type 'omni.replicator.core.FabricReader' in extension 'omni.replicator.core'
+2026-09-20T08:53:04Z [5,593ms] [Warning] [omni.replicator.core.scripts.extension] No material configuration file, adding configuration to material settings directly.
+[5.611s] [ext: omni.kit.quicklayout-1.0.8] startup
+[5.614s] [ext: omni.anim.navigation.core-107.3.8] startup
+[5.626s] [ext: omni.anim.graph.core-107.3.4] startup
+[5.642s] [ext: omni.metropolis.utils-0.1.20] startup
+2026-09-20T08:53:04Z [5,658ms] [Warning] [omni.graph.core._impl._registration.register_python_ogn] Python import process in omni.anim.graph.core failed - 'NoneType' object is not subscriptable. Aborting Python node registration
+[5.679s] [ext: isaacsim.asset.importer.mjcf-2.5.13] startup
+[5.689s] [ext: omni.anim.people-0.7.9] startup
+[5.703s] [ext: isaacsim.test.docstring-1.1.0] startup
+[5.713s] [ext: isaacsim.core.experimental.utils-0.3.0] startup
+[5.720s] [ext: isaacsim.anim.robot-0.0.15] startup
+[5.777s] [ext: isaacsim.core.experimental.prims-0.8.1] startup
+[5.825s] [ext: isaacsim.core.nodes-3.4.3] startup
+[5.839s] [ext: omni.flowusd-107.1.8] startup
+2026-09-20T08:53:04Z [5,828ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[5.850s] [ext: omni.sensors.nv.common-3.0.0] startup
+[5.897s] [ext: isaacsim.core.experimental.materials-0.4.0] startup
+[5.997s] [ext: omni.isaac.core-4.0.7] startup
+2026-09-20T08:53:05Z [5,990ms] [Warning] [omni.isaac.core.physics_context.physics_context] omni.isaac.core.physics_context.physics_context has been deprecated in favor of isaacsim.core.api.physics_context.physics_context. Please update your code accordingly.
+2026-09-20T08:53:05Z [5,995ms] [Warning] [omni.isaac.core.simulation_context.simulation_context] omni.isaac.core.simulation_context.simulation_context has been deprecated in favor of isaacsim.core.api.simulation_context.simulation_context. Please update your code accordingly.
+2026-09-20T08:53:05Z [5,997ms] [Warning] [omni.isaac.core.world.world] omni.isaac.core.world.world has been deprecated in favor of isaacsim.core.api.world.world. Please update your code accordingly.
+2026-09-20T08:53:05Z [5,997ms] [Warning] [omni.isaac.core] omni.isaac.core has been deprecated in favor of isaacsim.core.api. Please update your code accordingly.
+[6.014s] [ext: isaacsim.replicator.incident-0.1.28] startup
+[6.315s] [ext: omni.sensors.net-1.0.0] startup
+[6.322s] [ext: omni.sensors.nv.materials-2.0.0] startup
+[6.333s] [ext: isaacsim.sensors.camera-1.3.6] startup
+[6.339s] [ext: omni.sensors.nv.wpm-3.0.0] startup
+[6.352s] [ext: isaacsim.util.debug_draw-3.1.0] startup
+[6.356s] [ext: omni.sensors.nv.ids-2.0.0] startup
+[6.359s] [ext: omni.sensors.nv.lidar-3.0.0] startup
+[6.374s] [ext: omni.sensors.nv.radar-3.0.0] startup
+[6.387s] [ext: isaacsim.sensors.physics-0.4.3] startup
+[6.396s] [ext: isaacsim.robot_motion.lula-4.0.8] startup
+[6.420s] [ext: isaacsim.robot.surface_gripper-3.3.1] startup
+[6.428s] [ext: isaacsim.sensors.rtx-15.8.4] startup
+[6.442s] [ext: omni.kit.mesh.raycast-107.0.1] startup
+[6.450s] [ext: isaacsim.robot_motion.motion_generation-8.0.26] startup
+[6.460s] [ext: isaacsim.robot.manipulators-3.3.6] startup
+[6.465s] [ext: isaacsim.core.experimental.objects-0.4.0] startup
+[6.479s] [ext: omni.isaac.core_nodes-2.0.6] startup
+2026-09-20T08:53:05Z [6,469ms] [Warning] [omni.isaac.core_nodes] omni.isaac.core_nodes has been deprecated in favor of isaacsim.core.nodes. Please update your code accordingly.
+[6.483s] [ext: isaacsim.replicator.agent.core-0.7.28] startup
+[6.496s] [ext: isaacsim.robot.manipulators.examples-1.1.2] startup
+[6.500s] [ext: isaacsim.simulation_app-2.12.2] startup
+[6.501s] [ext: omni.kit.selection-0.1.6] startup
+[6.505s] [ext: omni.isaac.franka-1.0.7] startup
+2026-09-20T08:53:05Z [6,492ms] [Warning] [omni.isaac.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,492ms] [Warning] [omni.isaac.franka.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,510ms] [Warning] [omni.isaac.franka.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+[6.524s] [ext: isaacsim.robot_motion.lula_test_widget-1.0.12] startup
+[6.534s] [ext: omni.isaac.kit-2.0.6] startup
+2026-09-20T08:53:05Z [6,522ms] [Warning] [omni.isaac.kit] omni.isaac.kit has been deprecated in favor of isaacsim.simulation_app. Please update your code accordingly.
+[6.536s] [ext: isaacsim.gui.menu-2.4.4] startup
+[6.544s] [ext: omni.isaac.asset_browser-1.0.6] startup
+2026-09-20T08:53:05Z [6,533ms] [Warning] [omni.isaac.asset_browser] omni.isaac.asset_browser has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[6.548s] [ext: omni.isaac.lula_test_widget-1.0.6] startup
+2026-09-20T08:53:05Z [6,538ms] [Warning] [omni.isaac.lula_test_widget] omni.isaac.lula_test_widget has been deprecated in favor of isaacsim.robot_motion.lula_test_widget. Please update your code accordingly.
+[6.551s] [ext: omni.isaac.manipulators-3.0.7] startup
+2026-09-20T08:53:05Z [6,540ms] [Warning] [omni.isaac.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,540ms] [Warning] [omni.isaac.manipulators.controllers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,541ms] [Warning] [omni.isaac.manipulators.controllers.pick_place_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,542ms] [Warning] [omni.isaac.manipulators.controllers.stacking_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,542ms] [Warning] [omni.isaac.manipulators.grippers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,542ms] [Warning] [omni.isaac.manipulators.grippers.gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,542ms] [Warning] [omni.isaac.manipulators.grippers.parallel_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,542ms] [Warning] [omni.isaac.manipulators.grippers.surface_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,543ms] [Warning] [omni.isaac.manipulators.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,543ms] [Warning] [omni.isaac.manipulators.manipulators.single_manipulator] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+[6.557s] [ext: omni.isaac.menu-1.0.6] startup
+2026-09-20T08:53:05Z [6,545ms] [Warning] [omni.isaac.menu] omni.isaac.menu has been deprecated in favor of isaacsim.gui.menu. Please update your code accordingly.
+[6.561s] [ext: isaacsim.robot.policy.examples-4.1.11] startup
+[6.565s] [ext: isaacsim.sensors.physx-2.3.2] startup
+[6.573s] [ext: omni.isaac.motion_generation-8.0.7] startup
+2026-09-20T08:53:05Z [6,563ms] [Warning] [omni.isaac.motion_generation] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,563ms] [Warning] [omni.isaac.motion_generation.articulation_kinematics_solver] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,564ms] [Warning] [omni.isaac.motion_generation.articulation_motion_policy] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,564ms] [Warning] [omni.isaac.motion_generation.articulation_trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,564ms] [Warning] [omni.isaac.motion_generation.kinematics_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,565ms] [Warning] [omni.isaac.motion_generation.lula] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,566ms] [Warning] [omni.isaac.motion_generation.lula.kinematics] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,566ms] [Warning] [omni.isaac.motion_generation.lula.motion_policies] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,566ms] [Warning] [omni.isaac.motion_generation.lula.path_planners] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,566ms] [Warning] [omni.isaac.motion_generation.lula.trajectory_generator] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,567ms] [Warning] [omni.isaac.motion_generation.motion_policy_controller] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,567ms] [Warning] [omni.isaac.motion_generation.motion_policy_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,567ms] [Warning] [omni.isaac.motion_generation.path_planner_visualizer] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,567ms] [Warning] [omni.isaac.motion_generation.path_planning_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,568ms] [Warning] [omni.isaac.motion_generation.trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,568ms] [Warning] [omni.isaac.motion_generation.world_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+[6.582s] [ext: omni.isaac.nucleus-1.0.6] startup
+2026-09-20T08:53:05Z [6,570ms] [Warning] [omni.isaac.nucleus] omni.isaac.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,570ms] [Warning] [omni.isaac.nucleus.nucleus] omni.isaac.nucleus.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+[6.584s] [ext: omni.isaac.quadruped-3.0.7] startup
+2026-09-20T08:53:05Z [6,573ms] [Warning] [omni.isaac.quadruped] omni.isaac.quadruped has been deprecated in favor of isaacsim.robot.policy.examples. Please update your code accordingly.
+[6.587s] [ext: omni.isaac.range_sensor-4.0.6] startup
+2026-09-20T08:53:05Z [6,576ms] [Warning] [omni.isaac.range_sensor] omni.isaac.range_sensor has been deprecated in favor of isaacsim.sensors.physx. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,576ms] [Warning] [omni.isaac.range_sensor.commands] omni.isaac.range_sensor.commands has been deprecated in favor of isaacsim.sensors.physx.commands. Please update your code accordingly.
+[6.590s] [ext: omni.isaac.sensor-13.0.7] startup
+2026-09-20T08:53:05Z [6,580ms] [Warning] [omni.isaac.sensor] omni.isaac.sensor has been deprecated in favor of isaacsim.sensors.camera, isaacsim.sensors.physics, isaacsim.sensors.physx, and isaacsim.sensors.rtx. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,580ms] [Warning] [omni.isaac.sensor.camera] omni.isaac.sensor.camera has been deprecated in favor of isaacsim.sensors.camera.camera. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,581ms] [Warning] [omni.isaac.sensor.camera_view] omni.isaac.sensor.camera_view has been deprecated in favor of isaacsim.sensors.camera.camera_view. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,581ms] [Warning] [omni.isaac.sensor.commands] omni.isaac.sensor.commands has been deprecated in favor of isaacsim.sensors.physics.commands, isaacsim.sensors.physx.commands, and isaacsim.sensors.rtx.commands. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,581ms] [Warning] [omni.isaac.sensor.contact_sensor] omni.isaac.sensor.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.contact_sensor. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,581ms] [Warning] [omni.isaac.sensor.imu_sensor] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.imu_sensor. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,582ms] [Warning] [omni.isaac.sensor.lidar_rtx] omni.isaac.sensor.lidar_rtx has been deprecated in favor of isaacsim.sensors.rtx.lidar_rtx. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,582ms] [Warning] [omni.isaac.sensor.rotating_lidar_physX] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physix.rotating_lidar_physX. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,582ms] [Warning] [omni.isaac.sensor.scripts.samples.contact_sensor] omni.isaac.sensor.scripts.samples.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.contact_sensor. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,582ms] [Warning] [omni.isaac.sensor.scripts.samples.imu_sensor] omni.isaac.sensor.scripts.samples.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.imu_sensor. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,583ms] [Warning] [omni.isaac.sensor.scripts.samples.lightbeam_sensor] omni.isaac.sensor.scripts.samples.lightbeam_sensor has been deprecated in favor of isaacsim.sensors.physx.scripts.samples.lightbeam_sensor. Please update your code accordingly.
+[6.597s] [ext: omni.isaac.surface_gripper-2.0.6] startup
+2026-09-20T08:53:05Z [6,585ms] [Warning] [omni.isaac.surface_gripper] omni.isaac.surface_gripper has been deprecated in favor of isaacsim.robot.surface_gripper. Please update your code accordingly.
+[6.606s] [ext: omni.kit.widget.toolbar-2.0.1] startup
+[6.617s] [ext: omni.kit.manipulator.transform-107.0.0] startup
+[6.627s] [ext: omni.kit.manipulator.selector-1.1.3] startup
+[6.630s] [ext: isaacsim.app.about-2.0.11] startup
+[6.639s] [ext: isaacsim.cortex.framework-1.0.12] startup
+[6.640s] [ext: omni.kit.manipulator.tool.snap-1.5.13] startup
+[6.647s] [ext: omni.isaac.universal_robots-1.0.6] startup
+2026-09-20T08:53:05Z [6,635ms] [Warning] [omni.isaac.universal_robots] omni.isaac.universal_robots has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,635ms] [Warning] [omni.isaac.universal_robots.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,636ms] [Warning] [omni.isaac.universal_robots.ur10] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+[6.650s] [ext: omni.isaac.utils-2.0.6] startup
+[6.654s] [ext: omni.isaac.cortex-1.0.5] startup
+2026-09-20T08:53:05Z [6,643ms] [Warning] [omni.isaac.cortex] omni.isaac.cortex has been deprecated in favor of isaacsim.cortex.framework. Please update your code accordingly.
+[6.658s] [ext: omni.kit.viewport.manipulator.transform-107.0.4] startup
+[6.660s] [ext: omni.isaac.window.about-2.0.7] startup
+2026-09-20T08:53:05Z [6,649ms] [Warning] [omni.isaac.window.about] omni.isaac.window.about has been deprecated in favor of isaacsim.app.about. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,649ms] [Warning] [omni.isaac.window.about.about] omni.isaac.window.about.about has been deprecated in favor of isaacsim.app.about.about. Please update your code accordingly.
+[6.663s] [ext: omni.kit.manipulator.camera-106.0.4] startup
+[6.668s] [ext: omni.kit.property.audio-1.0.16] startup
+[6.670s] [ext: omni.fabric.commands-1.1.6] startup
+[6.674s] [ext: omni.kit.manipulator.prim.core-107.0.8] startup
+[6.683s] [ext: omni.kit.property.camera-1.0.10] startup
+[6.685s] [ext: omni.kit.property.geometry-2.0.4] startup
+[6.691s] [ext: omni.kit.property.light-1.0.12] startup
+[6.704s] [ext: omni.hydra.scene_api-0.1.2] startup
+[6.709s] [ext: omni.kit.manipulator.prim.fabric-107.0.4] startup
+[6.712s] [ext: omni.kit.manipulator.prim.usd-107.0.3] startup
+[6.714s] [ext: omni.kit.property.material-1.11.9] startup
+[6.724s] [ext: omni.kit.property.render-1.2.1] startup
+[6.725s] [ext: omni.kit.property.transform-1.5.13] startup
+[6.731s] [ext: isaacsim.gui.property-1.1.3] startup
+[6.734s] [ext: omni.kit.manipulator.prim-107.0.0] startup
+[6.735s] [ext: omni.kit.manipulator.selection-106.0.1] startup
+[6.736s] [ext: omni.isaac.lula-4.0.6] startup
+2026-09-20T08:53:05Z [6,723ms] [Warning] [omni.isaac.lula] omni.isaac.lula has been deprecated in favor of isaacsim.robot_motion.lula. Please update your code accordingly.
+[6.737s] [ext: omni.kit.property.bundle-1.4.1] startup
+[6.739s] [ext: omni.kit.property.isaac-1.0.6] startup
+2026-09-20T08:53:05Z [6,727ms] [Warning] [omni.kit.property.isaac] omni.kit.property.isaac has been deprecated in favor of isaacsim.gui.property. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,727ms] [Warning] [omni.kit.property.isaac.widgets] omni.kit.property.isaac.widgets has been deprecated in favor of isaacsim.gui.property.widgets. Please update your code accordingly.
+[6.741s] [ext: isaacsim.replicator.writers-1.0.17] startup
+[6.763s] [ext: omni.kit.viewport.menubar.camera-107.0.6] startup
+[6.777s] [ext: omni.kit.viewport.menubar.lighting-107.3.1] startup
+[6.781s] [ext: omni.kit.viewport.menubar.render-107.0.10] startup
+[6.785s] [ext: omni.kit.viewport.menubar.settings-107.0.3] startup
+[6.790s] [ext: isaacsim.replicator.domain_randomization-1.0.16] startup
+[6.793s] [ext: isaacsim.replicator.examples-1.3.6] startup
+[6.797s] [ext: omni.ocio-0.1.1] startup
+[6.801s] [ext: omni.rtx.window.settings-0.6.19] startup
+[6.814s] [ext: omni.kit.window.console-1.1.4] startup
+[6.834s] [ext: omni.kit.window.status_bar-0.1.9] startup
+[6.838s] [ext: omni.kit.window.toolbar-2.0.0] startup
+[6.841s] [ext: omni.replicator.isaac-2.0.8] startup
+2026-09-20T08:53:05Z [6,829ms] [Warning] [omni.replicator.isaac] omni.replicator.isaac has been deprecated in favor of isaacsim.replicator.domain_randomization, isaacsim.replicator.examples, isaacsim.replicator.writers. Please update your code accordingly.
+[6.843s] [ext: omni.replicator.replicator_yaml-2.0.11] startup
+[6.851s] [ext: omni.rtx.settings.core-0.6.5] startup
+[6.861s] [ext: omni.usd.metrics.assembler.ui-107.3.1] startup
+[6.871s] [ext: isaacsim.robot.wheeled_robots-4.0.24] startup
+[6.878s] [ext: isaacsim.cortex.behaviors-2.0.14] startup
+[6.881s] [ext: omni.isaac.version-2.0.7] startup
+2026-09-20T08:53:05Z [6,870ms] [Warning] [omni.isaac.version] omni.isaac.version has been deprecated in favor of isaacsim.core.version. Please update your code accordingly.
+[6.884s] [ext: semantics.schema.editor-2.0.2] startup
+[6.892s] [ext: omni.kit.ui.actions-1.0.5] startup
+[6.895s] [ext: semantics.schema.property-2.0.1] startup
+[6.899s] [ext: omni.isaac.wheeled_robots-3.0.7] startup
+2026-09-20T08:53:05Z [6,887ms] [Warning] [omni.isaac.wheeled_robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,887ms] [Warning] [omni.isaac.wheeled_robots.controllers] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,888ms] [Warning] [omni.isaac.wheeled_robots.controllers.ackermann_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,889ms] [Warning] [omni.isaac.wheeled_robots.controllers.differential_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,890ms] [Warning] [omni.isaac.wheeled_robots.controllers.holonomic_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,890ms] [Warning] [omni.isaac.wheeled_robots.controllers.quintic_path_planner] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,890ms] [Warning] [omni.isaac.wheeled_robots.controllers.stanley_control] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,891ms] [Warning] [omni.isaac.wheeled_robots.controllers.wheel_base_pose_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,891ms] [Warning] [omni.isaac.wheeled_robots.impl] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,892ms] [Warning] [omni.isaac.wheeled_robots.robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,892ms] [Warning] [omni.isaac.wheeled_robots.robots.holonomic_robot_usd_setup] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:53:05Z [6,893ms] [Warning] [omni.isaac.wheeled_robots.robots.wheeled_robot] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+[6.908s] [ext: omni.isaac.cortex.sample_behaviors-2.0.5] startup
+2026-09-20T08:53:05Z [6,896ms] [Warning] [omni.isaac.cortex.sample_behaviors] omni.isaac.cortex.sample_behaviors has been deprecated in favor of isaacsim.cortex.behaviors. Please update your code accordingly.
+[6.911s] [ext: isaacsim.replicator.behavior-1.1.16] startup
+[6.916s] [ext: isaacsim.core.throttling-2.2.2] startup
+[6.922s] [ext: omni.kit.menu.common-2.0.1] startup
+[6.925s] [ext: isaacsim.exp.base-5.1.0] startup
+[6.926s] [ext: isaacsim.exp.base.python-5.1.0] startup
+[6.928s] Simulation App Starting
+2026-09-20T08:53:06Z [7,090ms] [Warning] [omni.fabric.plugin] Warning: attribute viewportHandle not found for bucket id 9
+
+[7.151s] app ready
+INFO  [px4] instance: 0
+
+______  __   __    ___ 
+| ___ \ \ \ / /   /   |
+| |_/ /  \ V /   / /| |
+|  __/   /   \  / /_| |
+| |     / /^\ \ \___  |
+\_|     \/   \/     |_/
+
+px4 starting.
+
+INFO  [px4] startup script: /bin/sh /home/ani/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/rcS 0
+INFO  [init] found model autostart file as SYS_AUTOSTART=10016
+INFO  [param] selected parameter default file parameters.bson
+INFO  [param] selected parameter backup file parameters_backup.bson
+  SYS_AUTOCONFIG: curr: 0 -> new: 1
+  SYS_AUTOSTART: curr: 0 -> new: 10016
+  CAL_ACC0_ID: curr: 0 -> new: 1310988
+  CAL_GYRO0_ID: curr: 0 -> new: 1310988
+  CAL_ACC1_ID: curr: 0 -> new: 1310996
+  CAL_GYRO1_ID: curr: 0 -> new: 1310996
+  CAL_ACC2_ID: curr: 0 -> new: 1311004
+  CAL_GYRO2_ID: curr: 0 -> new: 1311004
+  CAL_MAG0_ID: curr: 0 -> new: 197388
+  CAL_MAG0_PRIO: curr: -1 -> new: 50
+  CAL_MAG1_ID: curr: 0 -> new: 197644
+  CAL_MAG1_PRIO: curr: -1 -> new: 50
+  SENS_BOARD_X_OFF: curr: 0.0000 -> new: 0.0000
+  SENS_DPRES_OFF: curr: 0.0000 -> new: 0.0010
+[9.539s] Simulation App Startup Complete
+2026-09-20T08:53:09Z [10,653ms] [Warning] [pegasus.simulator.logic.backends.ardupilot_mavlink_backend] [ArduPilotMavlinkBackendConfig] Initialized with vehicle_id=0, connection_type=udpin, connection_ip=127.0.0.1, connection_baseport=14550, ardupilot_autolaunch=True, ardupilot_dir=/home/ani/ardupilot, ardupilot_vehicle_model=gazebo-iris, enable_lockstep=False, num_rotors=4, input_offset=[0.0, 0.0, 0.0, 0.0], input_scaling=[1000, 1000, 1000, 1000], zero_position_armed=[100, 100, 100, 100], update_rate=400
+[10.676s] [ext: isaacsim.ros2.bridge-4.12.4] startup
+[11.058s] Attempting to load system rclpy
+[11.083s] Could not import system rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[11.083s] Attempting to load internal rclpy for ROS Distro: humble
+[11.084s] Could not import internal rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[11.084s] To use the internal libraries included with the extension please set the following environment variables to use with FastDDS (default) or CycloneDDS before starting Isaac Sim:
+
+FastDDS (default):
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+OR
+
+CycloneDDS:
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+
+2026-09-20T08:53:10Z [11,073ms] [Warning] [humble.rclpy] Could not import rclpy
+2026-09-20T08:53:10Z [11,348ms] [Warning] [pegasus.simulator.logic.backends] ROS2 package not installed. ROS2Backend will not be available
+2026-09-20T08:53:10Z [11,355ms] [Warning] [pegasus.simulator.ui.ui_delegate] ROS2 backend not available. Please install the ROS2 extension to use this feature.
+2026-09-20T08:53:10Z [11,378ms] [Warning] [__main__] PX4 rootfs kept at '/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_142258' - ulog will be under /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_142258/log/
+2026-09-20T08:53:10Z [11,378ms] [Warning] [__main__] run config written to /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_142258/run_config.json: {'motor_moment': 4.8771e-07, 'expected_spin_rad_s': 23.897789999999997, 'rotor_tau': 0.03, 'rotor_tau_is_placeholder': False, 'px4_airframe': 'none_iris', 'physics_rate_hz': 250.0, 'vehicle_id': 0, 'duration_s': 400.0}
+2026-09-20T08:53:10Z [11,379ms] [Warning] [__main__] motor_moment = 4.877e-07 -> expected steady yaw spin ~ 23.9 rad/s
+2026-09-20T08:53:10Z [11,379ms] [Warning] [__main__] desaturation = uniform
+2026-09-20T08:53:10Z [11,379ms] [Warning] [__main__] rotor_tau = 30.0 ms (explicit)
+2026-09-20T08:53:12Z [13,079ms] [Warning] [pegasus.simulator.logic.interface.pegasus_interface] Loading a new environment into the simulator. Please wait...
+2026-09-20T08:53:12Z [13,641ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] [PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL=none_iris, rootfs=/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_142258
+2026-09-20T08:53:12Z [13,925ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,926ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,927ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,928ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,938ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,939ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,940ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:12Z [13,941ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,950ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,951ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,952ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,953ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,960ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,962ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,963ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,963ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,972ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,973ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,975ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,976ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [13,998ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,000ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,001ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,002ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,025ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,027ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,028ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,029ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,054ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,055ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,056ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,057ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,082ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,083ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,084ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,085ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,108ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,109ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,110ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,111ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,133ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,135ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,136ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,137ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,157ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,158ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,159ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,160ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,180ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,182ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,183ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,184ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,206ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,207ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,209ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,210ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,228ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,229ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,230ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,232ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,251ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,253ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,254ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,255ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,277ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,280ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,281ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,300ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,301ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,302ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,303ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,324ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,325ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,326ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,327ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,350ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,352ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,353ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,355ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,371ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,373ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,374ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,375ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,395ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,396ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,397ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,399ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,422ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,424ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,426ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,428ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,443ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,445ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,446ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,447ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,467ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,469ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,470ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,471ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,494ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,496ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,497ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,498ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,515ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,517ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,518ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,520ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,539ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,540ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,541ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,542ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,564ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,568ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,569ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,570ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,587ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,588ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,589ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,590ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,610ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,611ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,612ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,613ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,636ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,637ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,638ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,639ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,660ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,661ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,662ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,663ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,683ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,684ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,685ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,686ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,707ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,708ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,709ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,710ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+INFO  [dataman] data manager file './dataman' size is 1208528 bytes
+INFO  [init] PX4_SIM_HOSTNAME: localhost
+INFO  [simulator_mavlink] Waiting for simulator to accept connection on TCP port 4560
+INFO  [simulator_mavlink] Simulator connected on TCP port 4560.
+INFO  [lockstep_scheduler] setting initial absolute time to 4000 us
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [mc_controller] controller: eigen (MC_CTRL_ALG=3), levels=0x0e
+INFO  [uxrce_dds_client] init UDP agent IP:127.0.0.1, port:8888
+INFO  [mavlink] mode: Normal, data rate: 4000000 B/s on udp port 18570 remote port 14550
+INFO  [mavlink] mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540
+INFO  [mavlink] mode: Onboard, data rate: 4000 B/s on udp port 14280 remote port 14030
+INFO  [mavlink] mode: Gimbal, data rate: 400000 B/s on udp port 13030 remote port 13280
+INFO  [tone_alarm] home set
+INFO  [logger] logger started (mode=all)
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-09-20/08_53_14.ulg	
+INFO  [logger] Opened full log file: ./log/2026-09-20/08_53_14.ulg
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [px4] Startup script returned successfully
+INFO  [mavlink] partner IP: 127.0.0.1
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+INFO  [commander] [32mReady for takeoff![0m
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [commander] Takeoff detected	
+2026-09-20T08:53:13Z [14,730ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,732ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,733ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,734ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,755ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,757ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,758ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,759ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,779ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,781ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,783ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,784ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,803ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,804ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,806ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,807ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,827ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,829ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,830ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,831ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,851ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,852ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,853ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,855ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,877ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,878ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,880ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,881ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,899ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:53:13Z [14,917ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Received first hearbeat
+2026-09-20T08:53:15Z [16,731ms] [Warning] [carb] Client gpu.foundation.plugin has acquired [gpu::unstable::IMemoryBudgetManagerFactory v0.1] 100 times. Consider accessing this interface with carb::getCachedInterface() (Performance warning)
+2026-09-20T08:53:56Z [57,938ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:57Z [58,058ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:57Z [58,179ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:57Z [58,374ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:57Z [58,783ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:58Z [59,877ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:59Z [60,214ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:59Z [60,316ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:59Z [60,433ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:53:59Z [60,435ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:00Z [61,890ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:01Z [62,234ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:01Z [62,473ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:02Z [63,801ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:03Z [64,020ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:03Z [64,022ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:03Z [64,192ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:04Z [65,477ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:06Z [67,344ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:09Z [70,178ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:13Z [74,062ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:13Z [74,086ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:13Z [74,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:13Z [74,912ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:16Z [77,557ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:18Z [79,011ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:18Z [79,134ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:18Z [79,520ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:18Z [79,598ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:25Z [86,071ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:25Z [86,172ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:25Z [86,192ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:25Z [86,293ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:25Z [86,777ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:26Z [87,262ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:26Z [87,502ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:29Z [90,075ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:29Z [90,097ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:29Z [90,099ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:30Z [91,212ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:30Z [91,215ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:30Z [91,435ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:31Z [92,885ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:33Z [94,228ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:33Z [94,298ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:34Z [95,337ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:35Z [96,697ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:35Z [96,725ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:35Z [96,848ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:37Z [98,034ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:37Z [98,520ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:37Z [98,764ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:38Z [99,803ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:41Z [102,203ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:42Z [103,317ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:43Z [103,976ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:43Z [104,338ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:43Z [104,459ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:43Z [104,461ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:48Z [109,847ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:48Z [109,896ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,141ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: ushort format requires 0 <= number <= 65535
+2026-09-20T08:54:53Z [114,165ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,260ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+2026-09-20T08:54:53Z [114,262ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,337ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,357ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,405ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,556ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,676ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,771ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,773ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,798ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,799ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,893ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:53Z [114,939ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:54Z [115,085ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:54Z [115,259ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:54Z [115,889ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:54Z [115,935ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,035ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,082ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,105ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,669ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,741ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,836ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:55Z [116,884ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,323ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,348ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,640ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,687ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,808ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:56Z [117,856ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:57Z [118,441ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,069ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,214ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,263ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,360ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,407ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:58Z [119,501ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:59Z [120,281ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:54:59Z [120,789ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,056ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,105ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,130ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,252ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,369ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:00Z [121,882ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:01Z [122,516ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:01Z [122,684ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:01Z [122,732ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:02Z [123,069ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:02Z [123,101ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:02Z [123,461ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:02Z [123,488ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:03Z [124,137ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:03Z [124,165ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:03Z [124,261ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:03Z [124,307ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:03Z [124,308ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:04Z [125,236ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:04Z [125,405ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:04Z [125,430ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,158ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,473ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,519ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,641ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,667ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:05Z [126,860ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:06Z [127,128ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:06Z [127,758ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:06Z [127,831ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:06Z [127,907ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:06Z [127,931ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:07Z [128,585ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:07Z [128,925ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [128,950ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [129,165ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [129,212ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [129,335ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [129,482ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:08Z [129,677ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:09Z [130,264ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:09Z [130,770ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:09Z [130,845ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:09Z [130,914ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:10Z [131,352ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Preflight Fail: High Accelerometer Bias
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+2026-09-20T08:55:10Z [131,380ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:10Z [131,429ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,181ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,228ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,473ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,517ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,618ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,645ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,666ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,812ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:11Z [132,857ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:12Z [133,422ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:13Z [134,053ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:13Z [134,221ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,291ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,435ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,462ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,606ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,626ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:14Z [135,657ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:15Z [136,823ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:16Z [137,014ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:16Z [137,473ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:16Z [137,768ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,302ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,348ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,372ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,493ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,496ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,518ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,521ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,689ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,715ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:17Z [138,860ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:18Z [139,003ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:19Z [140,316ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:19Z [140,511ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,168ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,653ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,699ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,747ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,749ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,823ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:20Z [141,872ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:22Z [143,229ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:22Z [143,402ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:23Z [144,471ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:23Z [144,497ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:23Z [144,645ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:23Z [144,664ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:24Z [145,888ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:25Z [146,004ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:25Z [146,055ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:25Z [146,421ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:25Z [146,730ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:26Z [147,100ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:26Z [147,152ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:26Z [147,267ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:26Z [147,291ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:26Z [147,441ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:27Z [148,658ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:27Z [148,755ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:27Z [148,876ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:27Z [148,924ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:28Z [148,975ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:28Z [149,241ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:28Z [149,897ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:29Z [150,064ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:29Z [150,091ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:29Z [150,748ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:29Z [150,919ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:30Z [151,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:30Z [151,453ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,033ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,397ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,449ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,548ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,617ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,667ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:31Z [152,693ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:32Z [153,711ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:33Z [154,247ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:33Z [154,435ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,021ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,412ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,462ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,560ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,608ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,728ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:34Z [155,778ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:35Z [155,969ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:36Z [157,062ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:36Z [157,254ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,087ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,474ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,497ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,544ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,574ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,718ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:37Z [158,885ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:38Z [159,033ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:38Z [159,887ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:39Z [160,076ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:40Z [161,052ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:40Z [161,317ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:40Z [161,364ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:40Z [161,412ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:40Z [161,461ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:41Z [162,584ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:41Z [162,755ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,147ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,558ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,730ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,775ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,803ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,900ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:42Z [163,944ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:43Z [163,972ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:43Z [164,163ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:43Z [164,214ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:44Z [164,995ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:44Z [165,165ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,101ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,149ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,247ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,295ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,299ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:45Z [166,497ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:46Z [167,296ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:46Z [167,471ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:46Z [167,623ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:47Z [168,093ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:47Z [168,297ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:47Z [168,691ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:48Z [169,542ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:48Z [169,766ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:48Z [169,844ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:48Z [169,914ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:48Z [169,945ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:50Z [171,750ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:50Z [171,927ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:51Z [172,271ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:51Z [172,692ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:52Z [173,548ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:52Z [173,627ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:52Z [173,767ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:53Z [174,867ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:54Z [175,042ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:54Z [175,062ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:54Z [175,184ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:55Z [176,105ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:55Z [176,179ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:55Z [176,398ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:55Z [176,689ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:56Z [177,773ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:56Z [177,871ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:57Z [177,992ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:57Z [178,089ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:57Z [178,645ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:59Z [180,430ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:55:59Z [180,575ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:00Z [181,207ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:00Z [181,739ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:00Z [181,787ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:00Z [181,906ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:00Z [181,909ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:02Z [183,307ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:02Z [183,478ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:03Z [184,398ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:03Z [184,469ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:03Z [184,613ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:04Z [185,844ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:04Z [185,936ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:05Z [185,991ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:05Z [186,012ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:05Z [186,820ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,013ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,063ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,086ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,164ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,185ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,209ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,382ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,408ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,574ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:06Z [187,696ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:07Z [188,822ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:07Z [188,918ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:07Z [188,944ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:08Z [189,013ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:08Z [189,434ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:08Z [189,832ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,117ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,486ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,512ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,654ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,656ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:09Z [190,704ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:11Z [192,317ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:11Z [192,485ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:12Z [193,073ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:12Z [193,467ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:12Z [193,942ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:13Z [193,988ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:13Z [194,034ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:13Z [194,036ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:13Z [194,182ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:13Z [194,326ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,495ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,568ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,642ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,691ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:14Z [195,736ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:15Z [196,033ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:15Z [196,368ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:15Z [196,690ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:16Z [197,079ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:16Z [197,131ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:16Z [197,178ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:16Z [197,272ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:17Z [198,515ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:17Z [198,611ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:17Z [198,688ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:18Z [199,396ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:18Z [199,463ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:18Z [199,809ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:18Z [199,856ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:18Z [199,908ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:19Z [199,981ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:20Z [201,466ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:20Z [201,662ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:20Z [201,906ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:20Z [201,928ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [201,976ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,341ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,369ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,638ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,710ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,806ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:21Z [202,807ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,225ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,316ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,414ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,441ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,512ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,539ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,758ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,831ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:23Z [204,853ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:24Z [205,073ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:24Z [205,903ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:25Z [205,955ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:25Z [206,049ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:25Z [206,070ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:25Z [206,217ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:26Z [207,437ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:26Z [207,630ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:27Z [208,433ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:27Z [208,483ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:27Z [208,605ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:27Z [208,656ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:29Z [210,216ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:29Z [210,313ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:29Z [210,384ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:29Z [210,776ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:29Z [210,847ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,706ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,751ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,797ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,821ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,847ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,920ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:30Z [211,945ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:31Z [212,023ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:31Z [212,190ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:32Z [213,631ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:32Z [213,796ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:32Z [213,825ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:32Z [213,840ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:32Z [213,942ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:33Z [214,139ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:33Z [214,185ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:33Z [214,477ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,160ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,184ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,206ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,257ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,285ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,305ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:34Z [215,328ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:35Z [216,714ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:35Z [216,863ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:36Z [217,154ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:36Z [217,567ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:36Z [217,568ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:36Z [217,620ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:37Z [218,053ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:37Z [218,082ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:37Z [218,178ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:37Z [218,493ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:38Z [219,397ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:38Z [219,562ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:38Z [219,881ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:39Z [220,423ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:39Z [220,685ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:39Z [220,755ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:39Z [220,855ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:39Z [220,880ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:41Z [222,243ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:41Z [222,343ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:41Z [222,412ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:42Z [222,951ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:42Z [222,997ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:42Z [223,464ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:42Z [223,510ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:43Z [224,043ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:43Z [224,340ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:44Z [225,164ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:44Z [225,314ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:44Z [225,336ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:44Z [225,798ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:44Z [225,827ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,189ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,408ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,457ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,480ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,531ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:45Z [226,604ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:46Z [227,091ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:47Z [228,210ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:47Z [228,472ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:47Z [228,650ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:48Z [229,108ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:48Z [229,429ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,032ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,081ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,107ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,152ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,276ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:49Z [230,277ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:50Z [231,786ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:51Z [231,957ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:51Z [232,495ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:51Z [232,885ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:51Z [232,928ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:51Z [232,932ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:52Z [233,054ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:52Z [233,106ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:52Z [233,611ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:52Z [233,857ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:53Z [234,706ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:53Z [234,782ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:53Z [234,832ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:53Z [234,881ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:53Z [234,927ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:54Z [235,414ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+INFO  [commander] Landing at current position	
+WARN  [health_and_arming_checks] Preflight Fail: High Accelerometer Bias
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+2026-09-20T08:56:55Z [236,145ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:55Z [236,241ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:55Z [236,271ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:55Z [236,434ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:55Z [236,437ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:55Z [236,653ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,019ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,192ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,481ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,531ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,603ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,655ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:56Z [237,946ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:57Z [238,602ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:58Z [239,844ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:58Z [239,914ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:59Z [240,013ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:56:59Z [240,552ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:57:00Z [241,233ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:57:00Z [241,261ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:57:00Z [241,403ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [commander] Disarming denied: not landed	
+INFO  [tone_alarm] notify negative
+
+PX4 Exiting...
+Exiting NOW.

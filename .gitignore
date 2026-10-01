@@ -121,9 +121,14 @@ stage3_gt_runs/
 # folder moved under examples/tools/, and three working files were committed.
 **/px4_tuning/*.json
 
-# experiments/ is a self-contained record of what was flown: the console logs copied
-# into each experiment's logs/ folder are evidence, not build output, so they are
-# tracked despite the blanket logs/ and *.log rules above. (The ~29 MB .ulg files they
-# point at stay untracked in px4_runs/.)
-!experiments/*/logs/
-!experiments/*/logs/**
+# experiments/ is a self-contained record of what was flown: the logs copied into each
+# experiment's logs/ folder are evidence, not build output, so they are tracked despite
+# the blanket logs/ and *.log rules above. This includes the ~28 MB .ulg files - unlike
+# the copies in px4_runs/, these are the archived record.
+#
+# MATCHED AT ANY DEPTH. This was `experiments/*/logs/`, which matches exactly one level,
+# and on 2026-09-19 every experiment moved down one into experiments/phase_only/ - so the
+# rule silently stopped matching and any log added afterwards would have been ignored
+# without a word. Same failure as the px4_tuning rule above, second occurrence.
+!experiments/**/logs/
+!experiments/**/logs/**

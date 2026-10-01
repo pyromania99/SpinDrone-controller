@@ -1,0 +1,933 @@
+Warning: running in conda env, please deactivate before executing this script
+If conda is desired please source setup_conda_env.sh in your python 3.11 conda env and run python normally
+[Info] [carb] Logging to file: /home/ani/isaacsim/kit/logs/Kit/Isaac-Sim Python/5.1/kit_20260920_134159.log
+2026-09-20T08:11:59Z [1ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/6db10f87-8dab-4655-65f0a2ae-9706f203.dmp'
+2026-09-20T08:11:59Z [2ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/9b509586-f53a-486f-d8793e94-f010e1a7.dmp'
+2026-09-20T08:11:59Z [2ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a1153a6a-21bf-47a4-866609a0-cc723cd0.dmp'
+2026-09-20T08:11:59Z [2ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a059571c-72c9-4334-16b2b098-b6af6c97.dmp'
+2026-09-20T08:11:59Z [2ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/f4aee325-9f93-4b6c-bb292f89-0d3f8926.dmp'
+2026-09-20T08:11:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/49dbf299-4e25-4506-78ed0c80-7802e77e.dmp'
+2026-09-20T08:11:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/620084d4-0665-4b52-604939bf-bbe66266.dmp'
+2026-09-20T08:11:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a40e406-ee65-4ae3-5e28e38e-ee9d6ce8.dmp'
+2026-09-20T08:11:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/910413dc-b87f-417b-149383b8-9efa8b0d.dmp'
+2026-09-20T08:11:59Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/ca5e2bb6-917e-41df-56da39a6-be97f765.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/c6297ee0-084e-4c2c-e4dfc381-c5596a82.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a253464-546a-4843-26147d84-3c1d96ef.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/80418541-097a-41ae-c53554a9-8319d1c2.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/227f1ba5-109e-47eb-128f41bd-b796a0e6.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/b1df8dcc-2a7b-4f50-5ed8ce99-ecf74335.dmp'
+2026-09-20T08:11:59Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/942e10f6-df4d-4118-199de6a0-62852751.dmp'
+2026-09-20T08:11:59Z [5ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a3fe664a-7800-43ab-888886a7-caab1e9d.dmp'
+2026-09-20T08:11:59Z [5ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/7becbd75-2225-4658-2eaa3380-e2e3890b.dmp'
+2026-09-20T08:11:59Z [5ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/e162ed80-7399-4f4a-260a66aa-25c5f26b.dmp'
+[0.051s] [ext: omni.kit.async_engine-0.0.3] startup
+[0.641s] [ext: omni.metrics.core-0.0.3] startup
+[0.642s] [ext: omni.client.lib-1.1.0] startup
+[0.656s] [ext: omni.blobkey-1.1.2] startup
+[0.656s] [ext: omni.stats-1.0.1] startup
+[0.657s] [ext: omni.datastore-0.0.0] startup
+[0.665s] [ext: omni.client-1.3.0] startup
+[0.671s] [ext: omni.ujitso.default-1.0.0] startup
+[0.673s] [ext: omni.hsscclient-1.1.2] startup
+[0.678s] [ext: omni.gpu_foundation.shadercache.vulkan-1.0.0] startup
+[0.681s] [ext: omni.assets.plugins-0.0.0] startup
+[0.682s] [ext: omni.gpu_foundation-0.0.0] startup
+[0.701s] [ext: carb.windowing.plugins-1.0.0] startup
+[0.711s] [ext: omni.kit.renderer.init-0.0.0] startup
+2026-09-20T08:12:00Z [1,032ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+2026-09-20T08:12:00Z [1,033ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4060 Laptop.. | Yes: 0 |     | 8188    MB | 10de      | 0          |
+|     |                                  |        |     |            | 28e0      | e9cf80ce.. |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | AMD Unknown (RADV GFX1103_R1)    |        |     | 5437    MB | 1002      | 0          |
+|     |                                  |        |     |            | 1900      | 00000000.. |
+|     |                                  |        |     |            | 5         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: AMD Ryzen 7 8845HS w/ Radeon 780M Graphics
+| Cores: 8 | Logical Cores: 16
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 15287 | Free Memory: 5699
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 0
+|---------------------------------------------------------------------------------------------|
+2026-09-20T08:12:01Z [1,365ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-20T08:12:01Z [1,376ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-09-20T08:12:01Z [1,376ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 197.78 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.40 
+
+   CPU     0 
+     0   2.09 
+[1.558s] [ext: omni.kit.pipapi-0.0.0] startup
+[1.560s] [ext: omni.kit.pip_archive-0.0.0] startup
+[1.560s] [ext: omni.pip.compute-1.6.3] startup
+[1.561s] [ext: omni.materialx.libs-1.0.7] startup
+[1.567s] [ext: omni.pip.cloud-1.4.3] startup
+[1.570s] [ext: omni.isaac.core_archive-3.0.0] startup
+[1.571s] [ext: omni.usd.config-1.0.6] startup
+[1.575s] [ext: omni.gpucompute.plugins-0.0.0] startup
+[1.575s] [ext: omni.usd.libs-1.0.1] startup
+[1.646s] [ext: omni.mdl-56.0.3] startup
+[1.745s] [ext: omni.iray.libs-0.0.0] startup
+[1.762s] [ext: omni.mdl.neuraylib-0.2.12] startup
+[1.765s] [ext: omni.kit.usd.mdl-1.1.5] startup
+[1.852s] [ext: omni.services.pip_archive-0.16.0] startup
+[1.852s] [ext: omni.isaac.ml_archive-3.0.4] startup
+[1.852s] [ext: omni.kit.telemetry-0.5.2] startup
+[1.876s] [ext: omni.kit.loop-isaac-1.3.7] startup
+[1.878s] [ext: omni.kit.test-2.0.1] startup
+[1.931s] [ext: omni.appwindow-1.1.10] startup
+[1.933s] [ext: omni.kit.renderer.core-1.1.0] startup
+[1.960s] [ext: omni.kit.renderer.capture-0.0.0] startup
+[1.963s] [ext: omni.kit.renderer.imgui-2.0.5] startup
+[2.021s] [ext: omni.ui-2.27.1] startup
+[2.032s] [ext: omni.kit.mainwindow-1.0.3] startup
+[2.033s] [ext: carb.audio-0.1.0] startup
+[2.037s] [ext: omni.uiaudio-1.0.0] startup
+[2.038s] [ext: omni.kit.uiapp-0.0.0] startup
+[2.038s] [ext: omni.usd.schema.metrics.assembler-107.3.1] startup
+[2.041s] [ext: omni.anim.behavior.schema-107.3.0] startup
+[2.049s] [ext: omni.usd.schema.omnigraph-1.0.0] startup
+[2.054s] [ext: omni.usd.schema.geospatial-0.0.0] startup
+[2.056s] [ext: omni.usd.schema.anim-0.0.0] startup
+[2.072s] [ext: omni.usd.schema.audio-0.0.0] startup
+[2.074s] [ext: isaacsim.robot.schema-3.6.0] startup
+[2.080s] [ext: omni.usd_resolver-1.0.0] startup
+[2.085s] [ext: omni.usd.core-1.5.3] startup
+[2.087s] [ext: omni.usd.schema.omni_sensors-0.0.0] startup
+[2.103s] [ext: omni.usd.schema.semantics-0.0.0] startup
+[2.105s] [ext: omni.usd.schema.omni_lens_distortion-0.0.0] startup
+[2.105s] [ext: omni.usd.schema.render_settings.rtx-0.0.0] startup
+[2.106s] [ext: omni.graph.exec-0.9.6] startup
+[2.107s] [ext: omni.kit.actions.core-1.0.0] startup
+[2.109s] [ext: omni.kit.usd_undo-0.1.8] startup
+[2.110s] [ext: omni.kit.exec.core-0.13.4] startup
+[2.112s] [ext: omni.kit.commands-1.4.10] startup
+[2.115s] [ext: omni.kit.window.popup_dialog-2.0.24] startup
+[2.119s] [ext: omni.activity.core-1.0.3] startup
+[2.121s] [ext: omni.resourcemonitor-107.0.1] startup
+[2.124s] [ext: omni.timeline-1.0.14] startup
+[2.126s] [ext: omni.kit.widget.nucleus_connector-2.0.1] startup
+[2.128s] [ext: usdrt.scenegraph-7.6.1] startup
+[2.170s] [ext: omni.kit.audiodeviceenum-1.0.2] startup
+[2.172s] [ext: omni.hydra.usdrt_delegate-7.5.1] startup
+[2.186s] [ext: omni.hydra.scene_delegate-0.3.4] startup
+[2.189s] [ext: omni.usd-1.13.10] startup
+[2.215s] [ext: omni.kit.asset_converter-5.0.17] startup
+[2.228s] [ext: omni.usd.schema.physx-107.3.26] startup
+[2.255s] [ext: omni.anim.navigation.schema-107.3.3] startup
+[2.258s] [ext: omni.inspect-1.0.2] startup
+[2.259s] [ext: omni.kit.notification_manager-1.0.10] startup
+[2.261s] [ext: omni.graph.core-2.184.5] startup
+[2.263s] [ext: isaacsim.core.deprecation_manager-0.2.7] startup
+[2.264s] [ext: omni.usd.schema.omniscripting-1.0.0] startup
+[2.267s] [ext: omni.usd.schema.flow-107.1.1] startup
+[2.268s] [ext: omni.anim.graph.schema-107.3.3] startup
+[2.274s] [ext: omni.usd.schema.isaac-3.0.5] startup
+[2.274s] [ext: isaacsim.core.version-2.0.6] startup
+[2.275s] [ext: omni.ui.scene-1.11.5] startup
+[2.281s] [ext: isaacsim.storage.native-1.5.1] startup
+[2.282s] [ext: omni.kit.widget.options_menu-1.1.6] startup
+[2.286s] [ext: omni.kit.menu.core-1.1.2] startup
+[2.286s] [ext: omni.graph.tools-1.79.2] startup
+[2.324s] [ext: omni.kit.widget.filter-1.1.4] startup
+[2.324s] [ext: omni.kit.menu.utils-2.0.5] startup
+[2.333s] [ext: omni.graph-1.141.2] startup
+[2.385s] [ext: omni.kit.hotkeys.core-1.3.10] startup
+[2.386s] [ext: omni.anim.curve.core-1.3.1] startup
+[2.403s] [ext: omni.kit.clipboard-1.0.5] startup
+[2.406s] [ext: omni.usdphysics-107.3.26] startup
+[2.408s] [ext: omni.physx.foundation-107.3.26] startup
+[2.410s] [ext: omni.kit.widget.context_menu-1.2.5] startup
+[2.412s] [ext: omni.kit.helper.file_utils-0.1.9] startup
+[2.414s] [ext: omni.kit.widget.path_field-2.0.11] startup
+[2.416s] [ext: omni.kvdb-107.3.26] startup
+[2.418s] [ext: omni.kit.widget.options_button-1.0.3] startup
+[2.419s] [ext: omni.kit.widget.filebrowser-2.12.3] startup
+[2.424s] [ext: omni.kit.widget.browser_bar-2.0.10] startup
+[2.426s] [ext: omni.localcache-107.3.26] startup
+[2.428s] [ext: omni.convexdecomposition-107.3.26] startup
+[2.430s] [ext: omni.kit.window.filepicker-2.13.4] startup
+[2.448s] [ext: omni.physx.cooking-107.3.26] startup
+[2.452s] [ext: omni.physics-107.3.26] startup
+[2.456s] [ext: omni.kit.window.file_exporter-1.0.33] startup
+[2.459s] [ext: omni.kit.stage_template.core-1.1.22] startup
+[2.462s] [ext: omni.physx-107.3.26] startup
+[2.470s] [ext: omni.kit.usd.layers-2.2.11] startup
+[2.478s] [ext: omni.kit.window.file_importer-1.1.18] startup
+[2.480s] [ext: omni.physics.physx-107.3.26] startup
+2026-09-20T08:12:02Z [2,460ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+[2.482s] [ext: omni.kit.numpy.common-0.1.3] startup
+[2.484s] [ext: omni.kit.window.file-2.0.5] startup
+[2.488s] [ext: omni.physics.stageupdate-107.3.26] startup
+[2.490s] [ext: omni.kit.window.drop_support-1.0.5] startup
+[2.491s] [ext: omni.kit.window.content_browser_registry-0.0.6] startup
+[2.493s] [ext: omni.isaac.dynamic_control-2.0.7] startup
+2026-09-20T08:12:02Z [2,477ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+[2.499s] [ext: omni.kit.window.content_browser-3.1.3] startup
+[2.513s] [ext: omni.graph.action_core-1.1.7] startup
+[2.515s] [ext: omni.kit.usd.collect-2.4.5] startup
+[2.519s] [ext: isaacsim.gui.content_browser-0.1.11] startup
+[2.521s] [ext: omni.graph.action_nodes-1.50.4] startup
+[2.524s] [ext: omni.kit.widget.prompt-1.0.7] startup
+[2.528s] [ext: omni.graph.action-1.130.0] startup
+[2.529s] [ext: omni.kit.tool.collect-2.2.18] startup
+[2.537s] [ext: omni.index.libs-380600.8087.0] startup
+[2.538s] [ext: omni.ujitso.client-0.0.0] startup
+[2.539s] [ext: omni.index-1.0.1] startup
+[2.539s] [ext: omni.volume-0.5.2] startup
+[2.542s] [ext: omni.hydra.rtx.shadercache.vulkan-1.0.0] startup
+[2.545s] [ext: omni.kit.context_menu-1.8.6] startup
+[2.548s] [ext: omni.hydra.rtx-1.0.0] startup
+2026-09-20T08:12:02Z [2,547ms] [Warning] [omni.log] Source: omni.hydra was already registered.
+[2.598s] [ext: omni.kit.material.library-2.0.7] startup
+[2.604s] [ext: omni.hydra.engine.stats-1.0.3] startup
+[2.607s] [ext: omni.kit.widget.stage_icons-1.0.8] startup
+[2.608s] [ext: omni.kit.viewport.scene_camera_model-1.0.6] startup
+[2.612s] [ext: omni.kit.hydra_texture-1.4.6] startup
+[2.615s] [ext: omni.kit.viewport.legacy_gizmos-1.0.19] startup
+[2.617s] [ext: omni.kit.widget.searchfield-1.1.8] startup
+[2.619s] [ext: omni.kit.widget.viewport-107.1.3] startup
+[2.625s] [ext: omni.kit.viewport.registry-104.0.6] startup
+[2.627s] [ext: omni.kit.raycast.query-1.1.0] startup
+[2.631s] [ext: omni.kit.widget.stage-3.1.4] startup
+[2.646s] [ext: omni.kit.widget.zoombar-1.0.6] startup
+[2.647s] [ext: omni.kit.viewport.window-107.2.0] startup
+[2.676s] [ext: omni.kit.window.stage-2.6.1] startup
+[2.683s] [ext: omni.kit.browser.core-2.3.13] startup
+[2.689s] [ext: omni.kit.menu.stage-1.2.7] startup
+[2.691s] [ext: omni.kit.browser.folder.core-1.10.9] startup
+[2.698s] [ext: omni.kit.property.adapter.core-1.0.2] startup
+[2.702s] [ext: omni.kit.widget.highlight_label-1.0.3] startup
+[2.703s] [ext: omni.kit.property.adapter.usd-1.0.2] startup
+[2.706s] [ext: omni.ui_query-1.1.8] startup
+[2.708s] [ext: omni.kit.window.property-1.12.1] startup
+[2.712s] [ext: omni.kit.property.adapter.fabric-1.0.3] startup
+[2.714s] [ext: omni.kit.ui_test-1.3.7] startup
+[2.716s] [ext: omni.kit.property.usd-4.5.12] startup
+[2.730s] [ext: omni.kit.viewport.utility-1.1.2] startup
+[2.732s] [ext: omni.kit.manipulator.viewport-107.0.1] startup
+[2.733s] [ext: omni.kit.usdz_export-1.0.9] startup
+[2.736s] [ext: omni.kit.window.extensions-1.4.27] startup
+[2.745s] [ext: omni.graph.visualization.nodes-2.1.3] startup
+[2.752s] [ext: omni.kit.tool.asset_importer-4.3.2] startup
+[2.764s] [ext: isaacsim.gui.components-1.2.1] startup
+[2.770s] [ext: isaacsim.examples.browser-0.2.1] startup
+[2.774s] [ext: isaacsim.asset.importer.urdf-2.4.30] startup
+[2.829s] [ext: omni.kit.menu.create-2.0.1] startup
+[2.832s] [ext: omni.physics.tensors-107.3.26] startup
+[2.844s] [ext: omni.usd.metrics.assembler-107.3.1] startup
+[2.848s] [ext: omni.kit.widget.graph-2.0.0] startup
+[2.856s] [ext: omni.kit.widget.searchable_combobox-1.0.6] startup
+[2.857s] [ext: omni.warp.core-1.8.2] startup
+[3.038s] [ext: omni.usd.metrics.assembler.physics-107.3.26] startup
+[3.042s] [ext: omni.kit.graph.delegate.default-1.2.3] startup
+[3.044s] [ext: omni.kit.scripting-107.3.2] startup
+[3.051s] [ext: omni.physx.tensors-107.3.26] startup
+[3.058s] [ext: isaacsim.core.utils-3.5.1] startup
+[3.061s] [ext: omni.anim.asset-107.3.0] startup
+[3.063s] [ext: isaacsim.core.simulation_manager-1.4.4] startup
+[4.536s] [ext: omni.graph.scriptnode-1.50.0] startup
+[4.540s] [ext: omni.kit.graph.editor.core-1.5.3] startup
+[4.547s] [ext: omni.kit.widget.settings-1.2.6] startup
+[4.552s] [ext: omni.kit.primitive.mesh-1.0.17] startup
+[4.559s] [ext: isaacsim.core.prims-0.6.1] startup
+[4.589s] [ext: omni.kit.widget.material_preview-1.0.16] startup
+[4.594s] [ext: omni.kit.graph.usd.commands-1.3.1] startup
+[4.596s] [ext: omni.graph.image.core-0.6.1] startup
+[4.597s] [ext: omni.kit.window.preferences-1.8.0] startup
+[4.605s] [ext: omni.kit.stage_templates-2.0.0] startup
+[4.607s] [ext: isaacsim.asset.browser-1.3.23] startup
+[4.681s] [ext: omni.graph.image.nodes-1.3.1] startup
+[4.682s] [ext: omni.kit.viewport.menubar.core-107.2.1] startup
+[4.696s] [ext: isaacsim.core.api-4.8.0] startup
+[4.708s] [ext: omni.kit.window.material_graph-1.9.1] startup
+[4.722s] [ext: omni.kit.viewport.actions-107.0.2] startup
+[4.727s] [ext: omni.graph.nodes-1.170.10] startup
+[4.739s] [ext: omni.syntheticdata-0.6.13] startup
+[4.763s] [ext: omni.isaac.assets_check-0.3.13] startup
+2026-09-20T08:12:04Z [4,744ms] [Warning] [omni.isaac.assets_check] omni.isaac.assets_check has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[4.767s] [ext: isaacsim.core.cloner-1.4.10] startup
+[4.770s] [ext: omni.kit.viewport.menubar.display-107.0.3] startup
+[4.775s] [ext: omni.graph.ui_nodes-1.50.5] startup
+[4.783s] [ext: omni.videoencoding-0.1.2] startup
+[4.788s] [ext: omni.isaac.cloner-1.0.7] startup
+2026-09-20T08:12:04Z [4,768ms] [Warning] [omni.isaac.cloner] omni.isaac.cloner has been deprecated in favor of isaacsim.core.cloner. Please update your code accordingly.
+[4.790s] [ext: isaacsim.gui.sensors.icon-2.0.3] startup
+[4.820s] [ext: omni.warp-1.8.2] startup
+[4.833s] [ext: omni.anim.retarget.core-107.3.3] startup
+[4.843s] [ext: omni.debugdraw-0.1.4] startup
+[4.846s] [ext: omni.replicator.core-1.12.27] startup
+2026-09-20T08:12:04Z [4,850ms] [Warning] [pxr.Semantics] pxr.Semantics is deprecated - please use Semantics instead
+2026-09-20T08:12:04Z [5,000ms] [Warning] [omni.graph.core.plugin] Found duplicate of category 'Replicator' - was 'Annotators', adding 'Fabric Reader'
+2026-09-20T08:12:04Z [5,000ms] [Warning] [omni.graph.core.plugin] Category 'Replicator' not accepted on node type 'omni.replicator.core.FabricReader' in extension 'omni.replicator.core'
+2026-09-20T08:12:04Z [5,001ms] [Warning] [omni.replicator.core.scripts.extension] No material configuration file, adding configuration to material settings directly.
+[5.028s] [ext: omni.kit.quicklayout-1.0.8] startup
+[5.035s] [ext: omni.anim.navigation.core-107.3.8] startup
+[5.046s] [ext: omni.anim.graph.core-107.3.4] startup
+[5.057s] [ext: omni.metropolis.utils-0.1.20] startup
+2026-09-20T08:12:04Z [5,063ms] [Warning] [omni.graph.core._impl._registration.register_python_ogn] Python import process in omni.anim.graph.core failed - 'NoneType' object is not subscriptable. Aborting Python node registration
+[5.096s] [ext: isaacsim.asset.importer.mjcf-2.5.13] startup
+[5.107s] [ext: omni.anim.people-0.7.9] startup
+[5.123s] [ext: isaacsim.test.docstring-1.1.0] startup
+[5.131s] [ext: isaacsim.core.experimental.utils-0.3.0] startup
+[5.135s] [ext: isaacsim.anim.robot-0.0.15] startup
+[5.186s] [ext: isaacsim.core.experimental.prims-0.8.1] startup
+[5.241s] [ext: isaacsim.core.nodes-3.4.3] startup
+[5.254s] [ext: omni.flowusd-107.1.8] startup
+2026-09-20T08:12:05Z [5,235ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[5.261s] [ext: omni.sensors.nv.common-3.0.0] startup
+[5.275s] [ext: isaacsim.core.experimental.materials-0.4.0] startup
+[5.299s] [ext: omni.isaac.core-4.0.7] startup
+2026-09-20T08:12:05Z [5,286ms] [Warning] [omni.isaac.core.physics_context.physics_context] omni.isaac.core.physics_context.physics_context has been deprecated in favor of isaacsim.core.api.physics_context.physics_context. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,309ms] [Warning] [omni.isaac.core.simulation_context.simulation_context] omni.isaac.core.simulation_context.simulation_context has been deprecated in favor of isaacsim.core.api.simulation_context.simulation_context. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,314ms] [Warning] [omni.isaac.core.world.world] omni.isaac.core.world.world has been deprecated in favor of isaacsim.core.api.world.world. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,314ms] [Warning] [omni.isaac.core] omni.isaac.core has been deprecated in favor of isaacsim.core.api. Please update your code accordingly.
+[5.337s] [ext: isaacsim.replicator.incident-0.1.28] startup
+[5.746s] [ext: omni.sensors.net-1.0.0] startup
+[5.752s] [ext: omni.sensors.nv.materials-2.0.0] startup
+[5.758s] [ext: isaacsim.sensors.camera-1.3.6] startup
+[5.765s] [ext: omni.sensors.nv.wpm-3.0.0] startup
+[5.768s] [ext: isaacsim.util.debug_draw-3.1.0] startup
+[5.776s] [ext: omni.sensors.nv.ids-2.0.0] startup
+[5.779s] [ext: omni.sensors.nv.lidar-3.0.0] startup
+[5.792s] [ext: omni.sensors.nv.radar-3.0.0] startup
+[5.796s] [ext: isaacsim.sensors.physics-0.4.3] startup
+[5.802s] [ext: isaacsim.robot_motion.lula-4.0.8] startup
+[5.811s] [ext: isaacsim.robot.surface_gripper-3.3.1] startup
+[5.817s] [ext: isaacsim.sensors.rtx-15.8.4] startup
+[5.831s] [ext: omni.kit.mesh.raycast-107.0.1] startup
+[5.838s] [ext: isaacsim.robot_motion.motion_generation-8.0.26] startup
+[5.849s] [ext: isaacsim.robot.manipulators-3.3.6] startup
+[5.855s] [ext: isaacsim.core.experimental.objects-0.4.0] startup
+[5.874s] [ext: omni.isaac.core_nodes-2.0.6] startup
+2026-09-20T08:12:05Z [5,857ms] [Warning] [omni.isaac.core_nodes] omni.isaac.core_nodes has been deprecated in favor of isaacsim.core.nodes. Please update your code accordingly.
+[5.878s] [ext: isaacsim.replicator.agent.core-0.7.28] startup
+[5.891s] [ext: isaacsim.robot.manipulators.examples-1.1.2] startup
+[5.894s] [ext: isaacsim.simulation_app-2.12.2] startup
+[5.895s] [ext: omni.kit.selection-0.1.6] startup
+[5.899s] [ext: omni.isaac.franka-1.0.7] startup
+2026-09-20T08:12:05Z [5,879ms] [Warning] [omni.isaac.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,879ms] [Warning] [omni.isaac.franka.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,897ms] [Warning] [omni.isaac.franka.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+[5.918s] [ext: isaacsim.robot_motion.lula_test_widget-1.0.12] startup
+[5.923s] [ext: omni.isaac.kit-2.0.6] startup
+2026-09-20T08:12:05Z [5,903ms] [Warning] [omni.isaac.kit] omni.isaac.kit has been deprecated in favor of isaacsim.simulation_app. Please update your code accordingly.
+[5.925s] [ext: isaacsim.gui.menu-2.4.4] startup
+[5.932s] [ext: omni.isaac.asset_browser-1.0.6] startup
+2026-09-20T08:12:05Z [5,913ms] [Warning] [omni.isaac.asset_browser] omni.isaac.asset_browser has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[5.936s] [ext: omni.isaac.lula_test_widget-1.0.6] startup
+2026-09-20T08:12:05Z [5,918ms] [Warning] [omni.isaac.lula_test_widget] omni.isaac.lula_test_widget has been deprecated in favor of isaacsim.robot_motion.lula_test_widget. Please update your code accordingly.
+[5.939s] [ext: omni.isaac.manipulators-3.0.7] startup
+2026-09-20T08:12:05Z [5,920ms] [Warning] [omni.isaac.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,920ms] [Warning] [omni.isaac.manipulators.controllers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,920ms] [Warning] [omni.isaac.manipulators.controllers.pick_place_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,921ms] [Warning] [omni.isaac.manipulators.controllers.stacking_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,922ms] [Warning] [omni.isaac.manipulators.grippers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,922ms] [Warning] [omni.isaac.manipulators.grippers.gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,922ms] [Warning] [omni.isaac.manipulators.grippers.parallel_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,922ms] [Warning] [omni.isaac.manipulators.grippers.surface_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,922ms] [Warning] [omni.isaac.manipulators.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,923ms] [Warning] [omni.isaac.manipulators.manipulators.single_manipulator] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+[5.944s] [ext: omni.isaac.menu-1.0.6] startup
+2026-09-20T08:12:05Z [5,926ms] [Warning] [omni.isaac.menu] omni.isaac.menu has been deprecated in favor of isaacsim.gui.menu. Please update your code accordingly.
+[5.951s] [ext: isaacsim.robot.policy.examples-4.1.11] startup
+[5.956s] [ext: isaacsim.sensors.physx-2.3.2] startup
+[5.962s] [ext: omni.isaac.motion_generation-8.0.7] startup
+2026-09-20T08:12:05Z [5,944ms] [Warning] [omni.isaac.motion_generation] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,945ms] [Warning] [omni.isaac.motion_generation.articulation_kinematics_solver] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,945ms] [Warning] [omni.isaac.motion_generation.articulation_motion_policy] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,946ms] [Warning] [omni.isaac.motion_generation.articulation_trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,946ms] [Warning] [omni.isaac.motion_generation.kinematics_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,947ms] [Warning] [omni.isaac.motion_generation.lula] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,947ms] [Warning] [omni.isaac.motion_generation.lula.kinematics] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,947ms] [Warning] [omni.isaac.motion_generation.lula.motion_policies] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,947ms] [Warning] [omni.isaac.motion_generation.lula.path_planners] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,947ms] [Warning] [omni.isaac.motion_generation.lula.trajectory_generator] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,948ms] [Warning] [omni.isaac.motion_generation.motion_policy_controller] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,948ms] [Warning] [omni.isaac.motion_generation.motion_policy_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,948ms] [Warning] [omni.isaac.motion_generation.path_planner_visualizer] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,948ms] [Warning] [omni.isaac.motion_generation.path_planning_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,948ms] [Warning] [omni.isaac.motion_generation.trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,949ms] [Warning] [omni.isaac.motion_generation.world_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+[5.970s] [ext: omni.isaac.nucleus-1.0.6] startup
+2026-09-20T08:12:05Z [5,951ms] [Warning] [omni.isaac.nucleus] omni.isaac.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,952ms] [Warning] [omni.isaac.nucleus.nucleus] omni.isaac.nucleus.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+[5.974s] [ext: omni.isaac.quadruped-3.0.7] startup
+2026-09-20T08:12:05Z [5,954ms] [Warning] [omni.isaac.quadruped] omni.isaac.quadruped has been deprecated in favor of isaacsim.robot.policy.examples. Please update your code accordingly.
+[5.975s] [ext: omni.isaac.range_sensor-4.0.6] startup
+2026-09-20T08:12:05Z [5,957ms] [Warning] [omni.isaac.range_sensor] omni.isaac.range_sensor has been deprecated in favor of isaacsim.sensors.physx. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,957ms] [Warning] [omni.isaac.range_sensor.commands] omni.isaac.range_sensor.commands has been deprecated in favor of isaacsim.sensors.physx.commands. Please update your code accordingly.
+[5.978s] [ext: omni.isaac.sensor-13.0.7] startup
+2026-09-20T08:12:05Z [5,960ms] [Warning] [omni.isaac.sensor] omni.isaac.sensor has been deprecated in favor of isaacsim.sensors.camera, isaacsim.sensors.physics, isaacsim.sensors.physx, and isaacsim.sensors.rtx. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,960ms] [Warning] [omni.isaac.sensor.camera] omni.isaac.sensor.camera has been deprecated in favor of isaacsim.sensors.camera.camera. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,961ms] [Warning] [omni.isaac.sensor.camera_view] omni.isaac.sensor.camera_view has been deprecated in favor of isaacsim.sensors.camera.camera_view. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,961ms] [Warning] [omni.isaac.sensor.commands] omni.isaac.sensor.commands has been deprecated in favor of isaacsim.sensors.physics.commands, isaacsim.sensors.physx.commands, and isaacsim.sensors.rtx.commands. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,961ms] [Warning] [omni.isaac.sensor.contact_sensor] omni.isaac.sensor.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.contact_sensor. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,961ms] [Warning] [omni.isaac.sensor.imu_sensor] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.imu_sensor. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,962ms] [Warning] [omni.isaac.sensor.lidar_rtx] omni.isaac.sensor.lidar_rtx has been deprecated in favor of isaacsim.sensors.rtx.lidar_rtx. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,962ms] [Warning] [omni.isaac.sensor.rotating_lidar_physX] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physix.rotating_lidar_physX. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,962ms] [Warning] [omni.isaac.sensor.scripts.samples.contact_sensor] omni.isaac.sensor.scripts.samples.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.contact_sensor. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,962ms] [Warning] [omni.isaac.sensor.scripts.samples.imu_sensor] omni.isaac.sensor.scripts.samples.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.imu_sensor. Please update your code accordingly.
+2026-09-20T08:12:05Z [5,963ms] [Warning] [omni.isaac.sensor.scripts.samples.lightbeam_sensor] omni.isaac.sensor.scripts.samples.lightbeam_sensor has been deprecated in favor of isaacsim.sensors.physx.scripts.samples.lightbeam_sensor. Please update your code accordingly.
+[5.984s] [ext: omni.isaac.surface_gripper-2.0.6] startup
+2026-09-20T08:12:05Z [5,965ms] [Warning] [omni.isaac.surface_gripper] omni.isaac.surface_gripper has been deprecated in favor of isaacsim.robot.surface_gripper. Please update your code accordingly.
+[5.987s] [ext: omni.kit.widget.toolbar-2.0.1] startup
+[6.007s] [ext: omni.kit.manipulator.transform-107.0.0] startup
+[6.012s] [ext: omni.kit.manipulator.selector-1.1.3] startup
+[6.015s] [ext: isaacsim.app.about-2.0.11] startup
+[6.020s] [ext: isaacsim.cortex.framework-1.0.12] startup
+[6.022s] [ext: omni.kit.manipulator.tool.snap-1.5.13] startup
+[6.029s] [ext: omni.isaac.universal_robots-1.0.6] startup
+2026-09-20T08:12:05Z [6,010ms] [Warning] [omni.isaac.universal_robots] omni.isaac.universal_robots has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T08:12:05Z [6,010ms] [Warning] [omni.isaac.universal_robots.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T08:12:05Z [6,012ms] [Warning] [omni.isaac.universal_robots.ur10] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+[6.033s] [ext: omni.isaac.utils-2.0.6] startup
+[6.038s] [ext: omni.isaac.cortex-1.0.5] startup
+2026-09-20T08:12:05Z [6,019ms] [Warning] [omni.isaac.cortex] omni.isaac.cortex has been deprecated in favor of isaacsim.cortex.framework. Please update your code accordingly.
+[6.041s] [ext: omni.kit.viewport.manipulator.transform-107.0.4] startup
+[6.044s] [ext: omni.isaac.window.about-2.0.7] startup
+2026-09-20T08:12:05Z [6,026ms] [Warning] [omni.isaac.window.about] omni.isaac.window.about has been deprecated in favor of isaacsim.app.about. Please update your code accordingly.
+2026-09-20T08:12:05Z [6,026ms] [Warning] [omni.isaac.window.about.about] omni.isaac.window.about.about has been deprecated in favor of isaacsim.app.about.about. Please update your code accordingly.
+[6.047s] [ext: omni.kit.manipulator.camera-106.0.4] startup
+[6.053s] [ext: omni.kit.property.audio-1.0.16] startup
+[6.055s] [ext: omni.fabric.commands-1.1.6] startup
+[6.060s] [ext: omni.kit.manipulator.prim.core-107.0.8] startup
+[6.074s] [ext: omni.kit.property.camera-1.0.10] startup
+[6.077s] [ext: omni.kit.property.geometry-2.0.4] startup
+[6.081s] [ext: omni.kit.property.light-1.0.12] startup
+[6.092s] [ext: omni.hydra.scene_api-0.1.2] startup
+[6.096s] [ext: omni.kit.manipulator.prim.fabric-107.0.4] startup
+[6.099s] [ext: omni.kit.manipulator.prim.usd-107.0.3] startup
+[6.100s] [ext: omni.kit.property.material-1.11.9] startup
+[6.108s] [ext: omni.kit.property.render-1.2.1] startup
+[6.110s] [ext: omni.kit.property.transform-1.5.13] startup
+[6.115s] [ext: isaacsim.gui.property-1.1.3] startup
+[6.118s] [ext: omni.kit.manipulator.prim-107.0.0] startup
+[6.119s] [ext: omni.kit.manipulator.selection-106.0.1] startup
+[6.121s] [ext: omni.isaac.lula-4.0.6] startup
+2026-09-20T08:12:05Z [6,100ms] [Warning] [omni.isaac.lula] omni.isaac.lula has been deprecated in favor of isaacsim.robot_motion.lula. Please update your code accordingly.
+[6.122s] [ext: omni.kit.property.bundle-1.4.1] startup
+[6.124s] [ext: omni.kit.property.isaac-1.0.6] startup
+2026-09-20T08:12:05Z [6,104ms] [Warning] [omni.kit.property.isaac] omni.kit.property.isaac has been deprecated in favor of isaacsim.gui.property. Please update your code accordingly.
+2026-09-20T08:12:05Z [6,104ms] [Warning] [omni.kit.property.isaac.widgets] omni.kit.property.isaac.widgets has been deprecated in favor of isaacsim.gui.property.widgets. Please update your code accordingly.
+[6.125s] [ext: isaacsim.replicator.writers-1.0.17] startup
+[6.145s] [ext: omni.kit.viewport.menubar.camera-107.0.6] startup
+[6.161s] [ext: omni.kit.viewport.menubar.lighting-107.3.1] startup
+[6.169s] [ext: omni.kit.viewport.menubar.render-107.0.10] startup
+[6.172s] [ext: omni.kit.viewport.menubar.settings-107.0.3] startup
+[6.177s] [ext: isaacsim.replicator.domain_randomization-1.0.16] startup
+[6.180s] [ext: isaacsim.replicator.examples-1.3.6] startup
+[6.183s] [ext: omni.ocio-0.1.1] startup
+[6.186s] [ext: omni.rtx.window.settings-0.6.19] startup
+[6.199s] [ext: omni.kit.window.console-1.1.4] startup
+[6.212s] [ext: omni.kit.window.status_bar-0.1.9] startup
+[6.217s] [ext: omni.kit.window.toolbar-2.0.0] startup
+[6.220s] [ext: omni.replicator.isaac-2.0.8] startup
+2026-09-20T08:12:06Z [6,200ms] [Warning] [omni.replicator.isaac] omni.replicator.isaac has been deprecated in favor of isaacsim.replicator.domain_randomization, isaacsim.replicator.examples, isaacsim.replicator.writers. Please update your code accordingly.
+[6.222s] [ext: omni.replicator.replicator_yaml-2.0.11] startup
+[6.228s] [ext: omni.rtx.settings.core-0.6.5] startup
+[6.235s] [ext: omni.usd.metrics.assembler.ui-107.3.1] startup
+[6.246s] [ext: isaacsim.robot.wheeled_robots-4.0.24] startup
+[6.253s] [ext: isaacsim.cortex.behaviors-2.0.14] startup
+[6.256s] [ext: omni.isaac.version-2.0.7] startup
+2026-09-20T08:12:06Z [6,237ms] [Warning] [omni.isaac.version] omni.isaac.version has been deprecated in favor of isaacsim.core.version. Please update your code accordingly.
+[6.259s] [ext: semantics.schema.editor-2.0.2] startup
+[6.267s] [ext: omni.kit.ui.actions-1.0.5] startup
+[6.270s] [ext: semantics.schema.property-2.0.1] startup
+[6.275s] [ext: omni.isaac.wheeled_robots-3.0.7] startup
+2026-09-20T08:12:06Z [6,256ms] [Warning] [omni.isaac.wheeled_robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,256ms] [Warning] [omni.isaac.wheeled_robots.controllers] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,257ms] [Warning] [omni.isaac.wheeled_robots.controllers.ackermann_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,259ms] [Warning] [omni.isaac.wheeled_robots.controllers.differential_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,259ms] [Warning] [omni.isaac.wheeled_robots.controllers.holonomic_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,260ms] [Warning] [omni.isaac.wheeled_robots.controllers.quintic_path_planner] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,260ms] [Warning] [omni.isaac.wheeled_robots.controllers.stanley_control] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,260ms] [Warning] [omni.isaac.wheeled_robots.controllers.wheel_base_pose_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,261ms] [Warning] [omni.isaac.wheeled_robots.impl] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,261ms] [Warning] [omni.isaac.wheeled_robots.robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,262ms] [Warning] [omni.isaac.wheeled_robots.robots.holonomic_robot_usd_setup] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T08:12:06Z [6,263ms] [Warning] [omni.isaac.wheeled_robots.robots.wheeled_robot] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+[6.285s] [ext: omni.isaac.cortex.sample_behaviors-2.0.5] startup
+2026-09-20T08:12:06Z [6,267ms] [Warning] [omni.isaac.cortex.sample_behaviors] omni.isaac.cortex.sample_behaviors has been deprecated in favor of isaacsim.cortex.behaviors. Please update your code accordingly.
+[6.288s] [ext: isaacsim.replicator.behavior-1.1.16] startup
+[6.292s] [ext: isaacsim.core.throttling-2.2.2] startup
+[6.297s] [ext: omni.kit.menu.common-2.0.1] startup
+[6.301s] [ext: isaacsim.exp.base-5.1.0] startup
+[6.302s] [ext: isaacsim.exp.base.python-5.1.0] startup
+[6.306s] Simulation App Starting
+2026-09-20T08:12:06Z [6,461ms] [Warning] [omni.fabric.plugin] Warning: attribute viewportHandle not found for bucket id 9
+
+[6.531s] app ready
+INFO  [px4] instance: 0
+
+______  __   __    ___ 
+| ___ \ \ \ / /   /   |
+| |_/ /  \ V /   / /| |
+|  __/   /   \  / /_| |
+| |     / /^\ \ \___  |
+\_|     \/   \/     |_/
+
+px4 starting.
+
+INFO  [px4] startup script: /bin/sh /home/ani/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/rcS 0
+INFO  [init] found model autostart file as SYS_AUTOSTART=10016
+INFO  [param] selected parameter default file parameters.bson
+INFO  [param] selected parameter backup file parameters_backup.bson
+  SYS_AUTOCONFIG: curr: 0 -> new: 1
+  SYS_AUTOSTART: curr: 0 -> new: 10016
+  CAL_ACC0_ID: curr: 0 -> new: 1310988
+  CAL_GYRO0_ID: curr: 0 -> new: 1310988
+  CAL_ACC1_ID: curr: 0 -> new: 1310996
+  CAL_GYRO1_ID: curr: 0 -> new: 1310996
+  CAL_ACC2_ID: curr: 0 -> new: 1311004
+  CAL_GYRO2_ID: curr: 0 -> new: 1311004
+  CAL_MAG0_ID: curr: 0 -> new: 197388
+  CAL_MAG0_PRIO: curr: -1 -> new: 50
+  CAL_MAG1_ID: curr: 0 -> new: 197644
+  CAL_MAG1_PRIO: curr: -1 -> new: 50
+  SENS_BOARD_X_OFF: curr: 0.0000 -> new: 0.0000
+  SENS_DPRES_OFF: curr: 0.0000 -> new: 0.0010
+[8.921s] Simulation App Startup Complete
+2026-09-20T08:12:09Z [10,137ms] [Warning] [pegasus.simulator.logic.backends.ardupilot_mavlink_backend] [ArduPilotMavlinkBackendConfig] Initialized with vehicle_id=0, connection_type=udpin, connection_ip=127.0.0.1, connection_baseport=14550, ardupilot_autolaunch=True, ardupilot_dir=/home/ani/ardupilot, ardupilot_vehicle_model=gazebo-iris, enable_lockstep=False, num_rotors=4, input_offset=[0.0, 0.0, 0.0, 0.0], input_scaling=[1000, 1000, 1000, 1000], zero_position_armed=[100, 100, 100, 100], update_rate=400
+[10.168s] [ext: isaacsim.ros2.bridge-4.12.4] startup
+[10.569s] Attempting to load system rclpy
+[10.590s] Could not import system rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[10.590s] Attempting to load internal rclpy for ROS Distro: humble
+[10.591s] Could not import internal rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[10.591s] To use the internal libraries included with the extension please set the following environment variables to use with FastDDS (default) or CycloneDDS before starting Isaac Sim:
+
+FastDDS (default):
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+OR
+
+CycloneDDS:
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+
+2026-09-20T08:12:10Z [10,572ms] [Warning] [humble.rclpy] Could not import rclpy
+2026-09-20T08:12:10Z [10,855ms] [Warning] [pegasus.simulator.logic.backends] ROS2 package not installed. ROS2Backend will not be available
+2026-09-20T08:12:10Z [10,861ms] [Warning] [pegasus.simulator.ui.ui_delegate] ROS2 backend not available. Please install the ROS2 extension to use this feature.
+2026-09-20T08:12:10Z [10,888ms] [Warning] [__main__] PX4 rootfs kept at '/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_134157' - ulog will be under /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_134157/log/
+2026-09-20T08:12:10Z [10,888ms] [Warning] [__main__] run config written to /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_134157/run_config.json: {'motor_moment': 4.4715e-07, 'expected_spin_rad_s': 21.910349999999998, 'rotor_tau': 0.03, 'rotor_tau_is_placeholder': False, 'px4_airframe': 'none_iris', 'physics_rate_hz': 250.0, 'vehicle_id': 0, 'duration_s': 270.0}
+2026-09-20T08:12:10Z [10,888ms] [Warning] [__main__] motor_moment = 4.471e-07 -> expected steady yaw spin ~ 21.9 rad/s
+2026-09-20T08:12:10Z [10,888ms] [Warning] [__main__] desaturation = uniform
+2026-09-20T08:12:10Z [10,888ms] [Warning] [__main__] rotor_tau = 30.0 ms (explicit)
+2026-09-20T08:12:12Z [12,679ms] [Warning] [pegasus.simulator.logic.interface.pegasus_interface] Loading a new environment into the simulator. Please wait...
+2026-09-20T08:12:13Z [13,263ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] [PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL=none_iris, rootfs=/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_134157
+2026-09-20T08:12:13Z [13,560ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,561ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,562ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,563ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,573ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,574ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,576ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,577ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,586ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,589ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,590ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,591ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,598ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,599ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,601ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,602ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,611ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,612ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,613ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,614ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,632ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,633ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,634ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,635ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,659ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,660ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,661ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,662ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,688ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,689ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,690ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,692ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,712ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,714ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,715ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,717ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,737ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,739ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,740ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,741ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,763ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,764ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,766ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,767ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,785ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,787ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,788ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,790ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,810ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,811ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,813ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,815ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,832ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,834ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,835ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,837ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,857ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,859ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,860ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,861ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,879ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,881ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,882ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,883ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,904ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,906ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,910ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,913ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,931ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,932ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,935ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,936ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,955ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,957ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,959ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,961ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,976ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,977ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,979ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [13,982ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,000ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,002ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,003ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,004ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,026ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,029ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,031ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,032ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,049ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,050ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,051ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,053ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,072ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,074ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,075ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,076ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,096ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,097ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,099ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,100ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,120ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,121ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,122ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:13Z [14,124ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,144ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,145ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,146ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,147ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,168ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,169ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,171ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,172ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,191ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,193ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,194ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,195ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,216ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,218ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,219ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,220ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,240ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,241ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,242ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,243ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,263ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,265ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,266ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,267ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,287ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,289ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,290ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,291ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,310ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,312ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,313ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,314ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,334ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,336ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,337ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,338ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+INFO  [dataman] data manager file './dataman' size is 1208528 bytes
+INFO  [init] PX4_SIM_HOSTNAME: localhost
+INFO  [simulator_mavlink] Waiting for simulator to accept connection on TCP port 4560
+INFO  [simulator_mavlink] Simulator connected on TCP port 4560.
+INFO  [lockstep_scheduler] setting initial absolute time to 4000 us
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [mc_controller] controller: cascaded_pd (MC_CTRL_ALG=1), levels=0x0e
+INFO  [uxrce_dds_client] init UDP agent IP:127.0.0.1, port:8888
+INFO  [mavlink] mode: Normal, data rate: 4000000 B/s on udp port 18570 remote port 14550
+INFO  [mavlink] mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540
+INFO  [mavlink] mode: Onboard, data rate: 4000 B/s on udp port 14280 remote port 14030
+INFO  [mavlink] mode: Gimbal, data rate: 400000 B/s on udp port 13030 remote port 13280
+INFO  [tone_alarm] home set
+INFO  [logger] logger started (mode=all)
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-09-20/08_12_15.ulg	
+INFO  [logger] Opened full log file: ./log/2026-09-20/08_12_15.ulg
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [px4] Startup script returned successfully
+INFO  [mavlink] partner IP: 127.0.0.1
+WARN  [mc_controller] MC_CTRL_ALG change to 3 deferred until disarm
+INFO  [mc_controller] controller: eigen (MC_CTRL_ALG=3), levels=0x0e
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+INFO  [commander] [32mReady for takeoff![0m
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [commander] Takeoff detected	
+2026-09-20T08:12:14Z [14,360ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,362ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,363ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,364ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,381ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,383ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,384ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,385ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,405ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,406ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,407ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,409ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,429ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,430ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,431ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,433ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,453ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,454ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,455ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,456ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,480ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,482ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,483ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,485ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,502ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T08:12:14Z [14,518ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Received first hearbeat
+2026-09-20T08:12:16Z [16,167ms] [Warning] [carb] Client gpu.foundation.plugin has acquired [gpu::unstable::IMemoryBudgetManagerFactory v0.1] 100 times. Consider accessing this interface with carb::getCachedInterface() (Performance warning)
+2026-09-20T08:12:43Z [43,779ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:43Z [44,007ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:48Z [48,525ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:49Z [49,334ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+2026-09-20T08:12:50Z [50,589ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:52Z [53,084ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:54Z [54,258ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:56Z [56,932ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:56Z [56,953ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:58Z [58,709ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:58Z [58,711ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:59Z [59,764ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:12:59Z [59,789ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:00Z [60,784ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:00Z [60,832ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:01Z [61,833ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: ushort format requires 0 <= number <= 65535
+2026-09-20T08:13:01Z [61,976ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:01Z [61,977ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:02Z [62,661ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:02Z [62,663ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:04Z [64,814ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:05Z [65,299ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:05Z [65,738ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:09Z [70,114ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:10Z [70,236ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+2026-09-20T08:13:10Z [70,511ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:10Z [70,607ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:12Z [72,906ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:12Z [73,104ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:14Z [74,356ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:14Z [74,627ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:14Z [74,943ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:15Z [75,165ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:16Z [76,467ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:17Z [77,422ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:18Z [78,893ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:20Z [80,263ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:20Z [80,264ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:21Z [82,117ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:22Z [82,141ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:22Z [82,144ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:22Z [82,897ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [83,340ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [83,412ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [83,488ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [83,512ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+2026-09-20T08:13:23Z [83,535ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [83,777ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [84,023ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:23Z [84,121ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,170ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,219ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,709ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,735ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,761ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,882ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:24Z [84,909ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:25Z [85,147ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:25Z [85,713ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:25Z [85,790ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:26Z [86,175ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:26Z [86,249ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:26Z [86,394ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:26Z [86,420ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:26Z [86,614ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:27Z [88,053ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:27Z [88,130ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:28Z [88,228ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,325ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,623ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,648ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,649ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,720ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,770ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:29Z [89,796ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:31Z [91,749ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:31Z [91,916ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:31Z [91,969ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:31Z [92,066ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:32Z [92,514ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:32Z [92,539ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:33Z [93,491ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:33Z [93,542ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:33Z [93,562ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:33Z [93,639ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:34Z [94,526ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:34Z [95,062ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,164ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,235ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,286ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,310ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,826ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:35Z [95,874ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,366ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,416ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,466ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,516ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,538ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:36Z [96,855ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:38Z [98,161ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:38Z [98,353ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:38Z [98,358ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:38Z [98,941ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:39Z [99,283ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:39Z [99,459ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:39Z [99,852ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:39Z [100,044ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:39Z [100,074ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:40Z [100,216ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:40Z [100,241ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:40Z [100,436ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:40Z [100,461ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:40Z [100,629ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:41Z [101,242ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:42Z [102,582ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:42Z [102,756ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:43Z [103,243ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:43Z [103,292ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:43Z [103,491ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,148ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,198ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,222ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,269ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,319ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,348ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,523ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:44Z [104,569ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:45Z [105,912ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:45Z [106,006ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:45Z [106,104ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: High Accelerometer Bias
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+2026-09-20T08:13:46Z [106,764ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:46Z [107,061ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,501ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,545ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,574ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,593ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,621ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:47Z [107,695ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:49Z [109,529ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:49Z [109,633ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:49Z [109,753ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:49Z [109,847ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:49Z [110,067ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:50Z [110,411ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:50Z [111,126ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:51Z [111,172ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:51Z [111,192ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:51Z [111,220ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:51Z [111,390ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:53Z [113,555ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:53Z [113,734ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:53Z [114,077ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:53Z [114,100ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:54Z [114,917ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:54Z [115,060ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:54Z [115,086ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:55Z [115,208ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:55Z [115,284ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:55Z [115,410ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:55Z [115,457ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:57Z [117,455ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:57Z [117,607ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:58Z [118,465ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:58Z [119,081ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:58Z [119,130ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:59Z [119,231ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:13:59Z [119,255ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:14:01Z [121,232ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:14:01Z [121,423ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:14:01Z [121,867ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:14:01Z [121,937ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T08:14:02Z [122,327ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+INFO  [commander] Landing at current position	
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: High Accelerometer Bias
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+INFO  [commander] Landing detected	
+INFO  [commander] Disarmed by landing	
+INFO  [tone_alarm] notify neutral
+INFO  [vehicle_imu] GYRO 0 (1310988) offset committed: [0.000 0.000 0.000]->[0.001 0.001 0.010])
+INFO  [logger] closed logfile, bytes written: 38369202
+WARN  [health_and_arming_checks] Compass needs calibration - Land now!	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+WARN  [health_and_arming_checks] Preflight Fail: Compass 0 fault
+
+PX4 Exiting...
+Exiting NOW.

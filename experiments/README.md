@@ -1,5 +1,23 @@
 # Experiments — seat (θ_s) and adaptive pole angle (θ_b) under sustained spin
 
+> **Archived 2026-09-19.** Everything below ran with a seat that rotated the wrench and did
+> not scale it, so all of it is **phase-only**. It now lives in
+> [`phase_only/`](phase_only/) — see [`phase_only/README.md`](phase_only/README.md) for what
+> that qualifies and why level 1 through level 3 have to be rerun against
+> `MC_SEAT_GLAW` / `--seat-gain`. The `0` arm of those reruns should reproduce these runs
+> exactly; that is the regression test. Tooling in [`tools/`](tools/) is shared and did not
+> move.
+>
+> **2026-09-20:** new work lands at the top level, not in `phase_only/`. First entry is
+> [`trajectory_level3_waypoint_ellipse/`](trajectory_level3_waypoint_ellipse/) — level-3
+> setpoint tracking, which flies at a 20 ms pole where the fast circle does not.
+>
+> **2026-09-20, later:** the stack gained a second lag tool — an actuator lead that inverts
+> the rotor pole, which the seat structurally cannot. Runs flown with it live in
+> [`lead_on/`](lead_on/) and are **not** comparable cell-for-cell with anything above,
+> because the plant the controller sees is different. See
+> [`lead_on/README.md`](lead_on/README.md).
+
 One folder per experiment. Each folder holds **the figures, a findings document, and a
 `RUN_LOG.md`** recording how the flights were produced and where the raw data is.
 
@@ -18,16 +36,18 @@ Folder naming: `{profile}_{level}_{what varied}`, where profile is `hover` or
 
 | folder | date | condition | the one-line result |
 |---|---|---|---|
-| [`hover_level1_km6e7_seat_off_fixed_adaptive`](hover_level1_km6e7_seat_off_fixed_adaptive/) | 2026-09-10/11 | L1 hover, r ≈ 29.5 rad/s, `rotor_tau=0.02` | Seat off crashes at 13.7 s, **model-computed** seat crashes at 5.3 s, **adaptive** seat flies 120 s. |
-| [`trajectory_level1_waypoint_ellipse_2x2_arms`](trajectory_level1_waypoint_ellipse_2x2_arms/) | 2026-09-13 | L1 waypoint ellipse, 25 rad/s, `rotor_tau=0.02` | 2×2 over {seat, b}: **the seat is load-bearing (−36.4 % tracking error), b is a 0.7-point refinement on top.** b alone still crashes. |
-| [`trajectory_level1_circle_seat`](trajectory_level1_circle_seat/) | 2026-09-18 | L1, the same R=10 m 5 m/s circle levels 2–3 fly, plus the validated R=3 m slow circle | **The seat improves circle tracking at level 1 at both speeds** — following distance 2.39→1.38 m slow, 7.54→4.62 m fast; altitude hold 45× tighter on the slow circle. Both arms fly. |
-| [`trajectory_level1_seat_b_geometry_sweep`](trajectory_level1_seat_b_geometry_sweep/) | 2026-09-13 | L1, five trajectory geometries, 25 rad/s, `rotor_tau=0.02` | No standing directional bias at ~1 m/s; a real speed-scaled one at 6.4 m/s. θ_b converges correctly everywhere and **never moves tracking outside noise**. |
-| [`hover_level2_px4_groundtruth`](hover_level2_px4_groundtruth/) | 2026-09-17 | L2 hover, r≈29.5, 2×2 over {lag, seat} | Seat off crashes at 12.1 s; seat on reaches 22.1 s — **not rescued**. θ_s tracks the lag cleanly to r≈28.6 then rails at r≈29.2. |
-| [`hover_level3_px4_estimator`](hover_level3_px4_estimator/) | 2026-09-17 | L3 hover, same 2×2 | **The seat rescues hover: 12.8 s → the full 46.7 s.** Same condition as level 2, opposite outcome. |
-| [`trajectory_level2_px4_groundtruth_fast_circle`](trajectory_level2_px4_groundtruth_fast_circle/) | 2026-09-13, re-flown 2026-09-18 | L2, R=10 m 5 m/s circle, ~20.7 rad/s | **The 20 ms-lag "rescue" reproduces 1 run in 4** — see below. θ_s finds PX4's own pipeline lag (−0.40 rad) even with no rotor lag. |
-| [`trajectory_level3_px4_estimator_fast_circle`](trajectory_level3_px4_estimator_fast_circle/) | 2026-09-14 | L3, R=10 m 5 m/s circle, ~25 rad/s | Level 3 works post-EKF2-fix. **L2 and L3 diverge reproducibly** at the seat-off boundary. Neither arm survives `rotor_tau=0.02` yet — the open item. |
-| [`hover_level3_rotor_loss`](hover_level3_rotor_loss/) | 2026-09-19 | L3 hover, one rotor stopped, r ≈ 20 / 25 / 29.5, `rotor_tau=0.02` | **No base spin rate survives a single rotor loss** — 1.9 / 2.8 / 1.9 s to departure, no trend. The allocator keeps commanding the dead motor; the other three saturate. `FD_ACT_EN=1` is unusable in SITL. |
-| [`supporting_b_pole_theory_and_archive`](supporting_b_pole_theory_and_archive/) | — | not a flight | The analytic reason the original θ_b law can't work, and the archived static-b sweep that supplies the "predicted band" the other folders plot against. |
+| [`hover_level1_km6e7_seat_off_fixed_adaptive`](phase_only/hover_level1_km6e7_seat_off_fixed_adaptive/) | 2026-09-10/11 | L1 hover, r ≈ 29.5 rad/s, `rotor_tau=0.02` | Seat off crashes at 13.7 s, **model-computed** seat crashes at 5.3 s, **adaptive** seat flies 120 s. |
+| [`trajectory_level1_waypoint_ellipse_2x2_arms`](phase_only/trajectory_level1_waypoint_ellipse_2x2_arms/) | 2026-09-13 | L1 waypoint ellipse, 25 rad/s, `rotor_tau=0.02` | 2×2 over {seat, b}: **the seat is load-bearing (−36.4 % tracking error), b is a 0.7-point refinement on top.** b alone still crashes. |
+| [`trajectory_level1_circle_seat`](phase_only/trajectory_level1_circle_seat/) | 2026-09-18 | L1, the same R=10 m 5 m/s circle levels 2–3 fly, plus the validated R=3 m slow circle | **The seat improves circle tracking at level 1 at both speeds** — following distance 2.39→1.38 m slow, 7.54→4.62 m fast; altitude hold 45× tighter on the slow circle. Both arms fly. |
+| [`trajectory_level1_seat_b_geometry_sweep`](phase_only/trajectory_level1_seat_b_geometry_sweep/) | 2026-09-13 | L1, five trajectory geometries, 25 rad/s, `rotor_tau=0.02` | No standing directional bias at ~1 m/s; a real speed-scaled one at 6.4 m/s. θ_b converges correctly everywhere and **never moves tracking outside noise**. |
+| [`hover_level2_px4_groundtruth`](phase_only/hover_level2_px4_groundtruth/) | 2026-09-17 | L2 hover, r≈29.5, 2×2 over {lag, seat} | Seat off crashes at 12.1 s; seat on reaches 22.1 s — **not rescued**. θ_s tracks the lag cleanly to r≈28.6 then rails at r≈29.2. |
+| [`hover_level3_px4_estimator`](phase_only/hover_level3_px4_estimator/) | 2026-09-17 | L3 hover, same 2×2 | **The seat rescues hover: 12.8 s → the full 46.7 s.** Same condition as level 2, opposite outcome. |
+| [`trajectory_level2_px4_groundtruth_fast_circle`](phase_only/trajectory_level2_px4_groundtruth_fast_circle/) | 2026-09-13, re-flown 2026-09-18 | L2, R=10 m 5 m/s circle, ~20.7 rad/s | **The 20 ms-lag "rescue" reproduces 1 run in 4** — see below. θ_s finds PX4's own pipeline lag (−0.40 rad) even with no rotor lag. |
+| [`trajectory_level3_px4_estimator_fast_circle`](phase_only/trajectory_level3_px4_estimator_fast_circle/) | 2026-09-14 | L3, R=10 m 5 m/s circle, ~25 rad/s | Level 3 works post-EKF2-fix. **L2 and L3 diverge reproducibly** at the seat-off boundary. Neither arm survives `rotor_tau=0.02` yet — the open item. |
+| [`hover_level3_rotor_loss`](phase_only/hover_level3_rotor_loss/) | 2026-09-19 | L3 hover, one rotor stopped, r ≈ 20 / 25 / 29.5, `rotor_tau=0.02` | **No base spin rate survives a single rotor loss** — 1.9 / 2.8 / 1.9 s to departure, no trend. The allocator keeps commanding the dead motor; the other three saturate. `FD_ACT_EN=1` is unusable in SITL. |
+| [`lead_on/hover_level3_actuator_lead`](lead_on/hover_level3_actuator_lead/) | 2026-09-20 | L3 hover, r ≈ 29.5, `rotor_tau` 0.020–0.050, **lead on** | **Neither the seat nor the lead flies alone at `rotor_tau=0.030`; together 5/5 fly.** `MC_LEAD_DMAX` carries the effect, not `MC_LEAD_TC`. Under-inverting the pole is free, over-inverting is a coin flip at +33 % and fatal at +67 %, with **no warning signature**. |
+| [`lead_on/trajectory_level3_actuator_lead`](lead_on/trajectory_level3_actuator_lead/) | 2026-09-20 | L3 waypoint ellipse, `rotor_tau` 0 and 0.030, **lead on** | **The spin ceiling is set by the rotor pole, not the profile: 22 rad/s at a 30 ms pole, ≥29.5 with none.** Slowing navigation 2× buys 5× the distance-to-failure and still crashes. At zero pole the trajectory flies **seat-off**. |
+| [`supporting_b_pole_theory_and_archive`](phase_only/supporting_b_pole_theory_and_archive/) | — | not a flight | The analytic reason the original θ_b law can't work, and the archived static-b sweep that supplies the "predicted band" the other folders plot against. |
 
 ## The level-2 / level-3 divergence
 
@@ -41,7 +61,7 @@ and spin were confounded):
 | level 3 (estimator) | crash 12.8 s | **flew 46.7 s** |
 
 The seat-off arms agree; the seat-on arms do not. This is the same divergence
-[level 3 §3](trajectory_level3_px4_estimator_fast_circle/LEVEL3_TRACKING.md) found on the
+[level 3 §3](phase_only/trajectory_level3_px4_estimator_fast_circle/LEVEL3_TRACKING.md) found on the
 circle with the seat off, and it has the sign that section's explanation predicts — a small
 spin-synchronous phase offset in the estimator acting as an inadvertent partial seat.
 **Hardware always runs level-3-like**, so the level-2 failure is an artifact of an idealised
@@ -69,7 +89,7 @@ split may be which fixed point the adaptation finds — untested.
 
 The seat-off arm at the same condition reproduces exactly (16.5 s → 16.4 s), so the
 *direction* of the effect is not in doubt; its size and reliability are. See
-[`l2_lag20ms_repeats_compare.png`](trajectory_level2_px4_groundtruth_fast_circle/l2_lag20ms_repeats_compare.png),
+[`l2_lag20ms_repeats_compare.png`](phase_only/trajectory_level2_px4_groundtruth_fast_circle/l2_lag20ms_repeats_compare.png),
 which plots all four.
 
 **Nothing else in the tree moved this way.** The other eleven re-flown arms reproduced their
@@ -102,7 +122,7 @@ Levels 2 and 3 carry the same four views, produced by
 All three levels now have all four. Level 1's set exists twice: the archived
 `km6e7_*` figures from 2026-09-10, and `km6e7_refly_*` from the 2026-09-17 re-flight.
 **They disagree, and the re-flown set is the one that matches the current code** — see
-[level 1's re-flight section](hover_level1_km6e7_seat_off_fixed_adaptive/KM6E7_LEVEL1.md#re-flight-2026-09-17--read-this-before-quoting-any-number-above).
+[level 1's re-flight section](phase_only/hover_level1_km6e7_seat_off_fixed_adaptive/KM6E7_LEVEL1.md#re-flight-2026-09-17--read-this-before-quoting-any-number-above).
 
 Figures are trimmed to the flight by default: data before takeoff and after a terminal loss
 of altitude is not plotted, because ground contact produces values an order of magnitude
@@ -120,19 +140,19 @@ adapts, and neither ran the observer with the seat off. Both now measure it unco
 and log `seat_stepped` separately for the gate. The affected arms were re-flown; **level 1
 came back bit-for-bit identical**, and the level-2/3 arms moved only by run-to-run scatter,
 with one exception recorded in
-[the level-2 circle RUN_LOG](trajectory_level2_px4_groundtruth_fast_circle/RUN_LOG.md) — the
+[the level-2 circle RUN_LOG](phase_only/trajectory_level2_px4_groundtruth_fast_circle/RUN_LOG.md) — the
 seat-OFF double dip on the `nolag` circle **did not reproduce.** Details in
 [`tools/README.md`](tools/README.md).
 
 ### The same figures, tiled for comparison
 
-[`analysis/`](analysis/) holds the standard figure set laid out for comparison — **the
+[`analysis/`](phase_only/analysis/) holds the standard figure set laid out for comparison — **the
 rungs as the columns, at the lowest delay each one has** — one sheet per view, built by
 [`tools/make_analysis_grids.py`](tools/make_analysis_grids.py) from the committed PNGs
-themselves. [`analysis/hover/`](analysis/hover/) puts levels 1, 2 and 3 side by side;
+themselves. [`analysis/hover/`](phase_only/analysis/hover/) puts levels 1, 2 and 3 side by side;
 level 1 belongs there because its 20 ms rotor pole and the PX4 rungs' `nolag` pipeline lag
 come to the same phase at this spin (0.533 rad vs ~0.50 rad).
-[`analysis/circle/`](analysis/circle/) is levels 2 and 3 only — level 1 never flew that
+[`analysis/circle/`](phase_only/analysis/circle/) is levels 2 and 3 only — level 1 never flew that
 circle. `--all-conditions` adds wider grids over every lag and spin condition. Each
 folder's `README.md` carries the outcome table, what the sheets are good for, and the
 confounds that make particular comparisons invalid — the circle columns are at r ≈ 20.7 and
@@ -193,7 +213,7 @@ and the fact that *holding* the model value outright is worse than no seat at al
   flight into a crash 13 s in, for **both** seat arms — and produced, on 2026-09-18, a
   thoroughly convincing but entirely spurious "the seat is harmful at level 1 on circles",
   complete with a monotonic gain sweep. See
-  [`trajectory_level1_circle_seat/RUN_LOG.md`](trajectory_level1_circle_seat/RUN_LOG.md).
+  [`trajectory_level1_circle_seat/RUN_LOG.md`](phase_only/trajectory_level1_circle_seat/RUN_LOG.md).
   **If a level-1 trajectory result says the seat hurts, check the clamp first.**
 - **Level 1 has no transport delay.** The only actuator lag is the first-order rotor pole
   (`--rotor-tau`). Levels 2/3 add PX4's own ~17 ms transport + ~14 ms pipeline lag on top.
@@ -201,7 +221,7 @@ and the fact that *holding* the model value outright is worse than no seat at al
 - **`nolag` at levels 2 and 3 does not mean zero lag.** It means `rotor_tau = 0` — no rotor
   pole. The PX4 pipeline above is still there, so read those runs as **~17 ms of loop
   delay** and the `lag20ms` runs as **~37 ms**. The figure names are kept as they are; only
-  the reading changes. [`analysis/`](analysis/) labels every column both ways.
+  the reading changes. [`analysis/`](phase_only/analysis/) labels every column both ways.
 - **`ψ_model = r·tau_a + atan(r·T)` is not the angle that flies.** Measured at level 1:
   model 0.533 rad, converged 0.157 rad. Holding the model value is *worse than no seat*.
 - **Every level-2 result dated before 2026-09-13 is void** — the ground-truth position fed

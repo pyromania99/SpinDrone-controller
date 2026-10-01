@@ -51,6 +51,13 @@ def parse_args():
                         "'off' (default) builds no seat at all. 'fixed' sets the angle "
                         "from r*tau_a + atan(r*rotor_tau); 'adaptive' measures the "
                         "misalignment in flight. Eigen controller only.")
+    p.add_argument("--seat-satgate", type=int, choices=(0, 1), default=1,
+                   help="Level 1: mirrors PX4's MC_SEAT_SATGATE. 1 (default) freezes the "
+                        "theta_s adaptation while the torque clips, which is what every "
+                        "archived PX4 run was flown with; 0 adapts straight through. "
+                        "Level 1 historically behaved as 0 because it never drove the flag "
+                        "at all, so the two rungs' archives cannot both be reproduced at "
+                        "once - pick the one you are comparing against.")
     p.add_argument("--seat-law", choices=("angle", "cross"), default="cross",
                    help="theta_s update law. 'cross' (default) drives on the raw "
                         "cross product |xd||xa|sin(alpha), so a starved channel "
@@ -209,7 +216,7 @@ class PegasusApp:
                  gains: dict = None, rotor_tau: float = None,
                  seat: str = "off", seat_gains: dict = None,
                  adapt_b: bool = False, pole_gains: dict = None,
-                 seat_law: str = "cross"):
+                 seat_law: str = "cross", seat_satgate: int = 1):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
 
@@ -248,7 +255,7 @@ class PegasusApp:
                                           gains=gains, km=motor_moment,
                                           seat=seat, seat_gains=seat_gains,
                                           adapt_b=adapt_b, pole_gains=pole_gains,
-                                          seat_law=seat_law,
+                                          seat_law=seat_law, seat_satgate=seat_satgate,
                                           rotor_tau=rotor_tau)
         carb.log_warn(f"Using controller: {selected_controller}")
 
@@ -503,7 +510,7 @@ class PegasusApp:
         self.timeline.stop()
         simulation_app.close()
 
-def _make_seat(mode, overrides, rotor_tau, controller_key, law="cross"):
+def _make_seat(mode, overrides, rotor_tau, controller_key, law="cross", sat_gate=1):
     """Build the seat, or None for no seat at all.
 
     None rather than a disabled object, so the eigen law genuinely has no seat in
@@ -522,6 +529,7 @@ def _make_seat(mode, overrides, rotor_tau, controller_key, law="cross"):
     # own value. Only 'fixed' reads it; 'adaptive' never does.
     kwargs.setdefault("T", ROTOR_TAU_PLACEHOLDER if rotor_tau is None else float(rotor_tau))
     kwargs.setdefault("law", law)
+    kwargs.setdefault("sat_gate", bool(sat_gate))
     s = Seat(mode=mode, **kwargs)
     carb.log_warn(f"[seat] {s.describe()}")
     return s
@@ -542,7 +550,7 @@ def _make_pole_adapter(enabled, overrides, controller_key):
 
 def build_controller(controller_key: str, eval_dir, gains=None, km=None,
                      seat="off", seat_gains=None, rotor_tau=None,
-                     adapt_b=False, pole_gains=None, seat_law="cross"):
+                     adapt_b=False, pole_gains=None, seat_law="cross", seat_satgate=1):
     """Factory/registry for all imported controllers.
 
     With ``gains``, construction is handed to controller_factory.make_controller -
@@ -562,7 +570,7 @@ def build_controller(controller_key: str, eval_dir, gains=None, km=None,
                       + "  ".join(f"{k}={v:g}" for k, v in sorted(gains.items())))
         return cf.make_controller(
             controller_key, gains, str(results), (0.0, 0.0, 1.5), km=km,
-            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law),
+            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law, seat_satgate),
             pole_adapter=_make_pole_adapter(adapt_b, pole_gains, controller_key))
 
     controller_registry = {
@@ -583,7 +591,7 @@ def build_controller(controller_key: str, eval_dir, gains=None, km=None,
             waypoint_radius=ARGS.waypoint_radius,
             max_lateral_accel=ARGS.max_lateral_accel,
             results_file=str(eval_dir / "eigen" / "statistics" / "eigen_statistics.npz"),
-            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law),
+            seat=_make_seat(seat, seat_gains, rotor_tau, controller_key, seat_law, seat_satgate),
             pole_adapter=_make_pole_adapter(adapt_b, pole_gains, controller_key),
         ),
         "mpc": lambda: LPVMPCController(
@@ -687,7 +695,8 @@ def main():
                         seat_gains=ARGS.seat_gains,
                         adapt_b=ARGS.adapt_b,
                         pole_gains=ARGS.pole_gains,
-                        seat_law=ARGS.seat_law)
+                        seat_law=ARGS.seat_law,
+                        seat_satgate=ARGS.seat_satgate)
 
     # Run the application loop
     pg_app.run()

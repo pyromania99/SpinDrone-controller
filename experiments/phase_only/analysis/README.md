@@ -3,7 +3,7 @@
 Nothing here is a new flight. Every tile is a PNG lifted unmodified (only scaled) out of an
 experiment folder and pasted into a labelled sheet, so a sheet can never disagree with the
 experiment it came from. Built by
-[`../tools/make_analysis_grids.py`](../tools/make_analysis_grids.py); re-run it after
+[`../tools/make_analysis_grids.py`](../../tools/make_analysis_grids.py); re-run it after
 regenerating any source figure.
 
 ```bash
@@ -28,7 +28,7 @@ running; the seat-OFF and seat-FIXED traces were empty, and the panel blamed a f
 allocator gate. That was wrong — α had never been computed on those arms. Both controllers
 now measure it unconditionally and the affected runs were re-flown. The measurement applies
 nothing, and the level-1 seat-OFF arm was re-flown and diffed against its previous log to
-prove the flight is unchanged. See [`../tools/README.md`](../tools/README.md).
+prove the flight is unchanged. See [`../tools/README.md`](../../tools/README.md).
 
 ## Scope
 

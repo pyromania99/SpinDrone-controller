@@ -43,7 +43,7 @@ command-frame rotation.
 
 ## 2. This reproduces the archived result, and that is the point
 
-[`../../seat_plots/TRAJECTORY_TRACKING.md`](../../seat_plots/TRAJECTORY_TRACKING.md) §5
+[`../../seat_plots/TRAJECTORY_TRACKING.md`](../../../seat_plots/TRAJECTORY_TRACKING.md) §5
 reports the smooth circle with a following distance **"rock-steady at ~1.4 m"** and a flown
 path sitting inside the commanded one at a constant radial offset. This re-flight measures
 **1.38 ± 0.04 m** with the path 2.69 m inside a 3.01 m command. The archived result stands.

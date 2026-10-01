@@ -84,7 +84,7 @@ python3 experiments/tools/plot_run.py \
     --title "Level 2 hover at r=20 (the circle's spin), rotor_tau 20 ms — the seat RESCUES"
 ```
 
-All three are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh),
+All three are also in [`../tools/make_all_figures.sh`](../../tools/make_all_figures.sh),
 which regenerates every figure in the tree in one pass, and all three were **verified by
 reproduction on 2026-09-17** — each regenerates the committed PNG byte for byte.
 

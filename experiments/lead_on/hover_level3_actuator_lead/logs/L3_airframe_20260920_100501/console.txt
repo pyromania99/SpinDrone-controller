@@ -1,0 +1,740 @@
+Warning: running in conda env, please deactivate before executing this script
+If conda is desired please source setup_conda_env.sh in your python 3.11 conda env and run python normally
+[Info] [carb] Logging to file: /home/ani/isaacsim/kit/logs/Kit/Isaac-Sim Python/5.1/kit_20260920_100501.log
+2026-09-20T04:35:01Z [2ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/6db10f87-8dab-4655-65f0a2ae-9706f203.dmp'
+2026-09-20T04:35:01Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/9b509586-f53a-486f-d8793e94-f010e1a7.dmp'
+2026-09-20T04:35:01Z [3ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a1153a6a-21bf-47a4-866609a0-cc723cd0.dmp'
+2026-09-20T04:35:01Z [4ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a059571c-72c9-4334-16b2b098-b6af6c97.dmp'
+2026-09-20T04:35:01Z [7ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/f4aee325-9f93-4b6c-bb292f89-0d3f8926.dmp'
+2026-09-20T04:35:01Z [7ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/49dbf299-4e25-4506-78ed0c80-7802e77e.dmp'
+2026-09-20T04:35:01Z [8ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/620084d4-0665-4b52-604939bf-bbe66266.dmp'
+2026-09-20T04:35:01Z [8ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a40e406-ee65-4ae3-5e28e38e-ee9d6ce8.dmp'
+2026-09-20T04:35:01Z [8ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/910413dc-b87f-417b-149383b8-9efa8b0d.dmp'
+2026-09-20T04:35:01Z [9ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/ca5e2bb6-917e-41df-56da39a6-be97f765.dmp'
+2026-09-20T04:35:01Z [9ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/c6297ee0-084e-4c2c-e4dfc381-c5596a82.dmp'
+2026-09-20T04:35:01Z [10ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/2a253464-546a-4843-26147d84-3c1d96ef.dmp'
+2026-09-20T04:35:01Z [10ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/80418541-097a-41ae-c53554a9-8319d1c2.dmp'
+2026-09-20T04:35:01Z [12ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/227f1ba5-109e-47eb-128f41bd-b796a0e6.dmp'
+2026-09-20T04:35:01Z [12ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/b1df8dcc-2a7b-4f50-5ed8ce99-ecf74335.dmp'
+2026-09-20T04:35:01Z [13ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/942e10f6-df4d-4118-199de6a0-62852751.dmp'
+2026-09-20T04:35:01Z [14ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/a3fe664a-7800-43ab-888886a7-caab1e9d.dmp'
+2026-09-20T04:35:01Z [14ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/7becbd75-2225-4658-2eaa3380-e2e3890b.dmp'
+2026-09-20T04:35:01Z [14ms] [Warning] [carb.crashreporter-breakpad.plugin] [previous crash] preventing upload of minidump due to user opt-out: '/home/ani/isaacsim/kit/data/Kit/Isaac-Sim Python/5.1/e162ed80-7399-4f4a-260a66aa-25c5f26b.dmp'
+[0.068s] [ext: omni.kit.async_engine-0.0.3] startup
+[0.704s] [ext: omni.metrics.core-0.0.3] startup
+[0.704s] [ext: omni.client.lib-1.1.0] startup
+[0.716s] [ext: omni.blobkey-1.1.2] startup
+[0.716s] [ext: omni.stats-1.0.1] startup
+[0.717s] [ext: omni.datastore-0.0.0] startup
+[0.725s] [ext: omni.client-1.3.0] startup
+[0.730s] [ext: omni.ujitso.default-1.0.0] startup
+[0.732s] [ext: omni.hsscclient-1.1.2] startup
+[0.737s] [ext: omni.gpu_foundation.shadercache.vulkan-1.0.0] startup
+[0.741s] [ext: omni.assets.plugins-0.0.0] startup
+[0.742s] [ext: omni.gpu_foundation-0.0.0] startup
+[0.752s] [ext: carb.windowing.plugins-1.0.0] startup
+[0.763s] [ext: omni.kit.renderer.init-0.0.0] startup
+2026-09-20T04:35:02Z [1,019ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+2026-09-20T04:35:02Z [1,020ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Unknown (RADV GFX1103_R1)
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 580.178.04    | Graphics API: Vulkan
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4060 Laptop.. | Yes: 0 |     | 8188    MB | 10de      | 0          |
+|     |                                  |        |     |            | 28e0      | e9cf80ce.. |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | AMD Unknown (RADV GFX1103_R1)    |        |     | 5437    MB | 1002      | 0          |
+|     |                                  |        |     |            | 1900      | 00000000.. |
+|     |                                  |        |     |            | 5         |            |
+|=============================================================================================|
+| OS: 22.04.5 LTS (Jammy Jellyfish) ubuntu, Version: 22.04.5, Kernel: 6.8.0-138-generic
+| XServer Vendor: The X.Org Foundation, XServer Version: 12101004 (1.21.1.4)
+| Processor: AMD Ryzen 7 8845HS w/ Radeon 780M Graphics
+| Cores: 8 | Logical Cores: 16
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 15287 | Free Memory: 5759
+| Total Page/Swap (MB): 2047 | Free Page/Swap: 0
+|---------------------------------------------------------------------------------------------|
+2026-09-20T04:35:02Z [1,345ms] [Warning] [gpu.foundation.plugin] CPU performance profile is set to powersave. This profile sets the CPU to the lowest frequency reducing performance.
+2026-09-20T04:35:02Z [1,355ms] [Warning] [gpu.foundation.plugin] IOMMU is enabled.
+2026-09-20T04:35:02Z [1,355ms] [Warning] [gpu.foundation.plugin] Detected IOMMU is enabled. Running CUDA peer-to-peer bandwidth and latency validation.
+Unidirectional P2P=Enabled Bandwidth (P2P Writes) Matrix (GB/s)
+   D\D     0 
+     0 195.75 
+P2P=Enabled Latency (P2P Writes) Matrix (us)
+   GPU     0 
+     0   1.33 
+
+   CPU     0 
+     0   2.46 
+[1.550s] [ext: omni.kit.pipapi-0.0.0] startup
+[1.552s] [ext: omni.kit.pip_archive-0.0.0] startup
+[1.552s] [ext: omni.pip.compute-1.6.3] startup
+[1.553s] [ext: omni.materialx.libs-1.0.7] startup
+[1.559s] [ext: omni.pip.cloud-1.4.3] startup
+[1.562s] [ext: omni.isaac.core_archive-3.0.0] startup
+[1.563s] [ext: omni.usd.config-1.0.6] startup
+[1.567s] [ext: omni.gpucompute.plugins-0.0.0] startup
+[1.567s] [ext: omni.usd.libs-1.0.1] startup
+[1.635s] [ext: omni.mdl-56.0.3] startup
+[1.738s] [ext: omni.iray.libs-0.0.0] startup
+[1.745s] [ext: omni.mdl.neuraylib-0.2.12] startup
+[1.755s] [ext: omni.kit.usd.mdl-1.1.5] startup
+[1.849s] [ext: omni.services.pip_archive-0.16.0] startup
+[1.850s] [ext: omni.isaac.ml_archive-3.0.4] startup
+[1.850s] [ext: omni.kit.telemetry-0.5.2] startup
+[1.876s] [ext: omni.kit.loop-isaac-1.3.7] startup
+[1.878s] [ext: omni.kit.test-2.0.1] startup
+[1.936s] [ext: omni.appwindow-1.1.10] startup
+[1.938s] [ext: omni.kit.renderer.core-1.1.0] startup
+[1.969s] [ext: omni.kit.renderer.capture-0.0.0] startup
+[1.972s] [ext: omni.kit.renderer.imgui-2.0.5] startup
+[2.037s] [ext: omni.ui-2.27.1] startup
+[2.046s] [ext: omni.kit.mainwindow-1.0.3] startup
+[2.048s] [ext: carb.audio-0.1.0] startup
+[2.053s] [ext: omni.uiaudio-1.0.0] startup
+[2.055s] [ext: omni.kit.uiapp-0.0.0] startup
+[2.055s] [ext: omni.usd.schema.metrics.assembler-107.3.1] startup
+[2.058s] [ext: omni.anim.behavior.schema-107.3.0] startup
+[2.069s] [ext: omni.usd.schema.omnigraph-1.0.0] startup
+[2.074s] [ext: omni.usd.schema.geospatial-0.0.0] startup
+[2.077s] [ext: omni.usd.schema.anim-0.0.0] startup
+[2.094s] [ext: omni.usd.schema.audio-0.0.0] startup
+[2.097s] [ext: isaacsim.robot.schema-3.6.0] startup
+[2.104s] [ext: omni.usd_resolver-1.0.0] startup
+[2.109s] [ext: omni.usd.core-1.5.3] startup
+[2.111s] [ext: omni.usd.schema.omni_sensors-0.0.0] startup
+[2.129s] [ext: omni.usd.schema.semantics-0.0.0] startup
+[2.132s] [ext: omni.usd.schema.omni_lens_distortion-0.0.0] startup
+[2.132s] [ext: omni.usd.schema.render_settings.rtx-0.0.0] startup
+[2.133s] [ext: omni.graph.exec-0.9.6] startup
+[2.134s] [ext: omni.kit.actions.core-1.0.0] startup
+[2.136s] [ext: omni.kit.usd_undo-0.1.8] startup
+[2.137s] [ext: omni.kit.exec.core-0.13.4] startup
+[2.139s] [ext: omni.kit.commands-1.4.10] startup
+[2.145s] [ext: omni.kit.window.popup_dialog-2.0.24] startup
+[2.150s] [ext: omni.activity.core-1.0.3] startup
+[2.152s] [ext: omni.resourcemonitor-107.0.1] startup
+[2.155s] [ext: omni.timeline-1.0.14] startup
+[2.157s] [ext: omni.kit.widget.nucleus_connector-2.0.1] startup
+[2.160s] [ext: usdrt.scenegraph-7.6.1] startup
+[2.201s] [ext: omni.kit.audiodeviceenum-1.0.2] startup
+[2.203s] [ext: omni.hydra.usdrt_delegate-7.5.1] startup
+[2.210s] [ext: omni.hydra.scene_delegate-0.3.4] startup
+[2.213s] [ext: omni.usd-1.13.10] startup
+[2.236s] [ext: omni.kit.asset_converter-5.0.17] startup
+[2.247s] [ext: omni.usd.schema.physx-107.3.26] startup
+[2.277s] [ext: omni.anim.navigation.schema-107.3.3] startup
+[2.280s] [ext: omni.inspect-1.0.2] startup
+[2.281s] [ext: omni.kit.notification_manager-1.0.10] startup
+[2.283s] [ext: omni.graph.core-2.184.5] startup
+[2.286s] [ext: isaacsim.core.deprecation_manager-0.2.7] startup
+[2.286s] [ext: omni.usd.schema.omniscripting-1.0.0] startup
+[2.290s] [ext: omni.usd.schema.flow-107.1.1] startup
+[2.291s] [ext: omni.anim.graph.schema-107.3.3] startup
+[2.297s] [ext: omni.usd.schema.isaac-3.0.5] startup
+[2.297s] [ext: isaacsim.core.version-2.0.6] startup
+[2.298s] [ext: omni.ui.scene-1.11.5] startup
+[2.303s] [ext: isaacsim.storage.native-1.5.1] startup
+[2.305s] [ext: omni.kit.widget.options_menu-1.1.6] startup
+[2.309s] [ext: omni.kit.menu.core-1.1.2] startup
+[2.309s] [ext: omni.graph.tools-1.79.2] startup
+[2.337s] [ext: omni.kit.widget.filter-1.1.4] startup
+[2.337s] [ext: omni.kit.menu.utils-2.0.5] startup
+[2.344s] [ext: omni.graph-1.141.2] startup
+[2.387s] [ext: omni.kit.hotkeys.core-1.3.10] startup
+[2.387s] [ext: omni.anim.curve.core-1.3.1] startup
+[2.401s] [ext: omni.kit.clipboard-1.0.5] startup
+[2.405s] [ext: omni.usdphysics-107.3.26] startup
+[2.408s] [ext: omni.physx.foundation-107.3.26] startup
+[2.410s] [ext: omni.kit.widget.context_menu-1.2.5] startup
+[2.413s] [ext: omni.kit.helper.file_utils-0.1.9] startup
+[2.415s] [ext: omni.kit.widget.path_field-2.0.11] startup
+[2.417s] [ext: omni.kvdb-107.3.26] startup
+[2.419s] [ext: omni.kit.widget.options_button-1.0.3] startup
+[2.420s] [ext: omni.kit.widget.filebrowser-2.12.3] startup
+[2.424s] [ext: omni.kit.widget.browser_bar-2.0.10] startup
+[2.426s] [ext: omni.localcache-107.3.26] startup
+[2.428s] [ext: omni.convexdecomposition-107.3.26] startup
+[2.430s] [ext: omni.kit.window.filepicker-2.13.4] startup
+[2.447s] [ext: omni.physx.cooking-107.3.26] startup
+[2.449s] [ext: omni.physics-107.3.26] startup
+[2.453s] [ext: omni.kit.window.file_exporter-1.0.33] startup
+[2.456s] [ext: omni.kit.stage_template.core-1.1.22] startup
+[2.458s] [ext: omni.physx-107.3.26] startup
+[2.466s] [ext: omni.kit.usd.layers-2.2.11] startup
+[2.474s] [ext: omni.kit.window.file_importer-1.1.18] startup
+[2.476s] [ext: omni.physics.physx-107.3.26] startup
+2026-09-20T04:35:03Z [2,462ms] [Warning] [carb] Acquiring non optional plugin interface which is not listed as dependency: [omni::physx::IPhysxBenchmarks v1.0] (plugin: <default plugin>), by client: omni.physics.physx.plugin. Add it to CARB_PLUGIN_IMPL_DEPS() macro of a client.
+[2.477s] [ext: omni.kit.numpy.common-0.1.3] startup
+[2.479s] [ext: omni.kit.window.file-2.0.5] startup
+[2.483s] [ext: omni.physics.stageupdate-107.3.26] startup
+[2.485s] [ext: omni.kit.window.drop_support-1.0.5] startup
+[2.487s] [ext: omni.kit.window.content_browser_registry-0.0.6] startup
+[2.488s] [ext: omni.isaac.dynamic_control-2.0.7] startup
+2026-09-20T04:35:03Z [2,477ms] [Warning] [omni.isaac.dynamic_control] omni.isaac.dynamic_control is deprecated as of Isaac Sim 4.5. No action is needed from end-users.
+[2.493s] [ext: omni.kit.window.content_browser-3.1.3] startup
+[2.504s] [ext: omni.graph.action_core-1.1.7] startup
+[2.507s] [ext: omni.kit.usd.collect-2.4.5] startup
+[2.510s] [ext: isaacsim.gui.content_browser-0.1.11] startup
+[2.514s] [ext: omni.graph.action_nodes-1.50.4] startup
+[2.517s] [ext: omni.kit.widget.prompt-1.0.7] startup
+[2.521s] [ext: omni.graph.action-1.130.0] startup
+[2.522s] [ext: omni.kit.tool.collect-2.2.18] startup
+[2.530s] [ext: omni.index.libs-380600.8087.0] startup
+[2.531s] [ext: omni.ujitso.client-0.0.0] startup
+[2.532s] [ext: omni.index-1.0.1] startup
+[2.532s] [ext: omni.volume-0.5.2] startup
+[2.535s] [ext: omni.hydra.rtx.shadercache.vulkan-1.0.0] startup
+[2.537s] [ext: omni.kit.context_menu-1.8.6] startup
+[2.553s] [ext: omni.hydra.rtx-1.0.0] startup
+2026-09-20T04:35:03Z [2,556ms] [Warning] [omni.log] Source: omni.hydra was already registered.
+[2.586s] [ext: omni.kit.material.library-2.0.7] startup
+[2.592s] [ext: omni.hydra.engine.stats-1.0.3] startup
+[2.596s] [ext: omni.kit.widget.stage_icons-1.0.8] startup
+[2.597s] [ext: omni.kit.viewport.scene_camera_model-1.0.6] startup
+[2.600s] [ext: omni.kit.hydra_texture-1.4.6] startup
+[2.604s] [ext: omni.kit.viewport.legacy_gizmos-1.0.19] startup
+[2.606s] [ext: omni.kit.widget.searchfield-1.1.8] startup
+[2.608s] [ext: omni.kit.widget.viewport-107.1.3] startup
+[2.614s] [ext: omni.kit.viewport.registry-104.0.6] startup
+[2.616s] [ext: omni.kit.raycast.query-1.1.0] startup
+[2.621s] [ext: omni.kit.widget.stage-3.1.4] startup
+[2.635s] [ext: omni.kit.widget.zoombar-1.0.6] startup
+[2.637s] [ext: omni.kit.viewport.window-107.2.0] startup
+[2.657s] [ext: omni.kit.window.stage-2.6.1] startup
+[2.663s] [ext: omni.kit.browser.core-2.3.13] startup
+[2.670s] [ext: omni.kit.menu.stage-1.2.7] startup
+[2.671s] [ext: omni.kit.browser.folder.core-1.10.9] startup
+[2.678s] [ext: omni.kit.property.adapter.core-1.0.2] startup
+[2.682s] [ext: omni.kit.widget.highlight_label-1.0.3] startup
+[2.684s] [ext: omni.kit.property.adapter.usd-1.0.2] startup
+[2.686s] [ext: omni.ui_query-1.1.8] startup
+[2.688s] [ext: omni.kit.window.property-1.12.1] startup
+[2.691s] [ext: omni.kit.property.adapter.fabric-1.0.3] startup
+[2.693s] [ext: omni.kit.ui_test-1.3.7] startup
+[2.696s] [ext: omni.kit.property.usd-4.5.12] startup
+[2.709s] [ext: omni.kit.viewport.utility-1.1.2] startup
+[2.711s] [ext: omni.kit.manipulator.viewport-107.0.1] startup
+[2.715s] [ext: omni.kit.usdz_export-1.0.9] startup
+[2.719s] [ext: omni.kit.window.extensions-1.4.27] startup
+[2.728s] [ext: omni.graph.visualization.nodes-2.1.3] startup
+[2.736s] [ext: omni.kit.tool.asset_importer-4.3.2] startup
+[2.748s] [ext: isaacsim.gui.components-1.2.1] startup
+[2.754s] [ext: isaacsim.examples.browser-0.2.1] startup
+[2.759s] [ext: isaacsim.asset.importer.urdf-2.4.30] startup
+[2.822s] [ext: omni.kit.menu.create-2.0.1] startup
+[2.828s] [ext: omni.physics.tensors-107.3.26] startup
+[2.837s] [ext: omni.usd.metrics.assembler-107.3.1] startup
+[2.840s] [ext: omni.kit.widget.graph-2.0.0] startup
+[2.847s] [ext: omni.kit.widget.searchable_combobox-1.0.6] startup
+[2.849s] [ext: omni.warp.core-1.8.2] startup
+[3.032s] [ext: omni.usd.metrics.assembler.physics-107.3.26] startup
+[3.035s] [ext: omni.kit.graph.delegate.default-1.2.3] startup
+[3.038s] [ext: omni.kit.scripting-107.3.2] startup
+[3.044s] [ext: omni.physx.tensors-107.3.26] startup
+[3.048s] [ext: isaacsim.core.utils-3.5.1] startup
+[3.051s] [ext: omni.anim.asset-107.3.0] startup
+[3.054s] [ext: isaacsim.core.simulation_manager-1.4.4] startup
+[4.335s] [ext: omni.graph.scriptnode-1.50.0] startup
+[4.339s] [ext: omni.kit.graph.editor.core-1.5.3] startup
+[4.344s] [ext: omni.kit.widget.settings-1.2.6] startup
+[4.348s] [ext: omni.kit.primitive.mesh-1.0.17] startup
+[4.355s] [ext: isaacsim.core.prims-0.6.1] startup
+[4.377s] [ext: omni.kit.widget.material_preview-1.0.16] startup
+[4.381s] [ext: omni.kit.graph.usd.commands-1.3.1] startup
+[4.382s] [ext: omni.graph.image.core-0.6.1] startup
+[4.383s] [ext: omni.kit.window.preferences-1.8.0] startup
+[4.390s] [ext: omni.kit.stage_templates-2.0.0] startup
+[4.392s] [ext: isaacsim.asset.browser-1.3.23] startup
+[4.445s] [ext: omni.graph.image.nodes-1.3.1] startup
+[4.447s] [ext: omni.kit.viewport.menubar.core-107.2.1] startup
+[4.460s] [ext: isaacsim.core.api-4.8.0] startup
+[4.469s] [ext: omni.kit.window.material_graph-1.9.1] startup
+[4.481s] [ext: omni.kit.viewport.actions-107.0.2] startup
+[4.485s] [ext: omni.graph.nodes-1.170.10] startup
+[4.494s] [ext: omni.syntheticdata-0.6.13] startup
+[4.517s] [ext: omni.isaac.assets_check-0.3.13] startup
+2026-09-20T04:35:05Z [4,504ms] [Warning] [omni.isaac.assets_check] omni.isaac.assets_check has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[4.519s] [ext: isaacsim.core.cloner-1.4.10] startup
+[4.523s] [ext: omni.kit.viewport.menubar.display-107.0.3] startup
+[4.528s] [ext: omni.graph.ui_nodes-1.50.5] startup
+[4.532s] [ext: omni.videoencoding-0.1.2] startup
+[4.540s] [ext: omni.isaac.cloner-1.0.7] startup
+2026-09-20T04:35:05Z [4,526ms] [Warning] [omni.isaac.cloner] omni.isaac.cloner has been deprecated in favor of isaacsim.core.cloner. Please update your code accordingly.
+[4.542s] [ext: isaacsim.gui.sensors.icon-2.0.3] startup
+[4.571s] [ext: omni.warp-1.8.2] startup
+[4.579s] [ext: omni.anim.retarget.core-107.3.3] startup
+[4.589s] [ext: omni.debugdraw-0.1.4] startup
+[4.595s] [ext: omni.replicator.core-1.12.27] startup
+2026-09-20T04:35:05Z [4,619ms] [Warning] [pxr.Semantics] pxr.Semantics is deprecated - please use Semantics instead
+2026-09-20T04:35:06Z [4,783ms] [Warning] [omni.graph.core.plugin] Found duplicate of category 'Replicator' - was 'Annotators', adding 'Fabric Reader'
+2026-09-20T04:35:06Z [4,783ms] [Warning] [omni.graph.core.plugin] Category 'Replicator' not accepted on node type 'omni.replicator.core.FabricReader' in extension 'omni.replicator.core'
+2026-09-20T04:35:06Z [4,784ms] [Warning] [omni.replicator.core.scripts.extension] No material configuration file, adding configuration to material settings directly.
+[4.802s] [ext: omni.kit.quicklayout-1.0.8] startup
+[4.804s] [ext: omni.anim.navigation.core-107.3.8] startup
+[4.814s] [ext: omni.anim.graph.core-107.3.4] startup
+[4.821s] [ext: omni.metropolis.utils-0.1.20] startup
+[4.852s] [ext: isaacsim.asset.importer.mjcf-2.5.13] startup
+[4.863s] [ext: omni.anim.people-0.7.9] startup
+2026-09-20T04:35:06Z [4,857ms] [Warning] [omni.graph.core._impl._registration.register_python_ogn] Python import process in omni.anim.graph.core failed - 'NoneType' object is not subscriptable. Aborting Python node registration
+[4.887s] [ext: isaacsim.test.docstring-1.1.0] startup
+[4.894s] [ext: isaacsim.core.experimental.utils-0.3.0] startup
+[4.898s] [ext: isaacsim.anim.robot-0.0.15] startup
+[4.944s] [ext: isaacsim.core.experimental.prims-0.8.1] startup
+[4.991s] [ext: isaacsim.core.nodes-3.4.3] startup
+[5.001s] [ext: omni.flowusd-107.1.8] startup
+2026-09-20T04:35:06Z [4,989ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[5.011s] [ext: omni.sensors.nv.common-3.0.0] startup
+[5.031s] [ext: isaacsim.core.experimental.materials-0.4.0] startup
+[5.049s] [ext: omni.isaac.core-4.0.7] startup
+2026-09-20T04:35:06Z [5,039ms] [Warning] [omni.isaac.core.physics_context.physics_context] omni.isaac.core.physics_context.physics_context has been deprecated in favor of isaacsim.core.api.physics_context.physics_context. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,040ms] [Warning] [omni.isaac.core.simulation_context.simulation_context] omni.isaac.core.simulation_context.simulation_context has been deprecated in favor of isaacsim.core.api.simulation_context.simulation_context. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,041ms] [Warning] [omni.isaac.core.world.world] omni.isaac.core.world.world has been deprecated in favor of isaacsim.core.api.world.world. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,041ms] [Warning] [omni.isaac.core] omni.isaac.core has been deprecated in favor of isaacsim.core.api. Please update your code accordingly.
+[5.056s] [ext: isaacsim.replicator.incident-0.1.28] startup
+[5.266s] [ext: omni.sensors.net-1.0.0] startup
+[5.307s] [ext: omni.sensors.nv.materials-2.0.0] startup
+[5.320s] [ext: isaacsim.sensors.camera-1.3.6] startup
+[5.412s] [ext: omni.sensors.nv.wpm-3.0.0] startup
+[5.442s] [ext: isaacsim.util.debug_draw-3.1.0] startup
+[5.495s] [ext: omni.sensors.nv.ids-2.0.0] startup
+[5.506s] [ext: omni.sensors.nv.lidar-3.0.0] startup
+[5.515s] [ext: omni.sensors.nv.radar-3.0.0] startup
+[5.519s] [ext: isaacsim.sensors.physics-0.4.3] startup
+[5.525s] [ext: isaacsim.robot_motion.lula-4.0.8] startup
+[5.538s] [ext: isaacsim.robot.surface_gripper-3.3.1] startup
+[5.543s] [ext: isaacsim.sensors.rtx-15.8.4] startup
+[5.562s] [ext: omni.kit.mesh.raycast-107.0.1] startup
+[5.567s] [ext: isaacsim.robot_motion.motion_generation-8.0.26] startup
+[5.577s] [ext: isaacsim.robot.manipulators-3.3.6] startup
+[5.583s] [ext: isaacsim.core.experimental.objects-0.4.0] startup
+[5.595s] [ext: omni.isaac.core_nodes-2.0.6] startup
+2026-09-20T04:35:06Z [5,583ms] [Warning] [omni.isaac.core_nodes] omni.isaac.core_nodes has been deprecated in favor of isaacsim.core.nodes. Please update your code accordingly.
+[5.598s] [ext: isaacsim.replicator.agent.core-0.7.28] startup
+[5.610s] [ext: isaacsim.robot.manipulators.examples-1.1.2] startup
+[5.613s] [ext: isaacsim.simulation_app-2.12.2] startup
+[5.615s] [ext: omni.kit.selection-0.1.6] startup
+[5.618s] [ext: omni.isaac.franka-1.0.7] startup
+2026-09-20T04:35:06Z [5,604ms] [Warning] [omni.isaac.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,604ms] [Warning] [omni.isaac.franka.franka] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,620ms] [Warning] [omni.isaac.franka.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.franka. Please update your code accordingly.
+[5.635s] [ext: isaacsim.robot_motion.lula_test_widget-1.0.12] startup
+[5.639s] [ext: omni.isaac.kit-2.0.6] startup
+2026-09-20T04:35:06Z [5,626ms] [Warning] [omni.isaac.kit] omni.isaac.kit has been deprecated in favor of isaacsim.simulation_app. Please update your code accordingly.
+[5.641s] [ext: isaacsim.gui.menu-2.4.4] startup
+[5.646s] [ext: omni.isaac.asset_browser-1.0.6] startup
+2026-09-20T04:35:06Z [5,633ms] [Warning] [omni.isaac.asset_browser] omni.isaac.asset_browser has been deprecated in favor of isaacsim.asset.browser. Please update your code accordingly.
+[5.648s] [ext: omni.isaac.lula_test_widget-1.0.6] startup
+2026-09-20T04:35:06Z [5,636ms] [Warning] [omni.isaac.lula_test_widget] omni.isaac.lula_test_widget has been deprecated in favor of isaacsim.robot_motion.lula_test_widget. Please update your code accordingly.
+[5.652s] [ext: omni.isaac.manipulators-3.0.7] startup
+2026-09-20T04:35:06Z [5,640ms] [Warning] [omni.isaac.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,640ms] [Warning] [omni.isaac.manipulators.controllers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,640ms] [Warning] [omni.isaac.manipulators.controllers.pick_place_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,641ms] [Warning] [omni.isaac.manipulators.controllers.stacking_controller] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,641ms] [Warning] [omni.isaac.manipulators.grippers] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,641ms] [Warning] [omni.isaac.manipulators.grippers.gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,641ms] [Warning] [omni.isaac.manipulators.grippers.parallel_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,641ms] [Warning] [omni.isaac.manipulators.grippers.surface_gripper] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,642ms] [Warning] [omni.isaac.manipulators.manipulators] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,642ms] [Warning] [omni.isaac.manipulators.manipulators.single_manipulator] omni.isaac.manipulators has been deprecated in favor of isaacsim.robot.manipulators. Please update your code accordingly.
+[5.657s] [ext: omni.isaac.menu-1.0.6] startup
+2026-09-20T04:35:06Z [5,644ms] [Warning] [omni.isaac.menu] omni.isaac.menu has been deprecated in favor of isaacsim.gui.menu. Please update your code accordingly.
+[5.659s] [ext: isaacsim.robot.policy.examples-4.1.11] startup
+[5.666s] [ext: isaacsim.sensors.physx-2.3.2] startup
+[5.672s] [ext: omni.isaac.motion_generation-8.0.7] startup
+2026-09-20T04:35:06Z [5,659ms] [Warning] [omni.isaac.motion_generation] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,660ms] [Warning] [omni.isaac.motion_generation.articulation_kinematics_solver] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,660ms] [Warning] [omni.isaac.motion_generation.articulation_motion_policy] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,660ms] [Warning] [omni.isaac.motion_generation.articulation_trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,660ms] [Warning] [omni.isaac.motion_generation.kinematics_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,661ms] [Warning] [omni.isaac.motion_generation.lula] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.lula.kinematics] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.lula.motion_policies] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.lula.path_planners] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.lula.trajectory_generator] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.motion_policy_controller] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.motion_policy_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.path_planner_visualizer] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,663ms] [Warning] [omni.isaac.motion_generation.path_planning_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,664ms] [Warning] [omni.isaac.motion_generation.trajectory] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,664ms] [Warning] [omni.isaac.motion_generation.world_interface] omni.isaac.motion_generation has been deprecated in favor of isaacsim.robot_motion.motion_generation. Please update your code accordingly.
+[5.679s] [ext: omni.isaac.nucleus-1.0.6] startup
+2026-09-20T04:35:06Z [5,666ms] [Warning] [omni.isaac.nucleus] omni.isaac.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,666ms] [Warning] [omni.isaac.nucleus.nucleus] omni.isaac.nucleus.nucleus has been deprecated in favor of isaacsim.storage.native. Please update your code accordingly.
+[5.682s] [ext: omni.isaac.quadruped-3.0.7] startup
+2026-09-20T04:35:06Z [5,669ms] [Warning] [omni.isaac.quadruped] omni.isaac.quadruped has been deprecated in favor of isaacsim.robot.policy.examples. Please update your code accordingly.
+[5.684s] [ext: omni.isaac.range_sensor-4.0.6] startup
+2026-09-20T04:35:06Z [5,671ms] [Warning] [omni.isaac.range_sensor] omni.isaac.range_sensor has been deprecated in favor of isaacsim.sensors.physx. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,671ms] [Warning] [omni.isaac.range_sensor.commands] omni.isaac.range_sensor.commands has been deprecated in favor of isaacsim.sensors.physx.commands. Please update your code accordingly.
+[5.686s] [ext: omni.isaac.sensor-13.0.7] startup
+2026-09-20T04:35:06Z [5,675ms] [Warning] [omni.isaac.sensor] omni.isaac.sensor has been deprecated in favor of isaacsim.sensors.camera, isaacsim.sensors.physics, isaacsim.sensors.physx, and isaacsim.sensors.rtx. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.camera] omni.isaac.sensor.camera has been deprecated in favor of isaacsim.sensors.camera.camera. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.camera_view] omni.isaac.sensor.camera_view has been deprecated in favor of isaacsim.sensors.camera.camera_view. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.commands] omni.isaac.sensor.commands has been deprecated in favor of isaacsim.sensors.physics.commands, isaacsim.sensors.physx.commands, and isaacsim.sensors.rtx.commands. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.contact_sensor] omni.isaac.sensor.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.contact_sensor. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.imu_sensor] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.imu_sensor. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,676ms] [Warning] [omni.isaac.sensor.lidar_rtx] omni.isaac.sensor.lidar_rtx has been deprecated in favor of isaacsim.sensors.rtx.lidar_rtx. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,677ms] [Warning] [omni.isaac.sensor.rotating_lidar_physX] omni.isaac.sensor.imu_sensor has been deprecated in favor of isaacsim.sensors.physix.rotating_lidar_physX. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,677ms] [Warning] [omni.isaac.sensor.scripts.samples.contact_sensor] omni.isaac.sensor.scripts.samples.contact_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.contact_sensor. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,677ms] [Warning] [omni.isaac.sensor.scripts.samples.imu_sensor] omni.isaac.sensor.scripts.samples.imu_sensor has been deprecated in favor of isaacsim.sensors.physics.scripts.samples.imu_sensor. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,677ms] [Warning] [omni.isaac.sensor.scripts.samples.lightbeam_sensor] omni.isaac.sensor.scripts.samples.lightbeam_sensor has been deprecated in favor of isaacsim.sensors.physx.scripts.samples.lightbeam_sensor. Please update your code accordingly.
+[5.692s] [ext: omni.isaac.surface_gripper-2.0.6] startup
+2026-09-20T04:35:06Z [5,680ms] [Warning] [omni.isaac.surface_gripper] omni.isaac.surface_gripper has been deprecated in favor of isaacsim.robot.surface_gripper. Please update your code accordingly.
+[5.700s] [ext: omni.kit.widget.toolbar-2.0.1] startup
+[5.708s] [ext: omni.kit.manipulator.transform-107.0.0] startup
+[5.712s] [ext: omni.kit.manipulator.selector-1.1.3] startup
+[5.713s] [ext: isaacsim.app.about-2.0.11] startup
+[5.719s] [ext: isaacsim.cortex.framework-1.0.12] startup
+[5.720s] [ext: omni.kit.manipulator.tool.snap-1.5.13] startup
+[5.727s] [ext: omni.isaac.universal_robots-1.0.6] startup
+2026-09-20T04:35:06Z [5,713ms] [Warning] [omni.isaac.universal_robots] omni.isaac.universal_robots has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,713ms] [Warning] [omni.isaac.universal_robots.kinematics_solver] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,714ms] [Warning] [omni.isaac.universal_robots.ur10] omni.isaac.franka has been deprecated in favor of isaacsim.robot.manipulators.examples.universal_robots. Please update your code accordingly.
+[5.728s] [ext: omni.isaac.utils-2.0.6] startup
+[5.731s] [ext: omni.isaac.cortex-1.0.5] startup
+2026-09-20T04:35:06Z [5,718ms] [Warning] [omni.isaac.cortex] omni.isaac.cortex has been deprecated in favor of isaacsim.cortex.framework. Please update your code accordingly.
+[5.733s] [ext: omni.kit.viewport.manipulator.transform-107.0.4] startup
+[5.736s] [ext: omni.isaac.window.about-2.0.7] startup
+2026-09-20T04:35:06Z [5,724ms] [Warning] [omni.isaac.window.about] omni.isaac.window.about has been deprecated in favor of isaacsim.app.about. Please update your code accordingly.
+2026-09-20T04:35:06Z [5,724ms] [Warning] [omni.isaac.window.about.about] omni.isaac.window.about.about has been deprecated in favor of isaacsim.app.about.about. Please update your code accordingly.
+[5.739s] [ext: omni.kit.manipulator.camera-106.0.4] startup
+[5.743s] [ext: omni.kit.property.audio-1.0.16] startup
+[5.745s] [ext: omni.fabric.commands-1.1.6] startup
+[5.747s] [ext: omni.kit.manipulator.prim.core-107.0.8] startup
+[5.754s] [ext: omni.kit.property.camera-1.0.10] startup
+[5.756s] [ext: omni.kit.property.geometry-2.0.4] startup
+[5.760s] [ext: omni.kit.property.light-1.0.12] startup
+[5.770s] [ext: omni.hydra.scene_api-0.1.2] startup
+[5.775s] [ext: omni.kit.manipulator.prim.fabric-107.0.4] startup
+[5.777s] [ext: omni.kit.manipulator.prim.usd-107.0.3] startup
+[5.778s] [ext: omni.kit.property.material-1.11.9] startup
+[5.784s] [ext: omni.kit.property.render-1.2.1] startup
+[5.786s] [ext: omni.kit.property.transform-1.5.13] startup
+[5.790s] [ext: isaacsim.gui.property-1.1.3] startup
+[5.792s] [ext: omni.kit.manipulator.prim-107.0.0] startup
+[5.793s] [ext: omni.kit.manipulator.selection-106.0.1] startup
+[5.794s] [ext: omni.isaac.lula-4.0.6] startup
+2026-09-20T04:35:07Z [5,780ms] [Warning] [omni.isaac.lula] omni.isaac.lula has been deprecated in favor of isaacsim.robot_motion.lula. Please update your code accordingly.
+[5.795s] [ext: omni.kit.property.bundle-1.4.1] startup
+[5.797s] [ext: omni.kit.property.isaac-1.0.6] startup
+2026-09-20T04:35:07Z [5,784ms] [Warning] [omni.kit.property.isaac] omni.kit.property.isaac has been deprecated in favor of isaacsim.gui.property. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,784ms] [Warning] [omni.kit.property.isaac.widgets] omni.kit.property.isaac.widgets has been deprecated in favor of isaacsim.gui.property.widgets. Please update your code accordingly.
+[5.799s] [ext: isaacsim.replicator.writers-1.0.17] startup
+[5.814s] [ext: omni.kit.viewport.menubar.camera-107.0.6] startup
+[5.824s] [ext: omni.kit.viewport.menubar.lighting-107.3.1] startup
+[5.831s] [ext: omni.kit.viewport.menubar.render-107.0.10] startup
+[5.835s] [ext: omni.kit.viewport.menubar.settings-107.0.3] startup
+[5.839s] [ext: isaacsim.replicator.domain_randomization-1.0.16] startup
+[5.841s] [ext: isaacsim.replicator.examples-1.3.6] startup
+[5.845s] [ext: omni.ocio-0.1.1] startup
+[5.849s] [ext: omni.rtx.window.settings-0.6.19] startup
+[5.862s] [ext: omni.kit.window.console-1.1.4] startup
+[5.874s] [ext: omni.kit.window.status_bar-0.1.9] startup
+[5.877s] [ext: omni.kit.window.toolbar-2.0.0] startup
+[5.880s] [ext: omni.replicator.isaac-2.0.8] startup
+2026-09-20T04:35:07Z [5,867ms] [Warning] [omni.replicator.isaac] omni.replicator.isaac has been deprecated in favor of isaacsim.replicator.domain_randomization, isaacsim.replicator.examples, isaacsim.replicator.writers. Please update your code accordingly.
+[5.882s] [ext: omni.replicator.replicator_yaml-2.0.11] startup
+[5.887s] [ext: omni.rtx.settings.core-0.6.5] startup
+[5.893s] [ext: omni.usd.metrics.assembler.ui-107.3.1] startup
+[5.902s] [ext: isaacsim.robot.wheeled_robots-4.0.24] startup
+[5.908s] [ext: isaacsim.cortex.behaviors-2.0.14] startup
+[5.911s] [ext: omni.isaac.version-2.0.7] startup
+2026-09-20T04:35:07Z [5,899ms] [Warning] [omni.isaac.version] omni.isaac.version has been deprecated in favor of isaacsim.core.version. Please update your code accordingly.
+[5.914s] [ext: semantics.schema.editor-2.0.2] startup
+[5.921s] [ext: omni.kit.ui.actions-1.0.5] startup
+[5.923s] [ext: semantics.schema.property-2.0.1] startup
+[5.926s] [ext: omni.isaac.wheeled_robots-3.0.7] startup
+2026-09-20T04:35:07Z [5,912ms] [Warning] [omni.isaac.wheeled_robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,913ms] [Warning] [omni.isaac.wheeled_robots.controllers] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,913ms] [Warning] [omni.isaac.wheeled_robots.controllers.ackermann_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,913ms] [Warning] [omni.isaac.wheeled_robots.controllers.differential_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,914ms] [Warning] [omni.isaac.wheeled_robots.controllers.holonomic_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,914ms] [Warning] [omni.isaac.wheeled_robots.controllers.quintic_path_planner] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,915ms] [Warning] [omni.isaac.wheeled_robots.controllers.stanley_control] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,916ms] [Warning] [omni.isaac.wheeled_robots.controllers.wheel_base_pose_controller] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,916ms] [Warning] [omni.isaac.wheeled_robots.impl] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,917ms] [Warning] [omni.isaac.wheeled_robots.robots] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,917ms] [Warning] [omni.isaac.wheeled_robots.robots.holonomic_robot_usd_setup] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+2026-09-20T04:35:07Z [5,919ms] [Warning] [omni.isaac.wheeled_robots.robots.wheeled_robot] omni.isaac.wheeled_robots has been deprecated in favor of isaacsim.robot.wheeled_robots. Please update your code accordingly.
+[5.934s] [ext: omni.isaac.cortex.sample_behaviors-2.0.5] startup
+2026-09-20T04:35:07Z [5,921ms] [Warning] [omni.isaac.cortex.sample_behaviors] omni.isaac.cortex.sample_behaviors has been deprecated in favor of isaacsim.cortex.behaviors. Please update your code accordingly.
+[5.936s] [ext: isaacsim.replicator.behavior-1.1.16] startup
+[5.940s] [ext: isaacsim.core.throttling-2.2.2] startup
+[5.944s] [ext: omni.kit.menu.common-2.0.1] startup
+[5.949s] [ext: isaacsim.exp.base-5.1.0] startup
+[5.950s] [ext: isaacsim.exp.base.python-5.1.0] startup
+[5.956s] Simulation App Starting
+2026-09-20T04:35:07Z [6,041ms] [Warning] [omni.fabric.plugin] Warning: attribute viewportHandle not found for bucket id 9
+
+[6.106s] app ready
+INFO  [px4] instance: 0
+
+______  __   __    ___ 
+| ___ \ \ \ / /   /   |
+| |_/ /  \ V /   / /| |
+|  __/   /   \  / /_| |
+| |     / /^\ \ \___  |
+\_|     \/   \/     |_/
+
+px4 starting.
+
+INFO  [px4] startup script: /bin/sh /home/ani/PX4-Autopilot/ROMFS/px4fmu_common/init.d-posix/rcS 0
+INFO  [init] found model autostart file as SYS_AUTOSTART=10016
+INFO  [param] selected parameter default file parameters.bson
+INFO  [param] selected parameter backup file parameters_backup.bson
+  SYS_AUTOCONFIG: curr: 0 -> new: 1
+  SYS_AUTOSTART: curr: 0 -> new: 10016
+  CAL_ACC0_ID: curr: 0 -> new: 1310988
+  CAL_GYRO0_ID: curr: 0 -> new: 1310988
+  CAL_ACC1_ID: curr: 0 -> new: 1310996
+  CAL_GYRO1_ID: curr: 0 -> new: 1310996
+  CAL_ACC2_ID: curr: 0 -> new: 1311004
+  CAL_GYRO2_ID: curr: 0 -> new: 1311004
+  CAL_MAG0_ID: curr: 0 -> new: 197388
+  CAL_MAG0_PRIO: curr: -1 -> new: 50
+  CAL_MAG1_ID: curr: 0 -> new: 197644
+  CAL_MAG1_PRIO: curr: -1 -> new: 50
+  SENS_BOARD_X_OFF: curr: 0.0000 -> new: 0.0000
+  SENS_DPRES_OFF: curr: 0.0000 -> new: 0.0010
+[8.447s] Simulation App Startup Complete
+2026-09-20T04:35:10Z [9,503ms] [Warning] [pegasus.simulator.logic.backends.ardupilot_mavlink_backend] [ArduPilotMavlinkBackendConfig] Initialized with vehicle_id=0, connection_type=udpin, connection_ip=127.0.0.1, connection_baseport=14550, ardupilot_autolaunch=True, ardupilot_dir=/home/ani/ardupilot, ardupilot_vehicle_model=gazebo-iris, enable_lockstep=False, num_rotors=4, input_offset=[0.0, 0.0, 0.0, 0.0], input_scaling=[1000, 1000, 1000, 1000], zero_position_armed=[100, 100, 100, 100], update_rate=400
+[9.527s] [ext: isaacsim.ros2.bridge-4.12.4] startup
+[9.856s] Attempting to load system rclpy
+[9.878s] Could not import system rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[9.878s] Attempting to load internal rclpy for ROS Distro: humble
+[9.880s] Could not import internal rclpy: No module named 'rclpy._rclpy_pybind11'
+The C extension '/opt/ros/humble/lib/python3.10/site-packages/_rclpy_pybind11.cpython-311-x86_64-linux-gnu.so' isn't present on the system. Please refer to 'https://docs.ros.org/en/humble/Guides/Installation-Troubleshooting.html#import-failing-without-library-present-on-the-system' for possible solutions
+[9.880s] To use the internal libraries included with the extension please set the following environment variables to use with FastDDS (default) or CycloneDDS before starting Isaac Sim:
+
+FastDDS (default):
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+OR
+
+CycloneDDS:
+export ROS_DISTRO=humble
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/humble/lib
+
+
+2026-09-20T04:35:11Z [9,867ms] [Warning] [humble.rclpy] Could not import rclpy
+2026-09-20T04:35:11Z [10,135ms] [Warning] [pegasus.simulator.logic.backends] ROS2 package not installed. ROS2Backend will not be available
+2026-09-20T04:35:11Z [10,139ms] [Warning] [pegasus.simulator.ui.ui_delegate] ROS2 backend not available. Please install the ROS2 extension to use this feature.
+2026-09-20T04:35:11Z [10,161ms] [Warning] [__main__] PX4 rootfs kept at '/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_100501' - ulog will be under /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_100501/log/
+2026-09-20T04:35:11Z [10,162ms] [Warning] [__main__] run config written to /home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_100501/run_config.json: {'motor_moment': 6e-07, 'expected_spin_rad_s': 29.4, 'rotor_tau': 0.03, 'rotor_tau_is_placeholder': False, 'px4_airframe': 'none_iris', 'physics_rate_hz': 250.0, 'vehicle_id': 0, 'duration_s': 240.0}
+2026-09-20T04:35:11Z [10,162ms] [Warning] [__main__] motor_moment = 6.000e-07 -> expected steady yaw spin ~ 29.4 rad/s
+2026-09-20T04:35:11Z [10,162ms] [Warning] [__main__] desaturation = uniform
+2026-09-20T04:35:11Z [10,162ms] [Warning] [__main__] rotor_tau = 30.0 ms (explicit)
+2026-09-20T04:35:13Z [11,810ms] [Warning] [pegasus.simulator.logic.interface.pegasus_interface] Loading a new environment into the simulator. Please wait...
+2026-09-20T04:35:13Z [12,368ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] [PX4MavlinkBackend] launching PX4 with PX4_SIM_MODEL=none_iris, rootfs=/home/ani/PegasusSimulator/px4_runs/L3_airframe_20260920_100501
+2026-09-20T04:35:13Z [12,658ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,659ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,660ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,661ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,670ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,671ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,672ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,673ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,680ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,682ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,683ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,684ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,691ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,692ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,693ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,694ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,704ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,705ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,706ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,707ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,730ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,731ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,733ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,734ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,756ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,757ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,758ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:13Z [12,759ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,783ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,784ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,785ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,786ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,811ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,812ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,814ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,815ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,837ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,839ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,840ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,842ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,865ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,866ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,867ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,869ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,890ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,891ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,893ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,894ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,915ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,916ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,917ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,918ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,942ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,944ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,945ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,947ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,969ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,971ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,972ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,973ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,991ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,992ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,994ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [12,995ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,014ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,016ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,017ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,019ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,041ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,043ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,045ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,047ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,064ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,066ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,067ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,068ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,085ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,087ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,088ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,089ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,109ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,111ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,112ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,113ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,135ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,138ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,139ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,140ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,158ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,159ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,160ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,161ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,181ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,183ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,184ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,185ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,205ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,206ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,207ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,209ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,229ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,230ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,231ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,232ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,252ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,254ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,255ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+INFO  [dataman] data manager file './dataman' size is 1208528 bytes
+2026-09-20T04:35:14Z [13,256ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,276ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,277ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,278ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,279ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,300ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,301ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,302ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,303ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,324ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,325ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,326ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,327ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,347ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,349ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,350ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,351ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,371ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,372ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,373ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,374ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,399ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,400ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,401ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,402ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,420ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,422ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,423ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,424ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,442ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,444ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,445ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,447ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,466ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+INFO  [init] PX4_SIM_HOSTNAME: localhost
+INFO  [simulator_mavlink] Waiting for simulator to accept connection on TCP port 4560
+INFO  [simulator_mavlink] Simulator connected on TCP port 4560.
+INFO  [lockstep_scheduler] setting initial absolute time to 4000 us
+INFO  [commander] LED: open /dev/led0 failed (22)
+INFO  [mc_controller] controller: cascaded_pd (MC_CTRL_ALG=1), levels=0x0e
+INFO  [uxrce_dds_client] init UDP agent IP:127.0.0.1, port:8888
+INFO  [mavlink] mode: Normal, data rate: 4000000 B/s on udp port 18570 remote port 14550
+INFO  [mavlink] mode: Onboard, data rate: 4000000 B/s on udp port 14580 remote port 14540
+INFO  [mavlink] mode: Onboard, data rate: 4000 B/s on udp port 14280 remote port 14030
+INFO  [mavlink] mode: Gimbal, data rate: 400000 B/s on udp port 13030 remote port 13280
+INFO  [tone_alarm] home set
+INFO  [logger] logger started (mode=all)
+INFO  [logger] Start file log (type: full)
+INFO  [logger] [logger] ./log/2026-09-20/04_35_15.ulg	
+INFO  [logger] Opened full log file: ./log/2026-09-20/04_35_15.ulg
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [mavlink] MAVLink only on localhost (set param MAV_{i}_BROADCAST = 1 to enable network)
+INFO  [px4] Startup script returned successfully
+INFO  [mavlink] partner IP: 127.0.0.1
+WARN  [mc_controller] MC_CTRL_ALG change to 3 deferred until disarm
+INFO  [mc_controller] controller: eigen (MC_CTRL_ALG=3), levels=0x0e
+WARN  [health_and_arming_checks] Preflight Fail: heading estimate not stable
+INFO  [commander] [32mReady for takeoff![0m
+INFO  [commander] Armed by external command	
+INFO  [tone_alarm] arming warning
+INFO  [commander] Takeoff detected	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+2026-09-20T04:35:14Z [13,468ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,469ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,470ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,490ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,491ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,492ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,493ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,515ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,516ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,518ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,519ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,537ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Waiting for first hearbeat
+2026-09-20T04:35:14Z [13,555ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Received first hearbeat
+2026-09-20T04:35:16Z [15,285ms] [Warning] [carb] Client gpu.foundation.plugin has acquired [gpu::unstable::IMemoryBudgetManagerFactory v0.1] 100 times. Consider accessing this interface with carb::getCachedInterface() (Performance warning)
+2026-09-20T04:35:37Z [36,244ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:37Z [36,720ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [36,862ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [36,957ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [36,984ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [36,986ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,056ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,127ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,152ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,296ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,318ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+2026-09-20T04:35:38Z [37,390ms] [Warning] [pegasus.simulator.logic.backends.px4_mavlink_backend] Could not send groundtruth through mavlink: error: short format requires -32768 <= number <= 32767
+INFO  [commander] Landing at current position	
+WARN  [health_and_arming_checks] Preflight Fail: Attitude failure (roll)
+INFO  [commander] Landing detected	
+
+PX4 Exiting...
+Exiting NOW.

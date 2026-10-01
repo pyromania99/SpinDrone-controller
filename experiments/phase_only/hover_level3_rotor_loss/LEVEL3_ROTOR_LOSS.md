@@ -52,10 +52,13 @@ the second.
 
 The three survivors saturate within half a second and stay there, while their *mean*
 command stays near the pre-failure value. That is the signature of a mixer thrashing on
-roll/pitch, not of a vehicle short of thrust:
+roll/pitch, not of a vehicle short of thrust: on this airframe at this km,
+`desaturation.py` measures the three surviving rotors as able to produce **31.0 N against a
+15.9 N weight — 1.95×**.
 
-- the four rotors were holding hover on a command sum of **2.476** out of a possible 4.0,
-- so three rotors at full command — 3.0 — exceed the hover requirement by **21 %**.
+(An earlier draft computed that margin as "21 %" from the normalised command sum, 2.476 of
+4.0. That is wrong — thrust goes as ω² and the normalised command sets ω, so command share
+is not thrust share. The measured 1.95× is the number.)
 
 **The lift to hover on three rotors exists.** It is not delivered, because
 `ControlAllocator`'s effectiveness matrix still contains the dead rotor: every roll/pitch
@@ -116,6 +119,197 @@ is worth 62× in attitude before the loss and **nothing after it** — which is 
 result, not a disappointment: θ_s cancels an actuator *phase*, and a missing rotor is not a
 phase error.
 
+## 4b. Level 1 survives the identical failure — and level 2 does not
+
+Added 2026-09-19 after the first draft, because the claim "a level-1 run survived a rotor
+loss at 30 rad/s" is correct and needed reconciling.
+
+| rung | who allocates | r | outcome after the rotor stops |
+|---|---|---|---|
+| **1** | Pegasus `Multirotor.force_and_torques_to_velocities` + the Python eigen law | **29.5** | **survives 45 s** — holds 5.41 m, xy drift 0.00 m, cones steadily at \|p,q\| 1.196 |
+| 2 | PX4 `ControlAllocator`, **ground truth** | 20.1 | crash **2.0 s** after |
+| 3 | PX4 `ControlAllocator`, estimator | 20.1 | crash **1.9 s** after |
+
+Level 1 was flown with `motor_failure.py --settle-hold 10`, so the rotor stops at a settled
+6 m hover with the spin fully converged (`ROTOR 0 STOPPED at t = 14.368 s, alt = 5.995 m,
+|v| = 0.017 m/s`) rather than mid-spin-up.
+
+**Level 2 and level 3 agree to 0.1 s, so the estimator is not the difference.** What changes
+between rung 1 and rung 2 is who allocates.
+
+### Why level 1 gets away with it
+
+Per-rotor thrust across the failure at level 1 (rotor 0 is the dead one; its share is
+computed, then discarded):
+
+| window | rotor 0 | rotor 1 | rotor 2 | rotor 3 | commanded collective |
+|---|---|---|---|---|---|
+| before | 3.79 | 4.15 | 3.80 | 4.14 | 15.88 N |
+| 1–3 s after | *8.80* | 3.45 | 2.79 | 9.90 | **24.94 N** |
+| 10–20 s after | *8.78* | 3.34 | 2.81 | 9.76 | **24.68 N** |
+
+The altitude loop simply **winds the collective up from 15.9 N to 24.7 N** until the three
+survivors deliver the 15.9 N the vehicle weighs, and settles there. The peak rotor sits at
+**9.90 N against a 10.34 N ceiling — it never saturates.**
+
+So level 1 allocates to the dead rotor too. The difference is that it can afford to: it
+solves in physical N·m and newtons, and has the headroom to pay for the waste.
+
+PX4 cannot, because its per-motor setpoint is normalised 0–1 and is already near the top:
+§2's three survivors hit exactly **1.000** within half a second and stay pinned there while
+their *means* stay near the pre-failure value. That is a mixer oscillating against its
+clip, not a loop that has found a new equilibrium.
+
+### The desaturation policy is not the discriminator today
+
+`desaturation.py` exists because of a stopped-rotor case where `uniform` cut a rotor asking
+4.52 N down to 2.04 N and the vehicle fell in 0.77 s. **That case does not reproduce at this
+operating point.** Flown back to back at r = 29.5, 6 m, converged spin:
+
+| policy | steady state after the failure |
+|---|---|
+| `collective` | 5.41 m, \|p,q\| 1.196, r −29.47 |
+| `uniform` | 5.41 m, \|p,q\| 1.196, r −29.47 |
+
+Identical, because **neither policy engages** — the demand stays inside the ceiling
+(9.90 of 10.34 N), so there is nothing to desaturate. The collective model is not what is
+carrying this survival; the thrust headroom is. It would still be carrying it at a demand
+that exceeded the ceiling, which is the case the module was written for.
+
+**And `--desaturation` is a no-op at levels 2 and 3 in any case.** It is read by
+`Multirotor.force_and_torques_to_velocities`, which runs only when a backend supplies force
+and torque. On the PX4 rungs `px4_mavlink_backend.update_input_reference()` writes
+`_input_reference` straight from `HIL_ACTUATOR_CONTROLS`, so that function is never called
+and the policy has nothing to act on. **The fix that protects level 1's collective does not
+exist on the PX4 rungs** — PX4 uses `ControlAllocationSequentialDesaturation`
+(`CA_METHOD=1`) instead, which is a different rule with a different priority order.
+
+### What level 1's survival actually looks like
+
+Not a hover. It holds altitude (5.41 m, 0.58 m below the setpoint) and position (xy drift
+0.00 m) while coning at **1.196 rad/s** indefinitely — `desaturation.py`'s own note calls
+this out: "a fault-blind allocator cannot hold roll and pitch on three rotors, so the
+vehicle climbs while tumbling." Score it as survival, not as control.
+
+### The saturation is measured, and the desaturation priority is not the fix
+
+`control_allocator_status` says it directly. Level 3, r = 20, across the failure:
+
+| window | `vehicle_thrust_setpoint.xyz[2]` | `unallocated_thrust[2]` |
+|---|---|---|
+| before | −0.619 | −0.0015 |
+| 0–0.5 s after | −0.846 | −0.217 |
+| 0.5–1 s after | **−1.000** (full throttle) | **−0.498** |
+| 1–2 s after | −1.000 | −0.505 |
+
+The loop makes exactly the same move level 1 makes — it winds the collective up. PX4 reaches
+full throttle inside a second and **the allocator reports half of it as undeliverable.**
+
+`MC_AIRMODE=0` (the default here) routes to `mixAirmodeDisabled()`, whose first desaturation
+step is literally commented *"only reduce thrust"* — the `uniform` pathology, hard-coded in
+the mixer. That makes `MC_AIRMODE=1` the obvious one-parameter test, and **it does not
+rescue the vehicle**: unallocated thrust improves 0.50 → 0.44 and time-to-departure goes
+1.9 s → 2.3 s (`px4_runs/L3_eigen_20260919_093823`). Still a crash.
+
+So saturation is the proximate mechanism but the desaturation *priority* is not the defect.
+The arithmetic says the collective alone is affordable — hover sits at 0.62 per motor and
+three rotors need about 0.72 to carry the same thrust — and `unallocated_torque[0]` reaching
+−0.33 says what is consuming the rest: **a fault-blind mixer demanding roll and pitch that
+three rotors cannot produce.** Thrust is what gets sacrificed to chase it.
+
+### Is the equilibrium unallocatable, or does PX4 just not steer to it?
+
+Level 1's post-failure fixed point, expressed in PX4's own units. Per-rotor thrust
+[8.78, 3.34, 2.81, 9.76] N against a 10.34 N ceiling, and thrust goes as the square of the
+command, so the normalised commands are:
+
+    [0.921, 0.568, 0.521, 0.972]      hottest rotor 0.972 — INSIDE the 0..1 box
+
+and `sim_px4.py` sets `input_scaling = 1100 = max_rotor_velocity` with zero offset, so **PX4
+command 1.0 is exactly the physical ceiling level 1 has.** The point level 1 sits at for
+45 s is reachable by PX4's actuators.
+
+**But only just.** The hottest rotor is at 94 % of the limit in rel-thrust terms
+(9.76/10.34), so the steady three-rotor solution leaves about 6 % of headroom for every
+transient — and level 3 carries a 20 ms rotor pole plus PX4's own pipeline lag on top.
+
+What moves first, in 0.2 s bins from the failure:
+
+| t − t_fail | attitude error | \|τ_cmd\| | unallocated thrust | unallocated torque |
+|---|---|---|---|---|
+| −0.2 s | 0.30° | 0.036 | −0.002 | 0.000 |
+| +0.0 s | 2.49° | **0.397** | −0.001 | 0.000 |
+| +0.2 s | 4.53° | 0.601 | **−0.346** | 0.000 |
+| +0.6 s | 3.85° | 0.626 | −0.497 | 0.206 |
+| +1.0 s | 7.18° | 1.033 | −0.506 | 0.851 |
+| +1.4 s | **31.49°** | 1.308 | −0.488 | 0.385 |
+
+**The torque demand is not a symptom of the vehicle coning out of control.** It jumps 11×
+in the first bin while the attitude error is 2.5–4.5° — the same order as level 1's *stable*
+3.7° equilibrium. Thrust starts being sacrificed at +0.2 s while torque is still fully
+delivered, which is `mixAirmodeDisabled()`'s rule, not a contest. The 31° runaway arrives
+at +1.4 s, after half the commanded collective has been undeliverable for a second. It is
+the consequence.
+
+Two candidate causes tested, neither of them it:
+
+| change | rationale | result |
+|---|---|---|
+| `MC_AIRMODE=1` | stop cutting thrust first | unallocated 0.50 → 0.44, **1.9 s → 2.3 s, still crashes** |
+| `THR_MDL_FAC=1.0` | PX4 assumes thrust ∝ command; the plant is thrust ∝ command². 1.0 inverts the quadratic | **crash 2.0 s after** (and it perturbs the trim — hover moves to 6.39 m, θ_s to −0.09 — so it is not a clean single variable) |
+
+So the defensible statement is narrower than either "the torque demand runs away" or "the
+equilibrium is unallocatable": **the equilibrium is inside the actuator box with ~6 % to
+spare, and PX4's fault-blind allocator does not steer to it.** It still carries the dead
+rotor in its effectiveness matrix, so it charges that rotor's ~0.92 share against the same
+0–1 budget and computes the survivors from a four-rotor solution. Level 1 allocates to the
+dead rotor too, and escapes only because it can raise the total demand in newtons until the
+*survivors'* share alone equals the weight.
+
+**Not yet shown:** that PX4 *cannot* reach that point. The decisive test is to command the
+level-1 equilibrium wrench and check whether the allocator reproduces the level-1 rotor set.
+
+### The oracle test: give it more thrust and see what is left
+
+Asked 2026-09-19: if saturation is the mechanism, does simply handing the vehicle more
+thrust authority save it? `fly.py --thrust-scale K` multiplies every rotor's thrust constant
+by K, with `CA_ROTOR*_CT = 10.344K` and `MC_EIG_TRQ_MAX = 3.843K` passed so PX4's model of
+the vehicle still matches the vehicle. **K > 1 is an oracle, not an airframe.**
+
+**Spin has to be held or K changes two things.** `r_ss = (km/kf)·mg/γ`, so scaling the
+thrust constant `kf` by K divides the steady spin by K — a first attempt flew K = 2 at
+r = 10.0 instead of 20.1, which is uninterpretable. `km` is scaled with it; the ratio
+`km/kf` is what `CA_ROTOR*_KM` encodes, so that parameter is unchanged.
+
+| K | r before | outcome | thrust sp | unallocated thrust | unallocated torque |
+|---|---|---|---|---|---|
+| 1.0 | 20.06 | crash **1.9 s** after | −1.000 | **−0.503** | 0.664 |
+| 1.25 | 20.06 | crash **2.7 s** after | −0.987 | −0.381 | 0.148 |
+| 2.0 | 20.06 | crash **15.4 s** after | **−0.493** | **−0.0007** | 0.368 |
+
+**At K = 2 the thrust starvation is gone completely** — half throttle, nothing unallocated —
+and the vehicle **holds 5.98 m of altitude for 15 s**. It still dies, at 37.4° of tilt and
+47 m off station.
+
+Two things follow, and they need keeping apart:
+
+1. **The immediate fall at K = 1 is thrust starvation.** Remove the starvation and the fall
+   disappears. That part of §2 is confirmed by intervention, not just correlation.
+2. **Thrust is not sufficient.** `unallocated_torque` is still 0.368 with thrust entirely
+   satisfied: a fault-blind four-rotor effectiveness matrix cannot produce the roll and
+   pitch it is asking for from three rotors, and no amount of thrust changes that. The
+   vehicle stops falling and starts flying away instead.
+
+This is exactly what `desaturation.py` predicts for level 1 — *"that buys altitude, not
+attitude"* — reproduced on the PX4 rungs by a different route.
+
+**It also sharpens the open question.** Level 1 holds attitude to a standing **3.7°** and
+stays on station for 45 s. Level 3 with thrust starvation fully removed tumbles to **37°**
+and translates 47 m. So beyond the thrust path there is a second, unexplained difference in
+the *torque* path between the rungs. Candidates, none tested: PX4's rank-3 allocation with
+all four `CA_ROTOR*_KM` of one sign, the 20 ms rotor pole, the estimator (level 2 at K = 2
+has not been flown and would separate the last one).
+
 ## 5. What would have to change
 
 Fault tolerance in the sense the literature means it — Mueller's relaxed hover, where a
@@ -145,12 +339,18 @@ Three things, in the order they would have to happen:
 1. **No base spin rate between 20 and 29.5 rad/s makes level-3 hover survive a single rotor
    loss.** Time to departure is 1.9 / 2.8 / 1.9 s at 20 / 25 / 29.5, with no trend, and
    1.8 s on a repeat. **25 rad/s is not a threshold and spin is not the variable.**
-2. **The mechanism is allocation, not dynamics.** The three surviving rotors saturate within
-   0.5 s while the mixer still assigns work to the dead one, although three rotors at full
-   command exceed the measured hover requirement by 21 %.
-3. **The seat is irrelevant to this failure**, as it should be: it converged to −0.48…−0.50
+2. **The mechanism is allocation, not dynamics, and not the estimator.** Level 2 dies 2.0 s
+   after the same failure and level 3 dies 1.9 s after it, so the state source is exonerated
+   (§4b). **Level 1 survives the identical failure at r = 29.5 for 45 s**, by winding the
+   commanded collective from 15.9 N to 24.7 N without ever saturating a rotor — headroom
+   PX4's normalised 0–1 setpoint does not have.
+3. **The desaturation policy is not the discriminator at this operating point** (§4b):
+   `collective` and `uniform` give bit-identical steady states at level 1, because the
+   demand never reaches the ceiling. And `--desaturation` is a **no-op at levels 2 and 3** —
+   it lives in the Pegasus allocator the PX4 rungs bypass.
+4. **The seat is irrelevant to this failure**, as it should be: it converged to −0.48…−0.50
    rad beforehand and bought 62× in attitude, and a missing rotor is not a phase error.
-4. **`FD_ACT_EN=1` is unusable in SITL** and can crash a healthy vehicle by removing a good
+5. **`FD_ACT_EN=1` is unusable in SITL** and can crash a healthy vehicle by removing a good
    motor from the mix. Re-allocation is untested on this airframe.
-5. **The seat-off arm cannot be read at r ≥ 25**: it crashes 13–16 s before the injection,
+6. **The seat-off arm cannot be read at r ≥ 25**: it crashes 13–16 s before the injection,
    reproducing the archived seat-off hover.

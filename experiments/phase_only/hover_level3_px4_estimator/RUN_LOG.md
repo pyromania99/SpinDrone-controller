@@ -81,7 +81,7 @@ arms as **~17 ms of loop delay** and the `lag20ms` arms as that same ~17 ms plus
 rotor pole, i.e. **~37 ms**. The names are kept; only the reading changes. The side-by-side
 sheets in [`../analysis/`](../analysis/) label the columns that way.
 
-All three are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh),
+All three are also in [`../tools/make_all_figures.sh`](../../tools/make_all_figures.sh),
 which regenerates every figure in the tree in one pass, and all three were **verified by
 reproduction on 2026-09-17** — each regenerates the committed PNG byte for byte.
 

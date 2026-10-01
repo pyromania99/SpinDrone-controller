@@ -18,7 +18,7 @@ Companion to [TRAJECTORY_TRACKING.md](../trajectory_level1_seat_b_geometry_sweep
 rung that matters for hardware: the controller closes the loop entirely on its own
 estimator (`MC_CTRL_GT=0`) rather than simulator ground truth. It only became usable once
 the EKF2 output-predictor spin bug was fixed — see
-[`notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md`](../../notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md).
+[`notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md`](../../../notes/EKF2_OUTPUT_PREDICTOR_SPIN_FIX.md).
 All runs below post-date that fix.
 
 Trajectory throughout: `fast_circle_l2.csv`, R=10 m, 5 m/s, cosine ramp on the orbital

@@ -1,0 +1,10 @@
+{
+  "motor_moment": 6e-07,
+  "expected_spin_rad_s": 29.4,
+  "rotor_tau": 0.05,
+  "rotor_tau_is_placeholder": false,
+  "px4_airframe": "none_iris",
+  "physics_rate_hz": 250.0,
+  "vehicle_id": 0,
+  "duration_s": 240.0
+}

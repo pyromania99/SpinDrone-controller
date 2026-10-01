@@ -134,6 +134,10 @@ def parse_args() -> argparse.Namespace:
                     metavar="MODE",
                     help="Level 1: command-frame rotation of the roll/pitch wrench "
                          "(brief v2). Default off. Eigen controller only.")
+    g1.add_argument("--seat-satgate", type=int, choices=(0, 1), default=None,
+                    help="Level 1: same meaning as PX4's MC_SEAT_SATGATE. 1 freezes theta_s "
+                         "while the torque clips (what the PX4 archive was flown with), "
+                         "0 adapts through (what level 1 historically did).")
     g1.add_argument("--seat-law", choices=("angle", "cross"), default=None,
                     help="Level 1: theta_s update law. 'cross' (default) self-suppresses "
                          "in a starved channel; 'angle' is the original atan2 form.")
@@ -198,6 +202,10 @@ def parse_args() -> argparse.Namespace:
 
                     help="Levels 2/3: seconds per lateral leg (default 20).")
 
+    g2.add_argument("--thrust-scale", type=float, default=1.0, metavar="K",
+                    help="Levels 2/3: multiply rotor thrust authority by K (an oracle, not "
+                         "a vehicle). Remember to scale CA_ROTOR*_CT and MC_EIG_TRQ_MAX in "
+                         "--gains to match, or PX4's model stops matching the plant.")
     g2.add_argument("--fail-rotor", type=int, default=None, metavar="N",
                     help="Levels 2/3: stop PX4 motor N (1-based; 0 = all) mid-flight "
                          "through PX4's own failure injector. Sets CA_FAILURE_MODE=1, "
@@ -244,6 +252,8 @@ def fly_level_1(a: argparse.Namespace) -> int:
         args += ["--seat-gains"] + list(a.seat_gains)
     if a.seat_law is not None:
         args += ["--seat-law", a.seat_law]
+    if a.seat_satgate is not None:
+        args += ["--seat-satgate", str(a.seat_satgate)]
     if a.adapt_b:
         args.append("--adapt-b")
     if a.pole_gains:
@@ -304,7 +314,8 @@ def fly_px4(a: argparse.Namespace) -> int:
         log(f"sim output    -> {sim_log}")
         proc = simlaunch.launch_px4_sim(
             run_dir, a.motor_moment, duration,
-            extra=["--desaturation", a.desaturation]
+            extra=["--desaturation", a.desaturation,
+                   "--thrust-scale", repr(a.thrust_scale)]
                   # The PLANT lag lives in Pegasus at every level, so it has to be
                   # forwarded here too. sim_px4.py defaults it to the 20 ms
                   # placeholder when unset, so "no added lag" is --rotor-tau 0 and
@@ -331,7 +342,8 @@ def fly_px4(a: argparse.Namespace) -> int:
         trajectory=a.l2_trajectory, waypoint_radius=a.l2_waypoint_radius,
         lateral_amp=(0.0 if a.lateral_amp is None else a.lateral_amp),
         lateral_period=(20.0 if a.lateral_period is None else a.lateral_period),
-        fail_rotor=a.fail_rotor, fail_at=a.fail_at)
+        fail_rotor=a.fail_rotor, fail_at=a.fail_at,
+        thrust_scale=a.thrust_scale)
     try:
         return offboard.fly(opts)
     except SystemExit as exc:
@@ -360,6 +372,7 @@ _LEVEL1_ONLY = ("controller", "failure_mode", "rotor", "seed", "lateral", "traje
 _LEVEL23_ONLY = ("hold", "altitude", "attach", "gains", "ctrl_alg", "run_dir",
                  "boot_timeout", "no_land", "abort_on_loss",
                  "lateral_amp", "lateral_period", "fail_rotor", "fail_at",
+                 "thrust_scale",
                  "l2_trajectory", "l2_waypoint_radius")
 
 

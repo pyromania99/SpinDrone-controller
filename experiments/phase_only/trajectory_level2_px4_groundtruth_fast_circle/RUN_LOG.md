@@ -2,7 +2,7 @@
 
 **Dates flown:** 2026-09-13, 20:05 – 20:13 (the two pairs used here).
 **Figures generated:** 2026-09-17, from the surviving ulogs, with
-[`../tools/plot_run.py`](../tools/plot_run.py).
+[`../tools/plot_run.py`](../../tools/plot_run.py).
 **Findings document:** [`LEVEL2_TRACKING.md`](LEVEL2_TRACKING.md).
 
 **The raw data is intact.** Unlike every level-1 experiment in this tree, these figures were

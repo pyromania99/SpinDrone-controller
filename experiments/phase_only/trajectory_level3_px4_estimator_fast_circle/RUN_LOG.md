@@ -122,7 +122,7 @@ table above are read directly from the logs and are exact.
 ## Addendum, 2026-09-17 — the standard figure set
 
 `l3_nolag_*` and `l3_lag20ms_*` were generated from the same ulogs with
-[`../tools/plot_run.py`](../tools/plot_run.py), so level 3 carries the same four views as
+[`../tools/plot_run.py`](../../tools/plot_run.py), so level 3 carries the same four views as
 levels 1 and 2. The original `l3_combined_panels.png` / `l3_zoom_response.png` are kept —
 they answer the trajectory-lag question, which the standard set does not.
 
@@ -143,7 +143,7 @@ python3 experiments/tools/plot_run.py \
     --title "Level 3, same circle, rotor_tau 20 ms - neither arm survives"
 ```
 
-Both are also in [`../tools/make_all_figures.sh`](../tools/make_all_figures.sh), and both
+Both are also in [`../tools/make_all_figures.sh`](../../tools/make_all_figures.sh), and both
 were verified by reproduction on 2026-09-17 — each regenerates the committed PNG byte for
 byte. The `l3_lag20ms` arguments printed here until then (`--zoom 0 30 --settle-from 25`)
 did not; the values above are the ones that do.

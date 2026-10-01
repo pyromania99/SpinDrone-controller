@@ -8,7 +8,7 @@ does the laying-side-by-side.
 |---|---|---|
 | [`plot_run.py`](plot_run.py) | a PX4 run directory (reads its `.ulg`) | levels 2 and 3 |
 | [`plot_level1.py`](plot_level1.py) | a level-1 `eigen_statistics.npz` | level 1 |
-| [`make_analysis_grids.py`](make_analysis_grids.py) | the PNGs the two above wrote | [`../analysis/`](../analysis/) |
+| [`make_analysis_grids.py`](make_analysis_grids.py) | the PNGs the two above wrote | [`../analysis/`](../phase_only/analysis/) |
 
 `make_analysis_grids.py` reads no logs. It tiles the committed figures into labelled
 sheets — by default level 2 against level 3 at the `nolag` condition, one sheet per view —

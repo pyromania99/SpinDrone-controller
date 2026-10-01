@@ -156,3 +156,48 @@ python3 experiments/tools/plot_run.py \
 
 `plot_run.py` knows nothing about the failure, so it marks the crash and not the rotor
 stop; on these figures the two are 2 s apart and the departure is unmistakable.
+
+---
+
+## Addendum, same day — the level-1 and level-2 comparisons
+
+Flown to answer "a level-1 run survived this at 30 rad/s; why can level 3 not repeat it?"
+
+### Level 1, both desaturation policies
+
+```bash
+~/isaacsim/python.sh examples/flight/motor_failure.py --headless --rotor 0 --seed 7 \
+    --km 6e-7 --desaturation <collective|uniform> \
+    --target-altitude 6 --settle-hold 10 --settle-timeout 40 --duration 60
+```
+
+`--settle-hold 10` is the part that matters: the script's 1.5 s default fires the failure
+while the vehicle is still spinning up (the archived Aug-2025 npz failed at r = −15.6, not
+at 30), so the run it produces is not a converged-spin test. With 10 s the rotor stops at
+`t = 14.368 s, alt = 5.995 m, |v| = 0.017 m/s` and r = −29.5.
+
+| policy | outcome |
+|---|---|
+| `collective` | **survives the full 60 s** — 5.41 m, xy 0.00 m, \|p,q\| 1.196, r −29.47 |
+| `uniform` | **survives** — 5.41 m, xy 0.00 m, \|p,q\| 1.196, r −29.47 |
+
+Identical, because the post-failure demand peaks at 9.90 N against a 10.34 N per-rotor
+ceiling and neither policy ever engages. npz under the session scratchpad; the flights are
+cheap to repeat from the command above.
+
+**Caveat on the tree.** These two were flown while another session had uncommitted edits to
+`examples/utils/seat.py` and `examples/utils/eigen_controller.py` (adding a seat gain term).
+`motor_failure.py` constructs the controller with `seat=None`, and every line of the new
+code is behind `if self.seat is not None and self.seat.gain_law == self.seat.G_ON`, so it is
+inert here — but the runs are on that working tree, not on `39b0bab`.
+
+### Level 2 — the discriminator
+
+| run directory | r | outcome |
+|---|---|---|
+| `px4_runs/L2_eigen_20260919_091903` | 25 (commanded 29.4) | **crashed at 26.2 s, 3.5 s before the injection** — reproduces the archived L2 seat-ON hover at this spin (22.1 s, "not rescued"), so this cell cannot host a failure |
+| `px4_runs/L2_eigen_20260919_092150` | 20.1 | crash 31.2 s — **2.0 s after** the failure |
+
+The second is the one that matters: **level 2 dies 2.0 s after the loss and level 3 dies
+1.9 s after it**, at the same spin, with the only difference being `MC_CTRL_GT`. The
+estimator is not what fails here.

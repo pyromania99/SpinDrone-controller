@@ -92,7 +92,8 @@ class Seat:
     CROSS = "cross"   #: theta_s -= k * (xd x xa) * dt          = k |xd||xa| sin(alpha)
 
     def __init__(self, mode=ADAPTIVE, k=2.0, theta_max=1.4, r_min=5.0,
-                 eps=1e-9, tau_a=0.002, T=0.020, k_sign=1.0, law=CROSS):
+                 eps=1e-9, tau_a=0.002, T=0.020, k_sign=1.0, law=CROSS,
+                 sat_gate=True):
         self.mode = self.MODES[mode] if isinstance(mode, str) else int(mode)
         self.k = max(float(k), 0.0)
         self.theta_max = float(np.clip(theta_max, 0.0, self.THETA_CEILING))
@@ -104,6 +105,14 @@ class Seat:
         if law not in (self.ANGLE, self.CROSS):
             raise ValueError(f"unknown law {law!r}")
         self.law = law
+        #: Whether allocator saturation freezes the update. PX4's MC_SEAT_SATGATE, which
+        #: defaults to 1 there because every archived PX4 run was flown gated.
+        #:
+        #: This does NOT break the level-1 archive. eigen_controller.py now sets `saturated`
+        #: from its torque re-clip, but that clip is behind `torque_max`, which is None
+        #: unless a run passes --controller-gains torque_max=..., and no archived level-1 run
+        #: does - so the flag is never assigned there and this is inert either way.
+        self.sat_gate = bool(sat_gate)
         self.saturated = False
         self.reset()
 
@@ -158,7 +167,7 @@ class Seat:
         if the operating amplitude changes. In the harness, k_cross ~ 0.01 matched
         k_angle = 2.0 - a factor of ~200 - and that factor is not portable.
         """
-        if self.saturated or abs(r) <= self.r_min or not dt > 0.0:
+        if (self.sat_gate and self.saturated) or abs(r) <= self.r_min or not dt > 0.0:
             self.alpha = float("nan")
             return False
 
@@ -203,6 +212,18 @@ class WrenchObserver:
     Note the difference is not divided by dt: atan2 is invariant to positive
     scaling of either vector, so dividing would only inject dt noise. The drift
     term is therefore scaled by dt to match.
+
+    CONSEQUENCE, recorded 2026-09-19 after it cost a day: last_xa is NOT in rad/s^2
+    and last_xd is. Every consumer this class has takes an ANGLE between them, which
+    is invariant to that, so it has never mattered - but anything comparing their
+    LENGTHS must divide last_xa by dt first. Related and more important: last_xa is a
+    RECONSTRUCTION, w_dot_meas minus the MODELLED drift, and under spin the lam*r
+    precession dominates that subtraction. A modest error in lam leaves a residual the
+    same order as the delivered wrench, so |last_xa|/|last_xd| is NOT the actuator's
+    magnitude response. Measured across 32 archived runs flown at rotor_tau = 0, where
+    the true |Ga| is exactly 1.000: the ratio reads 0.044 to 1.225, and exceeds 1,
+    which an attenuating actuator cannot do. The ANGLE survives this contamination;
+    a magnitude would not.
 
     TWO MODES, and the choice matters more than any gain:
 
