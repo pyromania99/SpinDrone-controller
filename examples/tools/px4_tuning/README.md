@@ -16,6 +16,7 @@ uses them is `notes/NEXT_STEPS.md`.
 | `measure_motor_lag.py` | `T` and `tau_eff` from a hardware ulog. |
 | `mode_compare.py` | The same mode measurement across a PX4 `.ulg` and a Pegasus `.npz`, handling the FLU↔FRD flip. |
 | `replay_law.py` | Recompute what the eigen controller *should* have commanded from the logged state, and compare against what it did. |
+| `tilt_spin_analysis.py` | Steady-hover spin split: props vs 10° motor tilt, and projection to larger tilts (notes/HARDWARE_TILT10_SPIN_ANALYSIS.md). |
 | `ulog_to_npz.py` | Convert a ulog into the `.npz` layout the rest of the tooling reads. |
 | `ga_to_candidates.py` | Turn a GA archive into a `gain_search.py` candidate list. Enforces the cascade separation the GA has no term for, and does not carry `Kd_att` across by default. |
 

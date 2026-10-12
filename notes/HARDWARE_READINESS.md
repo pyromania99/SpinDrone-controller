@@ -12,6 +12,75 @@ for the simulated envelope these checks are calibrated against.
 
 ---
 
+## Status 2026-10-07 — what the hardware flights since 09-24 changed
+
+The sections below are kept as written on 09-19/09-24. This block says which of them are
+now closed, superseded or newly open. Spin-ramp planning lives in
+[`SPIN_RAMP_STEPS.md`](SPIN_RAMP_STEPS.md); the per-build spin numbers in
+[`HARDWARE_TILT10_SPIN_ANALYSIS.md`](HARDWARE_TILT10_SPIN_ANALYSIS.md).
+
+**Latest flight:** `~/Downloads/logs/3_10_1_20/log_9_UnknownDate.ulg`. Eigen (`MC_CTRL_ALG 3`,
+`fallback_active 0`), seat off, lead off, POSCTL. The folder name is read as **3 motors at 10°
++ 1 at 20°**. Confirm that; it is not recorded anywhere else. That build predicts
+2.84 + 3·2.45 + 2.45·(tan 20°/tan 10°) ≈ **15.2 rad/s** from the tilt-analysis model, and it
+measured **14.6 rad/s** steady (14.8 at the end).
+
+| 9.0–13.6 s, steady spin | value |
+|---|---|
+| spin r | 14.6 rad/s, std 0.03–0.07 |
+| tilt error rms / p95 / max | 1.11° / 1.55° / 1.85° |
+| \|ω_xy\| mean / p95 | 14.9 / 19.1 °/s (coning from a ~1.1° tilt at r = 14.6) |
+| motors mean / p99 / saturated | 0.345 / 0.389 / 0 |
+| RPM | 16.7k–19.0k |
+| height | 0.57–0.63 m, converging on the −0.54 m setpoint |
+| EV yaw innovation | **mean +4.7°**, rms 9.1° (≈ 0° on the ground) |
+
+Stable and settling. But there is only ~4.5 s of steady data, because **the log stops at 13.7 s
+while armed and flying.** No disarm, no failsafe, no logger error; the file ends on a whole
+message, so it is not a truncated download. The board lost power or reset. Check the card
+for `fault_*.log`.
+
+**Closed or superseded:**
+
+- **§1, the SITL-only airframe file.** Still true, but hardware now flies on stored params
+  (`SYS_AUTOSTART 4050`). There is still no hardware airframe file. As flown: `WN 30`,
+  `ATT_P 4.2`, `ATT_D 0.05`, `Z_P 9.3`, `Z_D 5.0`, `XY_P 0.5`, `XY_D 2.0`, `B/ALPHA/BETA 0`,
+  `TRQ_MAX 2.11`, `IXX/IYY/IZZ 0.017/0.015/0.015`, `IMU_GYRO_CUTOFF 90`, `IMU_DGYRO_CUTOFF 60`,
+  `LEAD_EN 0`, `SEAT_MODE 0`, `CTRL_GT 0`. `CA_ROTOR*_PX/PY` are 0.46 m, so the unit-arm
+  problem in §2 is fixed.
+- **§2, `MC_EIG_IZZ`.** Set to 0.015, an effective value. The 2-tilt coupling fit gave
+  0.016–0.021. It only feeds the gyroscopic feedforward, so re-fit it as r rises.
+- **§2, EV delay and logging EV.** `vehicle_visual_odometry` is now logged at full rate
+  (~123 Hz) via the SD-card topic file. The 09-30 to 10-06 logs measured 15–16 ms, so
+  `EKF2_EV_DELAY` is 15. **Timesync is still not active:** `timestamp − timestamp_sample` is
+  0.00 ms in every log, so the bridge's capture stamp never reaches PX4.
+- **§5 A.6, `mc_controller_status`.** Logged at 20 Hz. The trimmed topic file takes it to
+  50 ms.
+
+**Newly open:**
+
+- **Lead values superseded (2026-10-08).** §1's `TC ≈ 0.0125` / `DMAX ≈ 36` used the August pole
+  spread and `TRQ_MAX 2.265`. The gap-free fit gives T = 20–25 ms, and `TRQ_MAX` is 2.11, so the
+  values are now `TC 0.015`, `DMAX 28`, `WN` 150 then 250. Method and flight order:
+  [`SPIN_RAMP_STEPS.md`](SPIN_RAMP_STEPS.md) §2. Seat observable causes/fixes: §6a there.
+
+- **EV delay is 18.8 ms, not 15 (updated 2026-10-08).** The first long full-rate log
+  (`3_10_1_20/log_1`, 50 s at ~15 rad/s) measures 18.8 ms. Its yaw innovation bias (+2° to
+  +8°) fits 15 being ~4 ms short. Set `EKF2_EV_DELAY 19`. log_9's 3.4 ms is withdrawn (too
+  short). The same log gives **Izz_eff 0.0223**, so set `MC_EIG_IZZ 0.022`. See
+  [`HARDWARE_15RADS_ANALYSIS.md`](HARDWARE_15RADS_ANALYSIS.md).
+- **§0's r_crit = 15.7 rad/s is now one step away.** That is the *stock* EKF2 limit. The
+  flashed build `d58c73df` contains the fix (`f7953526`, `10c40849`), so the next build is
+  its first hardware test above that speed. Do §5 B.10 on that flight.
+- **Battery current reads voltage**, not current (`current_a / voltage_v` ≈ 3 everywhere,
+  ~35 A disarmed). The current input is unconnected or miswired. Do not use any logged amps.
+- **Logger CPU cost.** Armed CPU load tracks the log rate: default set 43 KB/s → 0.70; first
+  topic file 125 KB/s → 0.89; profile 19 → 0.99. `esc_status` at 10 ms was 38% of the log.
+  The topic file is now trimmed to about 75 KB/s. Profile 19 ran 83 s at 0.99 without a reset,
+  so CPU load alone does not explain the 10-07 cutoff.
+
+---
+
 ## 0. Build state — VERIFIED 2026-09-19
 
 | check | state |
@@ -74,9 +143,9 @@ which are not what was flown:
 | `MC_EIG_TRQ_MAX` | 1.0 | **3.843** | derived; hardware value 2.265, see §2 |
 | `IMU_DGYRO_CUTOFF` | 20 | **60** | 20 Hz adds ~0.33 rad of phase at spin |
 | `MC_LEAD_EN` | 0 | **1** | off by default; the 2026-09-20 result needs it on |
-| `MC_LEAD_TC` | 0.020 | **≈0.0125** | the BOTTOM of the measured 12.5–40 ms spread, not the 25 ms median — over-inversion is a coin flip at +33 % and fatal at +67 % |
+| `MC_LEAD_TC` | 0.020 | **≈0.0125** → **0.015** (2026-10-08, see `SPIN_RAMP_STEPS.md` §2) | the BOTTOM of the measured 12.5–40 ms spread, not the 25 ms median — over-inversion is a coin flip at +33 % and fatal at +67 % |
 | `MC_LEAD_WN` | 150 | **250** | |
-| `MC_LEAD_DMAX` | 25 | **≈36** | `0.4·(0.50·TRQ_MAX)/TC`, and TRQ_MAX is **2.265 on hardware, not 3.843** — the sim value 25 is wrong here. At TC = 0.0125 the rule gives 36.2. |
+| `MC_LEAD_DMAX` | 25 | **≈36** → **28** (2026-10-08: TC 0.015, TRQ_MAX 2.11) | `0.4·(0.50·TRQ_MAX)/TC`, and TRQ_MAX is **2.265 on hardware, not 3.843** — the sim value 25 is wrong here. At TC = 0.0125 the rule gives 36.2. |
 | `MC_CTRL_GT` | 0 | 1 in sim, **must be 0 on hardware** | §3 |
 
 **Action:** write a hardware airframe file under `init.d/airframes/`, or a loadable `.params`

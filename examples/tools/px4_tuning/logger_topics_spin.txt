@@ -1,0 +1,60 @@
+# Spin-ramp logging set for the KakuteH7. Copy to the SD card as
+#   /etc/logging/logger_topics.txt   and set SDLOG_PROFILE 0.
+# PX4 applies this file AFTER the profile; with profile 0 it is the whole set.
+# Format: <topic> <interval_ms> <instance>  (interval 0 = every sample).
+# Always give the instance: without it the logger takes all 10 instances,
+# 10 slots per line of its 255, and silently drops the end of this list.
+# Budget ~75 KB/s. The card tops out near 190 KB/s; profile 19 + BDShot
+# asked ~300 and dropped 45% of the 2026-10-02 log. CPU (armed) tracks
+# log rate: 43 KB/s -> 0.70, 125 KB/s -> 0.89 (2026-10-07), so trimmed.
+# --- ID signals, full rate ---
+vehicle_angular_velocity 0 0
+vehicle_torque_setpoint 0 0
+# 8 ms ~ 125 Hz; torque_setpoint keeps the full-rate controller output
+actuator_motors 8 0
+vehicle_visual_odometry 0 0
+# esc_status is 496 B/msg (8 ESC slots); 10 ms cost 47 KB/s (38% of log)
+esc_status 50 0
+# --- control chain ---
+vehicle_attitude 20 0
+vehicle_attitude_setpoint 20 0
+vehicle_rates_setpoint 20 0
+vehicle_thrust_setpoint 20 0
+mc_controller_status 50 0
+control_allocator_status 50 0
+vehicle_local_position 50 0
+vehicle_local_position_setpoint 100 0
+trajectory_setpoint 100 0
+position_setpoint_triplet 200 0
+vehicle_acceleration 50 0
+manual_control_setpoint 50 0
+input_rc 200 0
+# --- estimator health ---
+estimator_status 100 0
+estimator_status_flags 200 0
+estimator_innovations 100 0
+estimator_aid_src_ev_yaw 50 0
+estimator_aid_src_ev_pos 50 0
+estimator_aid_src_ev_hgt 100 0
+estimator_sensor_bias 500 0
+estimator_event_flags 0 0
+timesync_status 1000 0
+vehicle_air_data 200 0
+# --- state / events ---
+vehicle_status 0 0
+vehicle_control_mode 0 0
+vehicle_land_detected 0 0
+actuator_armed 0 0
+failsafe_flags 0 0
+failure_detector_status 200 0
+takeoff_status 0 0
+vehicle_command 0 0
+vehicle_command_ack 0 0
+action_request 0 0
+home_position 0 0
+sensor_selection 0 0
+parameter_update 0 0
+battery_status 200 0
+cpuload 0 0
+logger_status 0 0
+event 0 0
