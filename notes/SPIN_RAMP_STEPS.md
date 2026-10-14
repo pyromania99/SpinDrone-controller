@@ -241,12 +241,13 @@ the spin frequency. The single angle the seat reads is a power-weighted average 
   one rotation cannot match it.
 
 **Offline checks before any seat flight (on `30th_2tilt/log_1` and `3_10_1_20/log_1`):**
-- [ ] Cross-spectrum phase of `xa` vs `xd` against **signed** body frequency, with coherence.
+- 2026-10-13, done: [`SEAT_OBSERVABLE_ANALYSIS.md`](SEAT_OBSERVABLE_ANALYSIS.md). The lock-in reads the lag at 15 rad/s with stick content (34° vs 26–33°), not in hover, and not robustly at 8.6 rad/s. The current firmware observable's fixed point is +83° (wrong sign), so no `MC_SEAT_MODE 2` flight before the observable changes. The "12°" above is a band-edge artefact; the true 0.3–8 Hz value is −25°.
+- [x] Cross-spectrum phase of `xa` vs `xd` against **signed** body frequency, with coherence.
       If the lag model holds it follows ω·L + atan(ωT) + gyro/D-term filter phase, a near-straight
       line; that would confirm the broadband reading is weighting, not a broken mechanism. The phase
       at ω = −r is what the seat should read.
-- [ ] The lock-in observable above, on both logs, against r·τ.
-- [ ] **Predict the seat's fixed point.** The cross law settles where the mean of
+- [x] The lock-in observable above, on both logs, against r·τ.
+- [x] **Predict the seat's fixed point.** The cross law settles where the mean of
       `|xd||xa|·sin ε` is zero; compute that from the seat-off log. If it says ~12° where the lag
       says ~30°, the seat will only partly compensate, before it ever flies.
 
