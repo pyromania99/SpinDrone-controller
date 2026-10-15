@@ -60,6 +60,13 @@ import os
 import sys
 from pathlib import Path
 
+# The rotating-wing command-line flags must be registered before parse_args() runs,
+# which is well before SimulationApp starts. wing_cli defers every Isaac Sim import
+# to spawn_vehicle(), so importing it this early is safe.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
+from wing_cli import add_wing_arguments, spawn_vehicle, wing_run_tag, describe_wing_run
+
+
 
 
 import carb
@@ -130,6 +137,7 @@ def parse_args():
     p.add_argument("--goal-seed",       type=int,   default=7)
     p.add_argument("--headless",        action="store_true", default=False)
     p.add_argument("--no-headless",     dest="headless", action="store_false")
+    add_wing_arguments(p)
     return p.parse_args()
 
 
@@ -880,7 +888,10 @@ def run_ab_sweep(
     x_min, x_max = bounds[0], bounds[1]
     x_margin     = 1.5
     x_usable     = x_max - x_min - 2.0 * x_margin
-    auto_spacing = x_usable / (n_a - 1) if n_a > 1 else 0.0
+    # A lone drone has no neighbour to space from, so it is given the whole usable
+    # width. Zero here would collapse its bounds box to zero width and flag it out of
+    # bounds on the first step, silently invalidating every single-point sweep.
+    auto_spacing = x_usable / (n_a - 1) if n_a > 1 else x_usable
     spacing      = min(ARGS.spacing, auto_spacing)
     x_start      = x_min + x_margin
     y_min, y_max = bounds[2], bounds[3]
@@ -931,13 +942,14 @@ def run_ab_sweep(
         cfg.backends     = [backend]
         cfg.thrust_curve = make_thrust_curve(mm_vals[0])
 
-        vehicle = Multirotor(
+        vehicle = spawn_vehicle(
             f"/World/ab_a{i_a}",
             ROBOTS["Iris"],
             i_a,
             spawn_pos,
             Rotation.from_euler("XYZ", [0., 0., 0.], degrees=True).as_quat(),
             config=cfg,
+            args=ARGS,
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
 
@@ -1150,7 +1162,10 @@ def main():
     x_min, x_max = bounds[0], bounds[1]
     x_margin  = 1.5
     x_usable  = x_max - x_min - 2.0 * x_margin
-    auto_spacing = x_usable / (n_on - 1) if n_on > 1 else 0.0
+    # A lone drone has no neighbour to space from, so it is given the whole usable
+    # width. Zero here would collapse its bounds box to zero width and flag it out of
+    # bounds on the first step, silently invalidating every single-point sweep.
+    auto_spacing = x_usable / (n_on - 1) if n_on > 1 else x_usable
     spacing   = min(ARGS.spacing, auto_spacing)
     x_start   = x_min + x_margin
 
@@ -1208,13 +1223,14 @@ def main():
         cfg.backends     = [backend]
         cfg.thrust_curve = make_thrust_curve(mm_vals[0])
 
-        vehicle = Multirotor(
+        vehicle = spawn_vehicle(
             f"/World/eigen_on{i_on}",
             ROBOTS["Iris"],
             i_on,
             spawn_pos,
             Rotation.from_euler("XYZ", [0., 0., 0.], degrees=True).as_quat(),
             config=cfg,
+            args=ARGS,
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
 

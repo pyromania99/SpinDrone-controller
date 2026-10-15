@@ -37,6 +37,13 @@ import os
 import sys
 from pathlib import Path
 
+# The rotating-wing command-line flags must be registered before parse_args() runs,
+# which is well before SimulationApp starts. wing_cli defers every Isaac Sim import
+# to spawn_vehicle(), so importing it this early is safe.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
+from wing_cli import add_wing_arguments, spawn_vehicle, wing_run_tag, describe_wing_run
+
+
 import carb
 from isaacsim import SimulationApp
 
@@ -78,6 +85,7 @@ def parse_args() -> argparse.Namespace:
                    help="Motor moment constant km. If provided, overrides default.")
     p.add_argument("--headless",   action="store_true", default=False)
     p.add_argument("--no-headless", dest="headless", action="store_false")
+    add_wing_arguments(p)
     return p.parse_args()
 
 
@@ -387,7 +395,10 @@ def main():
     x_min, x_max = bounds[0], bounds[1]
     x_margin  = 1.5
     x_usable  = x_max - x_min - 2.0 * x_margin
-    auto_spacing = x_usable / (n_kp - 1) if n_kp > 1 else 0.0
+    # A lone drone has no neighbour to space from, so it is given the whole usable
+    # width. Zero here would collapse its bounds box to zero width and flag it out of
+    # bounds on the first step, silently invalidating every single-point sweep.
+    auto_spacing = x_usable / (n_kp - 1) if n_kp > 1 else x_usable
     spacing   = min(ARGS.spacing, auto_spacing)
     x_start   = x_min + x_margin
 
@@ -438,13 +449,14 @@ def main():
         if ARGS.motor_moment is not None:
             cfg.thrust_curve = QuadraticThrustCurve(config={"motor_moment": ARGS.motor_moment})
 
-        vehicle = Multirotor(
+        vehicle = spawn_vehicle(
             f"/World/pd_kp{i}",
             ROBOTS["Iris"],
             i,
             spawn_pos,
             Rotation.from_euler("XYZ", [0., 0., 0.], degrees=True).as_quat(),
             config=cfg,
+            args=ARGS,
         )
         drones.append((vehicle, backend, spawn_pos, drone_bounds))
         carb.log_warn(f"  [Kp_xy={kp:.2f}]  drone {i} spawned at x={spawn_x:.1f}")
