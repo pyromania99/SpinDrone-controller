@@ -287,14 +287,22 @@ drag. A scaling error, a reference-area mistake or a lift-direction mistake woul
 coefficients the same way. So the suspect is `kOmegaSSTLM`'s response to the conditions it
 is being given, and the leading candidates are:
 
-1. **`gammaInt` initialised to 1**, i.e. fully turbulent everywhere, requiring the model to
-   *relaminarise* the attached region rather than transition into turbulence. The ERCOFTAC
-   T3A tutorial does this, but T3A is a flat plate where the correlation forces transition
-   anyway.
+1. ~~**`gammaInt` initialised to 1**, requiring the model to relaminarise rather than
+   transition.~~ **Tested and ruled out.** Re-running E387 from `gammaInt = 0` — fully
+   laminar everywhere — gives Cl 1.0379 against 1.0381, a difference of **0.02 %**, and
+   still converges (`settled: true`). The converged solution is independent of the initial
+   condition, which is reassuring about the solve and eliminates this cause.
 2. **Freestream turbulence at the low end of the model's calibration.** Tu = 0.1 % at the
    aerofoil matches a clean tunnel and XFOIL's Ncrit 9, but Langtry–Menter is calibrated
    mainly above a few tenths of a percent.
 3. **The wall `omega` treatment** injecting eddy viscosity into the laminar region.
+
+**Three causes eliminated with evidence**, each by measurement rather than reasoning:
+convergence (`settled: true`, drift 2.5e-4), force integration (the patch fix moved the
+answer 0.00 %), and the initial condition (0.02 %). What remains is calibration of the
+transition model itself, which is a different class of problem from the mesh and solver
+bugs fixed above — those were defects with right answers; this is a modelling choice that
+has to be tuned and then validated against measurement.
 
 For reference, published measurements put E387 at Re 2e5, α = 4° near Cl 0.75–0.80, so
 XFOIL is close to measurement and the CFD is the outlier. (The Selig volume is a scanned
