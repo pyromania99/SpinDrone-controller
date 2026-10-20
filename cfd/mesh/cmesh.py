@@ -302,24 +302,58 @@ def build_cmesh(
     volumes = [e[1] for e in extruded if e[0] == 3]
     front_faces = [e[1] for e in extruded if e[0] == 2][:0]  # filled below
 
-    # Classify every boundary surface geometrically. Doing it by position rather than by
-    # tracking extrusion order is robust to gmsh changing that order between versions.
+    # Classify every boundary surface by WHICH CURVE IT WAS EXTRUDED FROM, not by where
+    # it sits.
+    #
+    # The bounding-box heuristic this replaces produced DUPLICATE patch names -- two
+    # "aerofoil" patches of 220 and 102 faces and two "farfield" patches -- because a
+    # surface near the aerofoil in x and y is not necessarily part of it. OpenFOAM then
+    # integrated forces over only the first patch of that name, which is a silent and
+    # entirely plausible-looking error.
+    #
+    # Every extruded side surface carries its source curve in its boundary, so the mapping
+    # is exact rather than inferred.
+    wall_curves = {c_up_surf, c_lo_surf}
+    far_curves = {c_arc_up, c_arc_lo, c_far_up, c_far_lo}
+    outlet_curves = {c_out_up, c_out_lo}
+
     walls, far, outlet, front, back = [], [], [], [], []
-    base_surfaces = {s_up_foil, s_lo_foil, s_up_wake, s_lo_wake}
     for dim, tag in gmsh.model.getEntities(2):
         xmin, ymin, zmin, xmax, ymax, zmax = gmsh.model.getBoundingBox(dim, tag)
-        if abs(zmax - zmin) < 1e-12:                       # planar in z: front or back
+        if abs(zmax - zmin) < 1e-12:                   # planar in z: a front or back face
             (back if abs(zmin) < 1e-12 else front).append(tag)
             continue
-        cx, cy = 0.5 * (xmin + xmax), 0.5 * (ymin + ymax)
-        if abs(cx - L) < 1e-6 * max(1.0, L):
-            outlet.append(tag)
-        elif np.hypot(cx - te[0], cy - y_te) > 0.5 * R:
-            far.append(tag)
-        elif xmax <= 1.0 + 1e-9 and abs(ymax) < 0.5:
+        # The wake cut is shared by both wake blocks, so its extruded surface lies
+        # BETWEEN two volumes and is interior, not a boundary. That sharing is the whole
+        # point of a C-mesh -- cells above and below the cut are true neighbours -- so the
+        # surface must be skipped rather than given a patch.
+        if len(gmsh.model.getAdjacencies(2, tag)[0]) == 2:
+            continue
+
+        curves = {
+            abs(c[1])
+            for c in gmsh.model.getBoundary([(2, tag)], oriented=False, recursive=False)
+        }
+        if curves & wall_curves:
             walls.append(tag)
-        else:
+        elif curves & far_curves:
             far.append(tag)
+        elif curves & outlet_curves:
+            outlet.append(tag)
+        else:
+            # The wake cut is interior: both sides of it are real cells, not a boundary.
+            # Anything landing here would be an unclassified boundary, which must not be
+            # silently dropped into the wrong patch.
+            raise RuntimeError(
+                f"surface {tag} could not be classified from its curves {sorted(curves)}"
+            )
+
+    expected_walls = 2
+    if len(walls) != expected_walls:
+        raise RuntimeError(
+            f"expected {expected_walls} aerofoil surfaces (upper and lower), got "
+            f"{len(walls)}; force integration would be over the wrong faces"
+        )
 
     gmsh.model.addPhysicalGroup(3, volumes, name="internal")
     gmsh.model.addPhysicalGroup(2, walls, name="aerofoil")
