@@ -264,11 +264,46 @@ carries into the far wake left the pressure residual on a plateau at 1e-2 and th
 coefficients alternating in sign between consecutive iterations. Plain SIMPLE with explicit
 pressure relaxation, a tighter GAMG tolerance and relaxation at 0.5 converges cleanly.
 
-**Current status: converged, not yet validated.** GOE 210 at α = 5°, Re = 1e5 gives
-Cl 1.236 ± 0.003, Cd 0.0246 ± 0.0004 — stable, but **+30 % on XFOIL's Cl and +56 % on its
-Cd**. Whether that is the CFD or the reference is what the E387 case exists to decide: it
-is the only section available with *measured* wind-tunnel data. Until that runs, no table
-is generated and nothing reaches the simulator.
+### Status: converges reliably, not yet validated
+
+The solver side works. What is not established is absolute accuracy.
+
+| | CFD | XFOIL | difference |
+|---|---|---|---|
+| **E387**, α = 4°, Re = 2e5 | Cl 1.0381, Cd 0.01117 | Cl 0.8365, Cd 0.01230 | **Cl +24.1 %, Cd −9.2 %** |
+| **GOE 210**, α = 5°, Re = 1e5 | Cl 1.236, Cd 0.0246 | Cl 0.951, Cd 0.0159 | Cl +30 %, Cd +56 % |
+
+Both converge cleanly — E387 reports `settled: true`, Cl drift 0.00025, y+ max 0.82 — so
+this is not a convergence artefact.
+
+**It is not the patch bug either.** Re-running E387 on the corrected mesh changed the
+answer by **Cl +0.00 %, Cd −0.06 %**: the first of the two duplicate `aerofoil` patches had
+in fact contained the complete surface. The fix removes a genuine latent hazard but does
+not explain the discrepancy.
+
+**The signature points at transition.** Lift up *and* drag down together is what earlier
+transition produces — a shorter separation bubble, higher effective camber, less pressure
+drag. A scaling error, a reference-area mistake or a lift-direction mistake would move both
+coefficients the same way. So the suspect is `kOmegaSSTLM`'s response to the conditions it
+is being given, and the leading candidates are:
+
+1. **`gammaInt` initialised to 1**, i.e. fully turbulent everywhere, requiring the model to
+   *relaminarise* the attached region rather than transition into turbulence. The ERCOFTAC
+   T3A tutorial does this, but T3A is a flat plate where the correlation forces transition
+   anyway.
+2. **Freestream turbulence at the low end of the model's calibration.** Tu = 0.1 % at the
+   aerofoil matches a clean tunnel and XFOIL's Ncrit 9, but Langtry–Menter is calibrated
+   mainly above a few tenths of a percent.
+3. **The wall `omega` treatment** injecting eddy viscosity into the laminar region.
+
+For reference, published measurements put E387 at Re 2e5, α = 4° near Cl 0.75–0.80, so
+XFOIL is close to measurement and the CFD is the outlier. (The Selig volume is a scanned
+PDF whose polar tables do not OCR reliably, so this is from the literature rather than
+extracted here.)
+
+**No table is generated and nothing reaches the simulator until this is closed.** The
+aerodynamic model in use remains the one validated against the design report and XFOIL,
+which is unaffected by any of this.
 
 **Do not start the 234-case sweep until one case converges cleanly against XFOIL.** A week
 of compute on meshes like these produces confident-looking drag that is wrong.
