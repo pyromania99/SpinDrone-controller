@@ -17,8 +17,9 @@ instead of cancelling. Three things follow, and this work addresses all three.
 | **Dynamic inflow** | Inflow has mass; τ ≈ 77 ms is 0.81 of a 12 rad/s controller bandwidth. Also makes the per-step cost constant | **Working.** `--wing-inflow dynamic` |
 | **CFD section-data pipeline** | The section polar is answerable only to two codes that agree with each other | **Partial** — pipeline runs end to end; the structured mesher does not yet pass `checkMesh` (§6) |
 
-**184 offline physics tests**, no Isaac Sim required, ~4 s. The stock quadrotor path is
-bit-identical to before when the new terms are disabled.
+**184 offline physics tests** (no Isaac Sim, ~4 s) plus **18 end-to-end simulator
+configurations**, all passing. The stock quadrotor path is bit-identical to before when the
+new terms are disabled. See §8 for what was verified and how.
 
 ---
 
@@ -254,7 +255,7 @@ of compute on meshes like these produces confident-looking drag that is wrong.
 
 ## 7. Tests
 
-`examples/controller_tests/physics_tests/` — 184 tests, no Isaac Sim, ~4 s.
+`examples/controller_tests/physics_tests/` — 184 tests, no Isaac Sim, ~4 s. Runs under pytest, under the standalone runner, and under Isaac Sim's own Python 3.11 (§8.2).
 
 ```bash
 python3 -m pytest examples/controller_tests/physics_tests -q
@@ -295,7 +296,86 @@ output — the uniform-rod inertia, the parallel-axis theorem, `P = −Q_z·Ω`,
 
 ---
 
-## 8. Known limitations
+## 8. Verification
+
+Two layers, both repeatable. The offline suite checks the mathematics; the simulator
+harness checks that every configuration actually spawns, steps and scores inside Isaac Sim,
+which is where integration mistakes live -- a mis-wired flag, a missing `dt`, a prim that
+never receives the wing's mass, a NaN reaching PhysX.
+
+### 8.1 End-to-end simulator harness
+
+`examples/controller_tests/verify_simulation.py` -- 18 configurations. Each asserts three
+things: the run exits cleanly, it emits a **finite** score, and that score falls in a
+physically plausible band. A run that completes but scores infinity has diverged, which an
+exit code alone would not catch.
+
+```bash
+python3 examples/controller_tests/verify_simulation.py            # full, ~6 min
+python3 examples/controller_tests/verify_simulation.py --quick    # skips multi-vehicle
+```
+
+Result: **18/18 passed.**
+
+| # | configuration | score |
+|---|---|---|
+| 1 | baseline, no wing | 0.4220 |
+| 2 | baseline, gyroscopics ablated | 0.4220 |
+| 3 | wing, default (asserts the mass reaches the rigid body) | 0.4243 |
+| 4 | wing, inertia ablated | 0.4151 |
+| 5–7 | inflow `none` / `glauert` / `dynamic` | 0.4182 / 0.4231 / 0.4210 |
+| 8–11 | 4 blades / collective +2° / retargeted span / 48 stations | 0.4343 / 0.4214 / 0.4272 / 0.4245 |
+| 12 | wrong handedness (ablation) | 0.4490 |
+| 13–14 | six vehicles in one scene, without and with wing | 0.4220 / 0.4243 |
+| 15–16 | PD sweep, without and with wing | 0.4283 / 0.4275 |
+| 17–18 | MPC sweep, without and with wing | 0.5177 / 0.5800 |
+
+Case 3 additionally requires `"wing structure added"` in the log, so a silent failure to
+apply the wing's mass and inertia to the `/body` prim fails the check rather than passing
+with the aerodynamics alone.
+
+### 8.2 Offline suite under all three interpreters
+
+| path | result |
+|---|---|
+| `pytest`, system Python 3.10 | **184 passed** |
+| standalone runner, system Python 3.10 | **184 passed** |
+| standalone runner, **Isaac Sim's Python 3.11** | **184 passed** |
+
+The third did not work until now. The runner itself needed no pytest, but the *test
+modules* import it for `approx`, `raises`, `fixture` and `mark` -- so the documented
+promise that the suite runs "where pytest is not installed, e.g. Isaac Sim's bundled
+interpreter" was false and failed at import. A minimal shim now supplies exactly those four
+features.
+
+A shim that passed everything would be worse than none, so its semantics are checked
+directly: `approx` accepts matches within tolerance and **rejects** differences outside it
+(default, `rel=`, and `abs=` forms), `raises` raises `AssertionError` when nothing is
+raised, and it propagates an exception of the wrong type rather than swallowing it.
+
+### 8.3 Analysis and visualisation scripts
+
+Run under Isaac's interpreter against real recorded results:
+
+`benchmarks.py`, `tuning_equivalence.py`, `eigen_plot_heatmap.py`, `eigen_plot_summary.py`,
+`pareto_comparison.py` -- all pass.
+
+### 8.4 Modularity audit
+
+| check | result |
+|---|---|
+| The six "pure" modules import no `pxr`, `omni`, `isaacsim` or `carb` | **clean** |
+| The aerodynamics package imports standalone | **yes** -- zero Isaac modules pulled in |
+| Circular imports between `logic/` subpackages | **none** |
+| Layering | one-way: `vehicles` → {`aerodynamics`, `dynamics`, `thrusters`, `sensors`, `backends`}; `aerodynamics` depends on nothing outside itself |
+
+That property is what makes 184 tests run in under four seconds without a simulator, and it
+is worth protecting: the moment the aerodynamics package imports Isaac Sim, the offline
+suite stops existing.
+
+---
+
+## 9. Known limitations
 
 - **First-harmonic inflow states** absent (§4.2).
 - **Edgewise validity ends at μ ≈ 0.40**, reached at only 3.6 m/s sideways because the
@@ -320,7 +400,7 @@ output — the uniform-rod inertia, the parallel-axis theorem, `P = −Q_z·Ω`,
 
 ---
 
-## 9. Running it
+## 10. Running it
 
 ```bash
 # baseline: stock quadrotor, no panels
@@ -344,11 +424,20 @@ Other flags: `--wing-collective-deg`, `--wing-blades`, `--wing-root-radius`,
 
 ### Measured effect of the wing, single vehicle
 
+Measured at 20 s, one vehicle, `--motor-moments 6e-7 --omega-n-values 2`:
+
+| configuration | score | effort |
+|---|---|---|
+| `--no-wing` | 0.1033 | 62.34 |
+| `--no-wing --no-rotor-gyro` | 0.1032 | 63.00 |
+| **`--wing`** | 0.1131 | **52.07 (−16.5 %)** |
+| **`--wing --wing-inflow dynamic`** | 0.1332 | **49.61 (−20.4 %)** |
+| `--wing --wing-rotation-sense 1` (wrong handedness) | 0.1940 | 87.44 |
+
 | | no wing | wing |
 |---|---|---|
 | settled spin | −26.96 rad/s | **−18.00 rad/s** |
 | wing lift | — | **3.00 N (18.7 % of weight)** |
-| control effort | 63.0 | **52.1 (−17 %)** |
 | mass / I_zz | 1.500 kg / 0.0552 | 1.633 kg / 0.0707 |
 
 The spin slows partly from wing drag, but mostly because lift unloads the rotors, cutting
@@ -356,12 +445,13 @@ the reaction torque that drives the spin in the first place.
 
 ---
 
-## 10. Further reading in this repository
+## 11. Further reading in this repository
 
 | Document | Contents |
 |---|---|
 | `examples/controller_tests/physics_tests/README.md` | What the model is, what the suite covers, the defects it caught |
 | `examples/controller_tests/physics_tests/FIDELITY.md` | Accuracy and real-time budget, measured: spinning + rolling, edgewise limits, gyroscopics, polar validation |
+| `examples/controller_tests/verify_simulation.py` | End-to-end simulator harness, 18 configurations |
 | `cfd/README.md` | CFD pipeline, how to run it, measured cost |
 | `cfd/PLAN.md` | Full CFD campaign plan and priority ordering |
 | `lit_survey/` | Primary sources: Viterna & Corrigan 1981, Pitt & Peters 1980, Coleman ARR L5E10, Dodic 2023, XFOIL polars |

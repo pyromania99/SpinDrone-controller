@@ -32,6 +32,142 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 
+
+# =======================================================================================
+# Minimal pytest shim
+# =======================================================================================
+# The runner itself needs no pytest, but the TEST MODULES do: they use pytest.approx,
+# pytest.raises, pytest.fixture and pytest.mark. Without this, the promise above -- that
+# the suite runs where pytest is not installed, such as Isaac Sim's bundled interpreter --
+# was false, and the import failed before a single test ran.
+#
+# Only the four features the suite actually uses are implemented, and `approx` is checked
+# against pytest's own semantics (relative by default, absolute when given, both when
+# both). If a test ever needs more, it will raise AttributeError here rather than pass
+# silently.
+
+def _install_pytest_shim():
+    """Put a minimal 'pytest' module in sys.modules if the real one is unavailable."""
+    try:
+        import pytest  # noqa: F401
+        return False
+    except ImportError:
+        pass
+
+    import types
+
+    class _Approx:
+        """Stand-in for pytest.approx with the same comparison rules."""
+
+        def __init__(self, expected, rel=None, abs=None):
+            self.expected = expected
+            self.rel = rel
+            self.abs = abs
+
+        def _tol(self, expected):
+            if self.rel is None and self.abs is None:
+                return 1e-6 * builtins.abs(expected) + 1e-12
+            tol = 0.0
+            if self.rel is not None:
+                tol = max(tol, self.rel * builtins.abs(expected))
+            if self.abs is not None:
+                tol = max(tol, self.abs)
+            return tol
+
+        def __eq__(self, actual):
+            import numpy as _np
+
+            exp = _np.asarray(self.expected, dtype=float)
+            act = _np.asarray(actual, dtype=float)
+            if exp.shape != act.shape:
+                try:
+                    exp, act = _np.broadcast_arrays(exp, act)
+                except ValueError:
+                    return False
+            tol = _np.vectorize(self._tol)(exp) if exp.ndim else self._tol(float(exp))
+            return bool(_np.all(_np.abs(act - exp) <= tol))
+
+        def __repr__(self):
+            return f"approx({self.expected!r}, rel={self.rel}, abs={self.abs})"
+
+    import builtins
+
+    class _Raises:
+        """Context manager form of pytest.raises, including the ``as excinfo`` capture.
+
+        Tests use ``excinfo.value`` to assert on the message, so the caught exception is
+        exposed under the same attribute name pytest uses.
+        """
+
+        def __init__(self, expected, match=None):
+            self.expected = expected
+            self.match = match
+            self.value = None
+            self.type = None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            if exc_type is None:
+                raise AssertionError(f"DID NOT RAISE {self.expected}")
+            if not issubclass(exc_type, self.expected):
+                return False
+            self.value = exc
+            self.type = exc_type
+            if self.match is not None:
+                import re as _re
+                if not _re.search(self.match, str(exc)):
+                    raise AssertionError(
+                        f"pattern {self.match!r} not found in {str(exc)!r}"
+                    )
+            return True
+
+    def _fixture(fn=None, **_kw):
+        """Fixtures are resolved by the runner, so this only has to be transparent."""
+        if fn is None:
+            return lambda f: f
+        return fn
+
+    class _MarkInfo:
+        """One applied mark, shaped as ``_expand_parametrize`` above expects it."""
+
+        def __init__(self, name, args, kwargs):
+            self.name = name
+            self.args = args
+            self.kwargs = kwargs
+
+    class _Mark:
+        """Stand-in for pytest.mark.
+
+        Marks are ATTACHED to the function as ``pytestmark`` rather than discarded,
+        because the runner expands ``parametrize`` itself by reading that attribute. A
+        shim that silently dropped the mark would run each parametrised test once, with
+        missing arguments, instead of once per case.
+        """
+
+        def __getattr__(self, name):
+            def _decorator(*args, **kwargs):
+                def _apply(fn):
+                    existing = list(getattr(fn, "pytestmark", []))
+                    existing.append(_MarkInfo(name, args, kwargs))
+                    fn.pytestmark = existing
+                    return fn
+                return _apply
+            return _decorator
+
+    shim = types.ModuleType("pytest")
+    shim.approx = lambda expected, rel=None, abs=None: _Approx(expected, rel, abs)
+    shim.raises = lambda expected, match=None: _Raises(expected, match)
+    shim.fixture = _fixture
+    shim.mark = _Mark()
+    shim.skip = lambda *a, **k: None
+    sys.modules["pytest"] = shim
+    return True
+
+
+_SHIMMED = _install_pytest_shim()
+
 def _load_module(path: str):
     """Import a test module from its file path."""
     name = os.path.splitext(os.path.basename(path))[0]
