@@ -1,0 +1,9 @@
+# Written and rewritten by fetchpaper. Safe to delete; it can be rebuilt.
+schema_version: 1
+library_id: doi:10.3390/aerospace10030238
+metadata_from: crossref
+metadata_confidence: high
+fulltext_from: pdftotext
+source_url: https://www.mdpi.com/2226-4310/10/3/238
+content_hash: a4cee171349a63fe52cd0e095cc3a47c320999ccbde964eecb9673d0fd189b7d
+added_at: 2026-10-15T11:41:28.968687967+05:30

@@ -134,6 +134,16 @@ def add_wing_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
              "and 28%% to I_zz, so omitting them makes the yaw-axis dynamics wrong.",
     )
     group.add_argument(
+        "--no-rotor-gyro",
+        dest="no_rotor_gyro",
+        action="store_true",
+        help="Disable the propellers' gyroscopic reaction on the airframe. This is a "
+             "QUADROTOR term, not a wing term: because every motor turns the same way "
+             "here, the four propeller momenta add to 16%% of the vehicle's angular "
+             "momentum instead of cancelling. Use only to reproduce results recorded "
+             "before the term existed, or to measure its size.",
+    )
+    group.add_argument(
         "--wing-rotation-sense",
         type=int,
         choices=(1, -1),
@@ -221,6 +231,20 @@ def spawn_vehicle(
     # Imported lazily: these modules pull in Isaac Sim, which must not be a requirement
     # for the offline physics tests that import wing_params from this same package.
     from pegasus.simulator.logic.vehicles.multirotor import Multirotor
+
+    # Airframe dynamics parameters come from wing_params.py, so that one file governs
+    # every dynamics setting rather than some of them living as class defaults.
+    try:
+        from utils.wing_params import (
+            ENABLE_ROTOR_GYROSCOPICS, ROTOR_INERTIA_KG_M2,
+        )
+    except ImportError:  # pragma: no cover - exercised only by the sweep scripts
+        from wing_params import ENABLE_ROTOR_GYROSCOPICS, ROTOR_INERTIA_KG_M2
+
+    config.enable_rotor_gyroscopics = bool(
+        ENABLE_ROTOR_GYROSCOPICS and not getattr(args, "no_rotor_gyro", False)
+    )
+    config.rotor_inertia_kg_m2 = float(ROTOR_INERTIA_KG_M2)
 
     wing_config = wing_config_from_args(args)
 

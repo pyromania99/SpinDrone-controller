@@ -1,0 +1,19 @@
+# Dataset record, not a paper.
+id: dataset:airfoiltools-xf-goe210-il
+type: dataset
+title: XFOIL polars for the GOE 210 (DAIMLER) aerofoil, Re 5e4 to 1e6, Ncrit 9
+source: Airfoil Tools (airfoiltools.com)
+url: http://airfoiltools.com/airfoil/details?airfoil=goe210-il
+retrieved: 2026-10-15
+method: XFOIL 6.x, viscous, Ncrit = 9, Mach 0, fixed Reynolds number per polar
+files:
+    - data/goe210_50000.csv
+    - data/goe210_100000.csv
+    - data/goe210_200000.csv
+    - data/goe210_500000.csv
+    - data/goe210_1000000.csv
+    - data/goe210_coords.dat
+tags:
+    - aerodynamics
+    - airfoil-data
+    - validation

@@ -1,0 +1,71 @@
+# =====================================================================================
+#  CFD solver and sweep configuration.
+#  Everything the CFD campaign needs, in one file. Wing DESIGN stays in
+#  examples/utils/wing_params.py -- this file owns the solver only.
+# =====================================================================================
+
+solver:
+  image: opencfd/openfoam-default:2506   # OpenFOAM is distributed for Linux as a container
+  n_procs: 8                             # physical cores on this machine
+  turbulence_model: kOmegaSSTLM           # Langtry-Menter 4-equation transition model.
+                                          # NOT negotiable at Re 5e4-2.4e5: a fully
+                                          # turbulent model gets the laminar separation
+                                          # bubble qualitatively wrong and would be worse
+                                          # than the XFOIL data already in the repository.
+  n_iterations: 4000
+  residual_tolerance: 1.0e-7
+  relaxation_U: 0.7
+  relaxation_turb: 0.7
+  write_interval: 1000
+  case_timeout_s: 5400
+
+freestream:
+  # Turbulence intensity is specified AT THE AEROFOIL and the inlet value is back-solved
+  # from the analytic SST decay. Specifying it at the inlet instead is the single most
+  # common way a transitional case goes silently wrong.
+  turbulence_intensity_pct: 0.10          # clean low-turbulence tunnel, matching the
+                                          # conditions of the UIUC low-speed aerofoil data
+  inlet_viscosity_ratio: 10.0             # nu_t/nu at the inlet
+  velocity: 1.0                           # non-dimensional: c = 1, U = 1, nu = 1/Re
+
+mesh:
+  n_surface: 320                          # points around the section
+  bl_thickness_chord: 0.08                # layer-stack thickness; COUNT is derived from
+                                          # this, y1 and growth -- not specified directly
+  growth: 1.12
+  y_plus: 0.7                             # must stay below 1 for the transition model
+  farfield_radius: 60.0                   # chords; below ~20 the lift is measurably wrong
+  wake_length: 80.0
+  far_cell_size: 6.0
+  wake_cell_size: 0.012
+  te_cell_size: 0.0015
+
+sweep:
+  # One mesh is generated per Reynolds number; incidence is imposed by rotating the
+  # freestream vector, so alpha costs nothing extra in meshing.
+  reynolds: [50000, 75000, 100000, 140000, 200000, 240000]
+  alpha_deg:
+    attached:  {start: -8.0, stop: 10.0, step: 1.0}
+    stall:     {start: 11.0, stop: 20.0, step: 1.0}
+    deep:      {start: 22.0, stop: 40.0, step: 2.0}   # anchors the Viterna match point
+
+cases:
+  # E387 runs FIRST. It is the only section in lit_survey/ with measured wind-tunnel data
+  # at these Reynolds numbers, so it is the one case that can show whether this CFD setup
+  # is trustworthy at all. GOE 210 has no measured data anywhere -- validating against it
+  # is impossible by construction.
+  - name: e387
+    geometry: geometry/e387.dat
+    role: validation
+    reference: lit_survey/ -- Selig et al., Summary of Low-Speed Airfoil Data, Vol. 1
+    acceptance: {cl_rel_tol: 0.03, cd_rel_tol: 0.08, alpha_range_deg: [-4.0, 10.0]}
+
+  - name: goe210
+    geometry: geometry/goe210.dat
+    role: production
+    note: the blade section; coordinates verified identical to foil_out/database/goe210.dat
+
+output:
+  table: tables/goe210_cfd_v1.npz         # (alpha, Re) -> cl, cd, cm + provenance
+  viterna_match_from_cfd: true            # take the stall point for the +/-180 deg
+                                          # extension from CFD rather than assuming it

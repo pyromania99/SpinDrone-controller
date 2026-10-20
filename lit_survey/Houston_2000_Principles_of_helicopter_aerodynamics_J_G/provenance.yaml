@@ -1,0 +1,9 @@
+# Written and rewritten by fetchpaper. Safe to delete; it can be rebuilt.
+schema_version: 1
+library_id: doi:10.1017/s0001924000064058
+metadata_from: crossref (title match)
+metadata_confidence: medium
+fulltext_from: pdftotext
+source_url: https://assets.cambridge.org/97811070/13353/frontmatter/9781107013353_frontmatter.pdf
+content_hash: a456b792e907a904de3da1814db303938dc58872659744fc51bef1d7d79b9cd0
+added_at: 2026-10-15T11:41:34.106999535+05:30

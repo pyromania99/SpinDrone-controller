@@ -262,6 +262,7 @@ class SpinningWingMultirotor(Multirotor):
         loads = self._wing.compute_loads(
             linear_body_velocity_m_s=self._state.linear_body_velocity,
             angular_velocity_body_rad_s=self._state.angular_velocity,
+            dt=dt,
         )
         self._last_wing_loads = loads
 

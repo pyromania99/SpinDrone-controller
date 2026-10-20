@@ -1,7 +1,10 @@
 # Rotating-wing physics tests
 
-Offline verification of the spinning-wing aerodynamic model. **No Isaac Sim required** —
-the model is pure NumPy, so the whole suite runs in well under a second on system Python.
+Offline verification of the spinning-wing aerodynamic model and of the airframe dynamics
+terms it depends on. **No Isaac Sim required** — the code under test is pure NumPy, so the
+whole suite runs in about ten seconds on system Python. (Most of that is the dynamic-inflow
+tests, which integrate real transients over several hundred timesteps; the rest of the
+suite is still sub-second.)
 
 ```bash
 # from the repository root
@@ -182,6 +185,19 @@ wing lift reads as 25% of weight in simulation where it is ~75% on the intended 
 Use `design_pitch_schedule()` if you retarget the span — moving the radii without
 re-deriving the twist leaves every section at the wrong incidence.
 
+**`test_rotor_gyroscopics.py`** (15 tests) — the propellers' angular momentum.
+That four co-rotating propellers do not cancel while a conventional quadrotor's do, that
+the momentum carries the opposite sign to `rot_dir`, that roll rate feeds a pitch moment
+and vice versa, that yaw rate alone produces nothing, that the moment never does work on
+the body, and that its magnitude exceeds the wing's own at realistic body rates — which is
+the finding that justified adding the term.
+
+**`test_dynamic_inflow.py`** (13 tests) — inflow as a state rather than a constraint.
+That it settles on the algebraic uniform-inflow solution, that the time constant matches
+the apparent-mass derivation `2R/(3πν)` rather than a recorded number, that the step
+response reaches 63 % in one time constant, that a coarse timestep cannot destabilise it,
+and that it performs **exactly one** inflow pass in every flight state.
+
 **`test_wing_handedness.py`** (9 tests) — which way the panels are built.
 That mirroring is an exact symmetry (so handedness costs no performance), that the
 configured handedness produces lift at the spin rate the airframe *measurably* reaches,
@@ -285,6 +301,14 @@ low-Re data would anchor the whole model in measurement in a way GOE 210 cannot.
 
 ---
 
+## Accuracy and real-time budget
+
+Measured numbers — how accurate the model is, how much of the 4 ms physics step it costs,
+whether it survives a spinning-and-rolling vehicle, and why a lookup table does not help —
+are in **[FIDELITY.md](FIDELITY.md)**.
+
+---
+
 ## Known limitations
 
 Deliberate, documented in the module docstrings, and **not** covered by tests because they
@@ -294,7 +318,9 @@ are not modelled:
   under-stiff 5 mm rod. Represent a known mean twist error with
   `COLLECTIVE_PITCH_OFFSET_DEG`.
 - **No unsteady aerodynamics** — no dynamic stall, no shed-wake memory. Inflow responds
-  instantaneously to a change in loading.
+  instantaneously to a change in loading. This is the model's largest fidelity gap for a
+  manoeuvring vehicle: the inflow time constant is about 67 ms against a 125 ms roll
+  timescale, so it is not a small correction. See [FIDELITY.md](FIDELITY.md) §3.
 - **No spanwise flow** in the section force (blade element independence).
 - **Wing mass and inertia ARE now modelled**, and added to the rigid body at spawn
   (`APPLY_INERTIA_TO_BODY`). On the stock Iris the default panels add 9% to mass, **28% to

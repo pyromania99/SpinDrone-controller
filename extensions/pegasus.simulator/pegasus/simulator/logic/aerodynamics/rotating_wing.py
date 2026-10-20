@@ -160,6 +160,63 @@ class WingLoads:
         return float(ideal_power / self.aero_power_w)
 
 
+def _solve_glauert_inflow(
+    loading: float, v_edge: float, climb_rate: float, initial_guess: float = 0.0,
+    iterations: int = 3,
+) -> float:
+    """Solve Glauert's inflow relation for the uniform induced velocity.
+
+        v * sqrt(V_edge^2 + (V_c + v)^2) = loading,      loading = T / (2 rho A)
+
+    In hover this reduces to ``v = sqrt(loading)``; at high edgewise speed it tends to the
+    fixed-wing limit ``v = loading / V_edge``.
+
+    A FIXED number of Newton steps is used rather than iterating to a tolerance. The
+    distinction matters: this is one scalar equation, so three steps cost a few dozen
+    floating-point operations and the work is identical on every call. That is what keeps
+    the dynamic-inflow model constant-time, unlike the blade-wise fixed point in the BEMT
+    path which re-evaluates the section polar at every element on every pass.
+
+    Dodic et al. (2023), in ``lit_survey/``, show that high-order multipoint methods solve
+    this equation to acceptable accuracy in a single step given a good initial guess;
+    Newton from the hover value is the conservative version of the same observation.
+
+    Args:
+        loading: Disc loading divided by twice the air density, ``T / (2 rho A)``. May be
+            negative, which corresponds to downforce and a reversed inflow.
+        v_edge: In-plane speed of the hub through the air [m/s], non-negative.
+        climb_rate: Axial speed of the hub through the air [m/s].
+        initial_guess: Starting value, normally the current inflow state.
+        iterations: Newton steps. Three is ample from a sensible start.
+
+    Returns:
+        The induced velocity [m/s], carrying the sign of ``loading``.
+    """
+    sign = 1.0 if loading >= 0.0 else -1.0
+    target = abs(loading)
+    if target < 1.0e-12:
+        return 0.0
+
+    # Start from whichever of the hover solution and the current state is better scaled.
+    v = abs(initial_guess)
+    if v < 1.0e-6:
+        v = np.sqrt(target)
+
+    climb = sign * climb_rate
+    for _ in range(iterations):
+        root = np.sqrt(v_edge ** 2 + (climb + v) ** 2)
+        root = max(root, 1.0e-9)
+        f = v * root - target
+        df = root + v * (climb + v) / root
+        if abs(df) < 1.0e-12:
+            break
+        v = v - f / df
+        if v < 0.0:
+            v = 0.5 * np.sqrt(target)
+
+    return float(sign * v)
+
+
 class RotatingWing:
     """Blade-element / momentum model of the airframe-mounted rotating wing.
 
@@ -299,6 +356,7 @@ class RotatingWing:
         self,
         linear_body_velocity_m_s,
         angular_velocity_body_rad_s,
+        dt: Optional[float] = None,
     ) -> WingLoads:
         """Compute the wing's aerodynamic force and moment for the current vehicle state.
 
@@ -307,6 +365,8 @@ class RotatingWing:
                 expressed in the body frame (FLU) [m/s], shape (3,).
             angular_velocity_body_rad_s: Body angular rate [p, q, r] in the body frame
                 [rad/s], shape (3,).
+            dt: Physics timestep [s]. Required only by ``InflowModel.DYNAMIC``, which
+                integrates the induced velocity as a state. The algebraic models ignore it.
 
         Returns:
             A :class:`WingLoads` carrying the resultant loads and the per-station
@@ -343,7 +403,7 @@ class RotatingWing:
         climb_rate = v_element[..., 2]
 
         induced, residual, iterations = self._solve_inflow(
-            u_tangential, climb_rate, v_body
+            u_tangential, climb_rate, v_body, dt
         )
 
         loads = self._integrate_blade_elements(u_tangential, climb_rate, induced)
@@ -475,7 +535,7 @@ class RotatingWing:
     # -----------------------------------------------------------------------------------
 
     def _solve_inflow(
-        self, u_tangential, climb_rate, v_body
+        self, u_tangential, climb_rate, v_body, dt: Optional[float] = None
     ) -> Tuple[np.ndarray, float, int]:
         """Dispatch to the configured induced-velocity model."""
         model = self._config.inflow_model
@@ -490,6 +550,9 @@ class RotatingWing:
 
         if model == InflowModel.GLAUERT:
             return self._solve_inflow_glauert(u_tangential, climb_rate, v_body)
+
+        if model == InflowModel.DYNAMIC:
+            return self._solve_inflow_dynamic(u_tangential, climb_rate, v_body, dt)
 
         raise ValueError(f"unhandled inflow model {model!r}")
 
@@ -667,6 +730,128 @@ class RotatingWing:
         induced = np.full_like(self._radius_m, uniform)
         self._induced_velocity_m_s = induced
         return induced, residual, iterations
+
+    def _solve_inflow_dynamic(
+        self, u_tangential, climb_rate, v_body, dt: Optional[float]
+    ) -> Tuple[np.ndarray, float, int]:
+        """First-order dynamic inflow: the induced velocity is a state, not a constraint.
+
+        THE POINT
+            Momentum theory gives the induced velocity that *eventually* balances a given
+            thrust. It does not say how fast the flow gets there, and the answer is not
+            "instantly": accelerating the air column through the disc takes a moment,
+            because that column has mass.
+
+        THE TIME CONSTANT
+            The apparent mass of the air accelerated by a disc is ``m_a = (8/3) rho R^3``
+            -- the impermeable-disc value, which Pitt & Peters (1980) confirm is exactly
+            the M11 apparent-mass term of their dynamic-inflow model. Linearising the
+            momentum relation ``T = 2 rho A V_eff v`` about the operating point gives
+
+                dT/dv = 2 rho A [ V_eff + v (V_c + v) / V_eff ]
+                tau   = m_a / (dT/dv)
+
+            which reduces to ``2R/(3 pi v)`` in hover and ``4R/(3 pi V)`` in fast edgewise
+            flight. For this wing in hover it is about 67 ms.
+
+        WHY IT IS ALSO CHEAPER
+            The loads are evaluated at the CURRENT inflow state and the state is then
+            advanced once. There is no fixed-point iteration, so the cost is the same on
+            every step -- which is what a bounded worst case requires, as distinct from a
+            bounded average.
+
+        The update is the exact solution of the linear ODE over the step,
+        ``v <- v + (v_steady - v)(1 - exp(-dt/tau))``, rather than a forward Euler step, so
+        it stays stable for any dt relative to tau instead of only for dt < 2 tau.
+
+        Args:
+            u_tangential: Chordwise flow at each element [m/s].
+            climb_rate: Axial flow at each element [m/s].
+            v_body: Body-frame velocity [m/s], shape (3,).
+            dt: Timestep [s].
+
+        Returns:
+            Tuple of (induced velocity per station, |v_steady - v| as the residual, 1).
+
+        Raises:
+            ValueError: If ``dt`` is missing or non-positive. Silently falling back to a
+                steady solve would make the model quietly behave as a different one.
+        """
+        if dt is None or dt <= 0.0:
+            raise ValueError(
+                "InflowModel.DYNAMIC integrates the inflow in time and needs a positive "
+                "dt; pass dt to compute_loads(), or use 'bemt'/'glauert' for a steady "
+                "solve"
+            )
+
+        cfg = self._config
+        rho = cfg.air_density_kg_m3
+        area = cfg.disk_area_m2()
+        radius = cfg.tip_radius_m
+
+        # Loads at the inflow the flow actually has right now -- this is the state, not a
+        # guess to be refined.
+        uniform = float(np.mean(self._induced_velocity_m_s))
+        induced = np.full_like(self._radius_m, uniform)
+        _, v_rel, phi, _, c_l, c_d = self._section_state(
+            u_tangential, climb_rate, induced
+        )[:6]
+        df_axial, _ = self._element_forces(v_rel, phi, c_l, c_d)
+        thrust = float((df_axial * self._element_width_m[None, :]).sum())
+
+        v_edge = float(np.hypot(v_body[0], v_body[1]))
+        climb_mean = float(np.mean(climb_rate))
+
+        # Quasi-steady target for the present thrust. This must SOLVE Glauert's relation
+        #
+        #     v sqrt(V_edge^2 + (V_c + v)^2) = T / (2 rho A)
+        #
+        # not divide the thrust by an effective velocity evaluated at the current inflow.
+        # Doing the latter blows up from a cold start: with v = 0 in hover the effective
+        # velocity collapses to its numerical floor and the implied target reaches
+        # thousands of metres per second.
+        uniform_steady = _solve_glauert_inflow(
+            thrust / (2.0 * rho * area), v_edge, climb_mean, uniform
+        )
+        v_eff = max(
+            np.sqrt(v_edge ** 2 + (climb_mean + uniform) ** 2), 1.0e-3
+        )
+
+        # Apparent mass and the linearised sensitivity.
+        #
+        # The sensitivity is evaluated at the TARGET operating point, not the current one.
+        # Anchoring it at the current state degenerates on a cold start: with v = 0 the
+        # effective velocity collapses to its floor, dT/dv goes to nearly zero and the
+        # time constant runs away to tens of seconds, so the inflow would crawl up from
+        # rest instead of establishing itself in the tens of milliseconds it physically
+        # takes. At equilibrium the two choices coincide, so this costs nothing where the
+        # linearisation is valid and fixes it where it is not.
+        apparent_mass = (8.0 / 3.0) * rho * radius ** 3
+        v_eff_ref = max(
+            np.sqrt(v_edge ** 2 + (climb_mean + uniform_steady) ** 2), 1.0e-3
+        )
+        dT_dv = 2.0 * rho * area * (
+            v_eff_ref + abs(uniform_steady) * (climb_mean + uniform_steady) / v_eff_ref
+        )
+        tau = apparent_mass / max(abs(dT_dv), 1.0e-6)
+        tau = float(np.clip(tau, 1.0e-4, 10.0))
+
+        blend = 1.0 - np.exp(-dt / tau)
+        residual = abs(uniform_steady - uniform)
+        uniform = uniform + (uniform_steady - uniform) * blend
+
+        induced = np.full_like(self._radius_m, uniform)
+        self._induced_velocity_m_s = induced
+        self._inflow_time_constant_s = tau
+        return induced, residual, 1
+
+    @property
+    def inflow_time_constant_s(self) -> float:
+        """Time constant from the most recent dynamic-inflow update [s].
+
+        Zero until :class:`InflowModel.DYNAMIC` has been stepped at least once.
+        """
+        return getattr(self, "_inflow_time_constant_s", 0.0)
 
     # -----------------------------------------------------------------------------------
     # Analysis helpers

@@ -1,0 +1,30 @@
+# Bibliographic record. Yours to edit.
+#
+# The tool writes this file once, when the paper is first added, and never
+# rewrites it afterwards, so anything you change here is safe. Machine-managed
+# state lives in provenance.yaml instead.
+id: doi:10.3390/aerospace10030238
+type: article-journal
+title: Numerical Analysis of Glauert Inflow Formula for Single-Rotor Helicopter in Steady-Level Flight below Stall-Flutter Limit
+authors:
+    - given: Marjan
+      family: Dodic
+    - given: Branimir
+      family: Krstic
+    - given: Bosko
+      family: Rasuo
+    - given: Mirko
+      family: Dinulovic
+    - given: Aleksandar
+      family: Bengin
+year: 2023
+abstract: This article addresses the numerical computation problem of induced inflow ratio based on the helicopter momentum theory in forward flight. The Glauert inflow formula (equation) is a nonlinear equation usually solved by the Newton–Raphson method in a relatively small number of iterations. However, many high-order convergence multipoint iterative methods have been developed over the last decade. The study examines several selected methods in terms of finding ones that provide a solution in only one iteration with acceptable accuracy. Furthermore, the influence of initial guesses on the accuracy of the obtained solutions has been investigated. In this regard, the practical range of parameters of the Glauert inflow equation for helicopters in forward flight is roughly determined by simplified modeling of a power and stall-flutter limitation. For these purposes, a basic low-fidelity longitudinal trim model of a single-rotor helicopter in steady-level flight is modified and numerically solved by a symbolic transformation of a system of 20+ nonlinear equations into a single nonlinear equation.
+doi: 10.3390/aerospace10030238
+url: https://doi.org/10.3390/aerospace10030238
+journal: Aerospace
+volume: "10"
+issue: "3"
+pages: "238"
+publisher: MDPI AG
+tags:
+    - aerodynamics

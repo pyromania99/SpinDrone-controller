@@ -1,0 +1,22 @@
+# Bibliographic record. Yours to edit.
+#
+# The tool writes this file once, when the paper is first added, and never
+# rewrites it afterwards, so anything you change here is safe. Machine-managed
+# state lives in provenance.yaml instead.
+id: doi:10.1017/s0001924000064058
+type: article-journal
+title: Principles of helicopter aerodynamics. J.G. Leishman. Cambridge University Press, The Edinburgh Building, Cambridge CB2 2RU, UK.2000. 496pp. Illustrated. £60 ISBN 0-521-66060-2.
+authors:
+    - given: Stewart
+      family: Houston
+year: 2000
+abstract: Principles of helicopter aerodynamics. J.G. Leishman. Cambridge University Press, The Edinburgh Building, Cambridge CB2 2RU, UK. 2000. 496pp. Illustrated. £60 ISBN 0-521-66060-2. - Volume 104 Issue 1038
+doi: 10.1017/s0001924000064058
+url: https://doi.org/10.1017/s0001924000064058
+journal: The Aeronautical Journal
+volume: "104"
+issue: "1038"
+pages: 390-390
+publisher: Cambridge University Press (CUP)
+tags:
+    - aerodynamics
