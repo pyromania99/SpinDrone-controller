@@ -15,7 +15,7 @@ instead of cancelling. Three things follow, and this work addresses all three.
 | **Rotating-wing aerodynamics** — aerofoil panels on the arms, driven by the vehicle's own spin | Converts part of an otherwise parasitic yaw into lift | **Working.** 3.00 N at the settled spin, 18.7 % of vehicle weight, control effort −17 % |
 | **Propeller gyroscopic reaction** | Co-rotating propellers carry 16 % of the vehicle's angular momentum; the moment exceeds the wing's own above ~1.5 rad/s | **Working.** On by default, `--no-rotor-gyro` to ablate |
 | **Dynamic inflow** | Inflow has mass; τ ≈ 77 ms is 0.81 of a 12 rad/s controller bandwidth. Also makes the per-step cost constant | **Working.** `--wing-inflow dynamic` |
-| **CFD section-data pipeline** | The section polar is answerable only to two codes that agree with each other | **Partial** — pipeline runs end to end; the structured mesher does not yet pass `checkMesh` (§6) |
+| **CFD section-data pipeline** | The section polar is answerable only to two codes that agree with each other | **Partial** — pipeline runs and the structured mesh converges cleanly; absolute values not yet validated, so no table is generated (§6) |
 
 **184 offline physics tests** (no Isaac Sim, ~4 s) plus **18 end-to-end simulator
 configurations**, all passing. The stock quadrotor path is bit-identical to before when the
@@ -228,25 +228,47 @@ The physics setup is demonstrably right: y+ max 1.33 / mean 0.36, `kOmegaSSTLM` 
 model, freestream turbulence back-solved so the requested intensity arrives **at the
 aerofoil** (inlet 0.104 % → 0.100 %), and a mean Cl within **1.2 %** of XFOIL.
 
-**Not working: the mesher.**
+**The mesher now works.** Two meshers were written; the structured one is correct.
 
-| mesh | max non-orthogonality | outcome |
-|---|---|---|
-| hybrid (gmsh BL quads + triangles) | 85.7°, then 78.2° after smoothing | solution oscillates ±74 % about a correct mean |
-| structured C (4 transfinite blocks) | — | 104 open cells, 12 negative volumes; does not pass `checkMesh` |
+| mesh | max non-orth | negative cells | y+ max | Cl drift |
+|---|---|---|---|---|
+| hybrid (gmsh BL quads + triangles) | 85.7° → 78.2° | — | 1.33 | **±2.74 → ±1.39** |
+| **structured C (4 transfinite blocks)** | 87.4° | **0** | **0.785** | **±0.0041** |
 
-The hybrid mesh's bad cells sit exactly where the structured quads meet the unstructured
-triangles, which is also where the separation bubble forms. No solver setting fixes mesh
-topology, so a structured C-mesh was written (`cfd/mesh/cmesh.py`): four transfinite
-blocks, the aerofoil split at the leading edge to avoid a degenerate corner, wake cut
-shared between both wake blocks so the mesh is conformal across it, 34,560 cells against
-333,000 for better resolution.
+The hybrid mesh's bad cells sat where its structured layers met the unstructured region,
+which is also where the separation bubble forms, and the solution oscillated by ±74 % about
+a mean that was itself within 1.2 % of XFOIL. No solver setting fixes mesh topology.
 
-Two bugs in it were found and fixed — a duplicate point at the arc centre, and a blunt
-trailing edge (0.16 % chord) forced onto a sharp-TE topology. **A connectivity defect
-remains**: the failure counts are byte-identical across geometry variants, which places it
-in the block connectivity rather than the geometry. The hybrid mesher still works and is
-what runs today.
+`cfd/mesh/cmesh.py` replaces it with four transfinite blocks: the aerofoil split at the
+leading edge to avoid a degenerate corner, the wake cut shared by both wake blocks so the
+mesh is conformal across it, **34,560 cells against 333,000** — and solves **9× faster**,
+0.073 s/iteration against 0.66.
+
+Three defects were found and fixed getting there:
+
+1. **A duplicate point at the trailing edge.** The outer arc was given its own centre point
+   coincident with the TE, which gmsh meshes as a separate node. `checkMesh` named it
+   exactly: "2 conflicting points to set nonManifoldPoints".
+2. **A blunt trailing edge forced onto a sharp-TE topology.** GOE 210 ships with a 0.16 %
+   chord gap; the lower surface was being started at the *upper* TE point.
+3. **Clustering the far-field arc.** This was the one that mattered. Transfinite
+   interpolation blends between opposite edges, so clustering *both* the aerofoil and the
+   arc pinches the outer ends of the radial lines toward the same corners — and over 60
+   chords neighbouring lines cross and the first cell layer inverts. Measured on the lower
+   surface near x = 0.10: **303 inverted cells at Bump 0.08, 180 at 0.2, 47 at 0.5, and
+   exactly 0 with the arc uniform.** Clustering the far field bought nothing anyway; it has
+   no feature to resolve.
+
+The solver also needed changing. SIMPLEC (`consistent yes`) with the aspect ratios a C-mesh
+carries into the far wake left the pressure residual on a plateau at 1e-2 and the
+coefficients alternating in sign between consecutive iterations. Plain SIMPLE with explicit
+pressure relaxation, a tighter GAMG tolerance and relaxation at 0.5 converges cleanly.
+
+**Current status: converged, not yet validated.** GOE 210 at α = 5°, Re = 1e5 gives
+Cl 1.236 ± 0.003, Cd 0.0246 ± 0.0004 — stable, but **+30 % on XFOIL's Cl and +56 % on its
+Cd**. Whether that is the CFD or the reference is what the E387 case exists to decide: it
+is the only section available with *measured* wind-tunnel data. Until that runs, no table
+is generated and nothing reaches the simulator.
 
 **Do not start the 234-case sweep until one case converges cleanly against XFOIL.** A week
 of compute on meshes like these produces confident-looking drag that is wrong.

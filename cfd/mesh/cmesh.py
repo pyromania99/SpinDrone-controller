@@ -258,16 +258,26 @@ def build_cmesh(
     for c in (c_rad_le, c_rad_te_up, c_rad_te_lo, c_out_up, c_out_lo):
         geo.mesh.setTransfiniteCurve(c, n_normal + 1, "Progression", cfg.growth)
 
-    # Surface and its opposite arc must agree. Bump below 1 clusters at both ends, which
-    # puts points where the curvature and the pressure gradient are.
+    # The aerofoil surface is clustered at both ends -- Bump below 1 -- to put points where
+    # the curvature and the pressure gradient are.
     for c in (c_up_surf, c_lo_surf):
         geo.mesh.setTransfiniteCurve(
             c, cfg.n_surface_half + 1, "Bump", cfg.surface_bump
         )
+
+    # The far-field arc opposite it is UNIFORM, and this is not a free choice.
+    #
+    # Transfinite interpolation blends between opposite edges, so clustering BOTH the
+    # aerofoil and the arc pinches the outer ends of the radial grid lines towards the
+    # same two corners. Over a 60-chord span that is enough for neighbouring lines to
+    # cross, and the first cell layer inverts. Measured on the lower surface near
+    # x = 0.10: 303 cells of negative area with matched Bump 0.08, falling to 180 at
+    # Bump 0.2, 47 at Bump 0.5 -- and exactly ZERO with the arc uniform.
+    #
+    # Clustering the arc bought nothing in the first place: the far field has no feature
+    # to resolve.
     for c in (c_arc_up, c_arc_lo):
-        geo.mesh.setTransfiniteCurve(
-            c, cfg.n_surface_half + 1, "Bump", cfg.surface_bump
-        )
+        geo.mesh.setTransfiniteCurve(c, cfg.n_surface_half + 1, "Progression", 1.0)
 
     # Wake: fine at the trailing edge, coarsening downstream.
     for c in (c_cut, c_far_up, c_far_lo):

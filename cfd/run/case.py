@@ -228,6 +228,16 @@ class CaseConfig:
     n_iterations: int = 6000
     residual_tolerance: float = 1.0e-7
     write_interval: int = 1000
+    consistent: bool = False
+    """Use SIMPLEC (``consistent yes``) instead of SIMPLE.
+
+    SIMPLEC converges faster on a good mesh but is less forgiving on stretched cells. With
+    the aspect ratios a C-mesh carries into the far wake it left the pressure residual on a
+    plateau at 1e-2 and the force coefficients alternating in sign between consecutive
+    iterations. Plain SIMPLE with explicit pressure relaxation is slower and stable, which
+    is the right trade for generating a table.
+    """
+
     relaxation_p: float = 0.3
     relaxation_U: float = 0.7
     relaxation_turb: float = 0.7
@@ -473,8 +483,12 @@ wallDist
     {{
         solver          GAMG;
         smoother        GaussSeidel;
+        nPreSweeps      0;
+        nPostSweeps     2;
+        cacheAgglomeration true;
+        nCellsInCoarsestLevel 50;
         tolerance       1e-9;
-        relTol          0.01;
+        relTol          0.001;
     }}
 
     "(U|k|omega|gammaInt|ReThetat)"
@@ -489,7 +503,7 @@ wallDist
 SIMPLE
 {{
     nNonOrthogonalCorrectors {cfg.n_nonorth};
-    consistent      yes;
+    consistent      {"yes" if cfg.consistent else "no"};
 
     residualControl
     {{
@@ -501,6 +515,10 @@ SIMPLE
 
 relaxationFactors
 {{
+    fields
+    {{
+        p               {1.0 if cfg.consistent else cfg.relaxation_p};
+    }}
     equations
     {{
         U               {cfg.relaxation_U};
