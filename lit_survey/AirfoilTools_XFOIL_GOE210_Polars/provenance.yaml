@@ -1,0 +1,11 @@
+fetched_by: claude-code
+fetched_on: 2026-10-15
+transport: plain HTTP (airfoiltools.com serves no TLS; https refuses on :443)
+endpoints:
+    - "http://airfoiltools.com/polar/csv?polar=xf-goe210-il-<Re>"
+    - "http://airfoiltools.com/airfoil/seligdatfile?airfoil=goe210-il"
+integrity_check: |
+    data/goe210_coords.dat is byte-identical in content to the repository's own
+    foil_out/database/goe210.dat (same header "GOE 210 (DAIMLER) AIRFOIL", same 33
+    coordinate pairs), confirming the polars belong to the same section the blade
+    was designed around.

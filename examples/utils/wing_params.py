@@ -128,6 +128,41 @@ KINEMATIC_VISCOSITY_M2_S = 1.5e-5
 """Kinematic viscosity [m^2/s], used for the chord Reynolds number."""
 
 
+# ======================================================================================
+#  AIRFRAME DYNAMICS
+#  Terms that belong to the vehicle rather than the wing, but that the spinning premise
+#  makes significant. They are gathered here so that every dynamics parameter in the
+#  project is editable from this one file.
+# ======================================================================================
+
+ENABLE_ROTOR_GYROSCOPICS = True
+"""Include the propellers' own angular momentum in the body dynamics.
+
+A conventional quadrotor sets ``rot_dir = [-1, -1, +1, +1]``, so the four propeller
+angular momenta cancel and neglecting them is harmless -- which is why upstream Pegasus
+neglects them. This airframe spins *because* every motor turns the same way, so they ADD:
+about 0.209 kg*m^2/s at hover, 16 percent of the whole vehicle's angular momentum. The
+resulting moment exceeds the rotating wing's entire aerodynamic moment above roughly
+1.5 rad/s of body rate.
+
+Set False to reproduce results recorded before the term existed."""
+
+ROTOR_INERTIA_KG_M2 = 7.646e-5
+"""Polar moment of inertia of ONE propeller about its spin axis [kg*m^2].
+
+Measured from the stock Iris asset at runtime: the asset authors no mass for the rotor
+links, so PhysX computes it from the propeller geometry. Replace with a weighed value once
+hardware exists."""
+
+HOVER_ROTOR_SPEED_RAD_S = 684.0
+"""Rotor speed at hover [rad/s], from T = k*omega^2 with the asset's own thrust constant.
+
+Recorded for reference and for the physics tests. Note the USD's rotor joints are driven
+kinematically at a hardcoded 100 rad/s by ``handle_propeller_visual()`` "for animation
+purposes only", so the articulation carries at most 15 percent of the true momentum and
+none of it reliably -- which is why the gyroscopic term is applied explicitly."""
+
+
 # -- Blade planform --------------------------------------------------------------------
 
 NUM_BLADES = 2
@@ -247,13 +282,29 @@ edges rather than extrapolating."""
 # -- Induced velocity and numerics -------------------------------------------------------
 
 INFLOW_MODEL = InflowModel.BEMT
-"""One of InflowModel.BEMT, InflowModel.GLAUERT, InflowModel.NONE.
+"""Induced-velocity model. One of 'none', 'bemt', 'glauert', 'dynamic'.
 
-BEMT is the default and is what the design report used; it resolves the radial inflow
-distribution and is accurate in hover and axial flight. GLAUERT applies a single uniform
-inflow with an edgewise correction and is better behaved in fast translation. NONE
-disables induced velocity entirely, which over-predicts thrust by roughly 25-30 percent
-and exists for debugging."""
+    bemt     Annulus-by-annulus momentum balance with Prandtl tip loss, solved to
+             convergence each step. Resolves the radial inflow distribution and reproduces
+             the design report. DEFAULT, so existing results stay reproducible. Costs
+             between 1 and 32 polar evaluations per step depending on flight state.
+
+    dynamic  Inflow as a STATE: dv/dt = (v_steady - v)/tau, with tau from the air column's
+             apparent mass (about 77 ms here). Two things this buys:
+               * the lag is real -- 0.54 of the roll timescale at 8 rad/s and 0.81 of a
+                 12 rad/s controller bandwidth -- so treating inflow as instantaneous
+                 overstates aerodynamic damping and phase margin;
+               * exactly ONE pass per step, so the cost is constant rather than varying
+                 by a factor of thirty-two. Measured 4.4x cheaper in the mean and 7.7x
+                 better in the worst case than bemt during manoeuvre.
+             Uniform component only; the first-harmonic states are not modelled.
+
+    glauert  Uniform inflow from Glauert's edgewise momentum relation. Cheaper than bemt
+             and better behaved in fast translation, without the radial distribution.
+
+    none     No induced velocity. Debugging and ablation only; over-predicts thrust.
+
+Override per run with ``--wing-inflow``."""
 
 NUM_STATIONS = 24
 """Spanwise integration stations per blade. The solution is grid-converged here: going to

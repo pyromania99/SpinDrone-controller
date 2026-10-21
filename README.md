@@ -30,10 +30,40 @@ Because Isaac Sim requires deep hardware rendering access, your host machine **m
 
 Because the goal of this repository is strictly spinning dynamics evaluation, irrelevant backend controllers (like PX4/Ardupilot variants) have been surgically removed.
 
-- `extensions/`: The core Pegasus Simulator extension logic. This gets automatically installed as an editable module (`-e`) into the container.
+- `extensions/`: The core Pegasus Simulator extension logic. This gets automatically installed as an editable module (`-e`).
 - `examples/utils/nonlinear_controller.py`: The custom nonlinear analysis controller backend designed to process the spinning logic.
 - `examples/controller_tests/`: Eigenvalue and stability sweep mathematics frameworks used to empirically track physical tuning outputs.
 - `Dockerfile`: Found at the root of the project, executing environment configurations while wiring up `container_user` to seamlessly align with your host permissions.
+
+### High-fidelity dynamics
+
+The vehicle spins because all four motors turn the same way, so their reaction torques add
+instead of cancelling. Three additions follow from that, each with its own documentation:
+
+| Where | What |
+|---|---|
+| **[`IMPLEMENTATION.md`](IMPLEMENTATION.md)** | **Start here.** What was built, why, every measured number, and what is deliberately not done |
+| [`extensions/.../logic/aerodynamics/`](extensions/pegasus.simulator/pegasus/simulator/logic/aerodynamics/README.md) | Rotating-wing model: aerofoil panels on the arms, driven by the spin. Blade element theory closed with momentum theory |
+| [`extensions/.../logic/dynamics/`](extensions/pegasus.simulator/pegasus/simulator/logic/dynamics/README.md) | Propeller gyroscopic reaction — 16 % of the vehicle's angular momentum, which cancels on a normal quadrotor but adds here |
+| [`examples/utils/`](examples/utils/README.md) | `wing_params.py`, the single file for every dynamics parameter, and the `--wing` CLI plumbing |
+| [`examples/controller_tests/physics_tests/`](examples/controller_tests/physics_tests/README.md) | 184 offline physics tests; no Isaac Sim, ~4 s |
+| [`.../physics_tests/FIDELITY.md`](examples/controller_tests/physics_tests/FIDELITY.md) | Measured accuracy and real-time budget: spinning + rolling, edgewise limits, polar validation |
+| [`cfd/`](cfd/README.md) | OpenFOAM pipeline for CFD-derived section data (partial — see `cfd/PLAN.md`) |
+| [`lit_survey/`](lit_survey/) | Primary sources: Viterna & Corrigan 1981, Pitt & Peters 1980, Coleman ARR L5E10, Dodic 2023, XFOIL polars |
+
+Quick start:
+
+```bash
+# offline physics tests, no simulator needed
+python3 -m pytest examples/controller_tests/physics_tests -q
+
+# end-to-end simulator verification, 18 configurations
+python3 examples/controller_tests/verify_simulation.py
+
+# fly it
+isaac_run examples/controller_tests/sweeps/eigen_stability_sweep.py \
+    --motor-moments 6e-7 --omega-n-values 2 4 6 8 10 12 --duration 20 --headless --wing
+```
 
 ---
 

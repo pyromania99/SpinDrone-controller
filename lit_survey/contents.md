@@ -98,3 +98,56 @@
     }
     ```
 
+## aerodynamics
+
+<!-- fetchpaper:Dodic_2023_Numerical_Analysis_of_Glauert_Inflow_Formula@aerodynamics -->
+### Numerical Analysis of Glauert Inflow Formula for Single-Rotor Helicopter in Steady-Level Flight below Stall-Flutter Limit
+
+**Marjan Dodic, Branimir Krstic, Bosko Rasuo, Mirko Dinulovic, Aleksandar Bengin**
+
+2023 · *Aerospace* · [doi:10.3390/aerospace10030238](https://doi.org/10.3390/aerospace10030238) · [PDF](./Dodic_2023_Numerical_Analysis_of_Glauert_Inflow_Formula/paper.pdf) · [notes](./Dodic_2023_Numerical_Analysis_of_Glauert_Inflow_Formula/notes.md) · `#aerodynamics`
+
+This article addresses the numerical computation problem of induced inflow ratio based on the helicopter momentum theory in forward flight. The Glauert inflow formula (equation) is a nonlinear equation usually solved by the Newton–Raphson method in a relatively small number of iterations. However, many high-order convergence multipoint iterative methods have been developed over the last decade. The study examines several selected methods in terms of finding ones that provide a solution in only one iteration with acceptable accuracy. Furthermore, the influence of initial guesses on the accuracy of the obtained solutions has been investigated. In this regard, the practical range of parameters of the Glauert inflow equation for helicopters in forward flight is roughly determined by simplified modeling of a power and stall-flutter limitation. For these purposes, a basic low-fidelity longitudinal trim model of a single-rotor helicopter in steady-level flight is modified and numerically solved by a symbolic transformation of a system of 20+ nonlinear equations into a single nonlinear equation.
+
+<details><summary>BibTeX</summary>
+
+```bibtex
+@article{dodic2023numerical, title={Numerical Analysis of Glauert Inflow Formula for Single-Rotor Helicopter in Steady-Level Flight below Stall-Flutter Limit}, volume={10}, ISSN={2226-4310}, url={http://dx.doi.org/10.3390/aerospace10030238}, DOI={10.3390/aerospace10030238}, number={3}, journal={Aerospace}, publisher={MDPI AG}, author={Dodic, Marjan and Krstic, Branimir and Rasuo, Bosko and Dinulovic, Mirko and Bengin, Aleksandar}, year={2023}, month=Feb, pages={238} }
+```
+
+</details>
+
+<!-- fetchpaper:Houston_2000_Principles_of_helicopter_aerodynamics_J_G@aerodynamics -->
+### Principles of helicopter aerodynamics. J.G. Leishman. Cambridge University Press, The Edinburgh Building, Cambridge CB2 2RU, UK.2000. 496pp. Illustrated. £60 ISBN 0-521-66060-2.
+
+**Stewart Houston**
+
+2000 · *The Aeronautical Journal* · [doi:10.1017/s0001924000064058](https://doi.org/10.1017/s0001924000064058) · [PDF](./Houston_2000_Principles_of_helicopter_aerodynamics_J_G/paper.pdf) · [notes](./Houston_2000_Principles_of_helicopter_aerodynamics_J_G/notes.md) · `#aerodynamics`
+
+Principles of helicopter aerodynamics. J.G. Leishman. Cambridge University Press, The Edinburgh Building, Cambridge CB2 2RU, UK. 2000. 496pp. Illustrated. £60 ISBN 0-521-66060-2. - Volume 104 Issue 1038
+
+<details><summary>BibTeX</summary>
+
+```bibtex
+@article{houston2000principles, title={Principles of helicopter aerodynamics. J.G. Leishman. Cambridge University Press, The Edinburgh Building, Cambridge CB2 2RU, UK.2000. 496pp. Illustrated. £60 ISBN 0-521-66060-2.}, volume={104}, ISSN={2059-6464}, url={http://dx.doi.org/10.1017/s0001924000064058}, DOI={10.1017/s0001924000064058}, number={1038}, journal={The Aeronautical Journal}, publisher={Cambridge University Press (CUP)}, author={Houston, Stewart}, year={2000}, month=Aug, pages={390–390} }
+```
+
+</details>
+
+<!-- fetchpaper:Unknown_n_d_TECT_I_AL_Mi_iORAITDUMS@aerodynamics -->
+### TECT I AL Mi.'iORAITDUMS
+
+[source](https://ntrs.nasa.gov/api/citations/19930090882/downloads/19930090882.pdf) · [PDF](./Unknown_n_d_TECT_I_AL_Mi_iORAITDUMS/paper.pdf) · [notes](./Unknown_n_d_TECT_I_AL_Mi_iORAITDUMS/notes.md) · `#aerodynamics`
+
+*No abstract recorded.*
+
+<details><summary>BibTeX</summary>
+
+```bibtex
+@misc{unknowntect,
+  title     = {{TECT I AL Mi.'iORAITDUMS}},
+  url       = {https://ntrs.nasa.gov/api/citations/19930090882/downloads/19930090882.pdf}
+}
+```
+
+</details>

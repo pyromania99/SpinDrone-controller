@@ -64,8 +64,39 @@ __all__ = [
     "REPORT",
     "REPORT_STATIONS",
     "GRAVITY_M_S2",
+    "rotor_angular_momentum_z",
+    "rotor_gyroscopic_torque",
+    "ROTOR_INERTIA_KG_M2",
+    "HOVER_ROTOR_SPEED_RAD_S",
 ]
 
+
+def _load_rotor_gyroscopics():
+    """Import the rotor-gyroscopics module standalone.
+
+    It imports nothing but NumPy, but reaching it through ``pegasus.simulator.logic``
+    would pull in that package's __init__, which needs Isaac Sim. Loaded by path for the
+    same reason ``wing_params`` loads the aerodynamics package that way.
+    """
+    import importlib.util
+
+    path = os.path.join(
+        REPO_ROOT, "extensions", "pegasus.simulator", "pegasus", "simulator", "logic",
+        "dynamics", "rotor_gyroscopics.py",
+    )
+    spec = importlib.util.spec_from_file_location("rotor_gyroscopics_standalone", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_gyro = _load_rotor_gyroscopics()
+rotor_angular_momentum_z = _gyro.rotor_angular_momentum_z
+rotor_gyroscopic_torque = _gyro.rotor_gyroscopic_torque
+
+# Measured from the stock Iris asset via PhysX at runtime.
+ROTOR_INERTIA_KG_M2 = 7.646e-5
+HOVER_ROTOR_SPEED_RAD_S = 684.0
 
 GRAVITY_M_S2 = 9.80665
 

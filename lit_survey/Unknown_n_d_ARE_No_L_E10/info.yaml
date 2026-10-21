@@ -1,0 +1,11 @@
+# Bibliographic record. Yours to edit.
+#
+# The tool writes this file once, when the paper is first added, and never
+# rewrites it afterwards, so anything you change here is safe. Machine-managed
+# state lives in provenance.yaml instead.
+id: sha256:c219d57d5ad0ba7a
+type: document
+title: ARE No. L_E10
+url: https://ntrs.nasa.gov/api/citations/19930093086/downloads/19930093086.pdf
+tags:
+    - aerodynamics

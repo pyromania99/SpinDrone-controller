@@ -1,0 +1,9 @@
+# Written and rewritten by fetchpaper. Safe to delete; it can be rebuilt.
+schema_version: 1
+library_id: sha256:c219d57d5ad0ba7a
+metadata_from: pdf heuristics
+metadata_confidence: low
+fulltext_from: pdftotext
+source_url: https://ntrs.nasa.gov/api/citations/19930093086/downloads/19930093086.pdf
+content_hash: c219d57d5ad0ba7a31da802aedd5b76fd8ca02747406d7f057dd9f827949f474
+added_at: 2026-10-15T11:47:06.667978737+05:30

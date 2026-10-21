@@ -90,13 +90,34 @@ class InflowModel:
         relation including an edgewise (forward-flight) term. Cheaper than BEMT and better
         behaved in fast translational flight, at the cost of losing the radial inflow
         distribution.
+
+    DYNAMIC
+        First-order dynamic inflow on the uniform component: the induced velocity is a
+        STATE obeying ``dv/dt = (v_steady - v)/tau`` rather than an algebraic constraint
+        resolved every step. Two consequences, both wanted here.
+
+        First, physics. Inflow has mass. The apparent mass of the air column accelerated
+        by the disc is ``m_a = (8/3) rho R^3`` -- the impermeable-disc value that
+        Pitt & Peters (1980) confirm for the M11 term -- which for this wing gives a time
+        constant of about 67 ms. That is 0.54 of the roll timescale at 8 rad/s and 0.81 of
+        a 12 rad/s controller bandwidth, so treating inflow as instantaneous overstates
+        aerodynamic damping and phase margin exactly where a controller study cares.
+
+        Second, cost. There is no fixed-point iteration, so the per-step cost is constant
+        instead of varying between one and thirty-two polar evaluations, which turns a
+        bounded average into a bounded worst case.
+
+        NOT INCLUDED: the first-harmonic inflow states (longitudinal and lateral), which
+        need the full Pitt-Peters L-matrix as a function of wake skew angle. Only the
+        uniform component is modelled here.
     """
 
     NONE = "none"
     BEMT = "bemt"
     GLAUERT = "glauert"
+    DYNAMIC = "dynamic"
 
-    ALL = (NONE, BEMT, GLAUERT)
+    ALL = (NONE, BEMT, GLAUERT, DYNAMIC)
 
 
 # ---------------------------------------------------------------------------------------

@@ -17,6 +17,9 @@ from pegasus.simulator.logic.backends.px4_mavlink_backend import PX4MavlinkBacke
 
 # Sensors and dynamics setup
 from pegasus.simulator.logic.dynamics import LinearDrag
+from pegasus.simulator.logic.dynamics.rotor_gyroscopics import (
+    rotor_gyroscopic_torque,
+)
 from pegasus.simulator.logic.thrusters import QuadraticThrustCurve
 from pegasus.simulator.logic.sensors import Barometer, IMU, Magnetometer, GPS
 
@@ -43,6 +46,32 @@ class MultirotorConfig:
         # Body-rate damping torque coefficients [roll, pitch, yaw] in N*m/(rad/s).
         # Keep yaw slightly higher to damp residual yaw oscillations faster.
         self.rotational_damping = [0.02, 0.02, 0.035]
+
+        # Polar moment of inertia of ONE rotor about its own spin axis [kg*m^2].
+        # Measured from the stock Iris asset at runtime (PhysX computes it from the
+        # propeller geometry, since the asset authors no mass for the rotor links).
+        self.rotor_inertia_kg_m2 = 7.646e-5
+
+        # Include the propellers' own angular momentum in the body dynamics.
+        #
+        # WHY THIS MATTERS HERE AND NOWHERE ELSE IN PEGASUS
+        #     A conventional quadrotor sets rot_dir = [-1, -1, +1, +1], so the four
+        #     propeller angular momenta cancel to essentially zero and ignoring them is
+        #     harmless -- which is why upstream Pegasus does.
+        #
+        #     This airframe spins because every motor turns the SAME way
+        #     (rot_dir = [-1, -1, -1, -1]), so the four momenta ADD. At hover they total
+        #     about 0.209 kg*m^2/s, which is 16% of the whole vehicle's angular momentum,
+        #     and the resulting gyroscopic moment exceeds the rotating wing's entire
+        #     aerodynamic moment above roughly 1.5 rad/s of body rate.
+        #
+        #     The rotor joints in the USD are driven kinematically at a hardcoded
+        #     100 rad/s by handle_propeller_visual() "for animation purposes only", against
+        #     a real hover speed near 684 rad/s, so the articulation carries at most 15% of
+        #     the true momentum and none of it reliably.
+        #
+        # Set False to reproduce results recorded before this term existed.
+        self.enable_rotor_gyroscopics = True
 
         # The default sensors for a quadrotor
         self.sensors = [Barometer(), IMU(), Magnetometer(), GPS()]
@@ -91,6 +120,10 @@ class Multirotor(Vehicle):
         self._thrusters = config.thrust_curve
         self._drag = config.drag
         self._rotational_damping = np.array(getattr(config, "rotational_damping", [0.02, 0.02, 0.035]), dtype=float)
+        self._rotor_inertia_kg_m2 = float(getattr(config, "rotor_inertia_kg_m2", 7.646e-5))
+        self._enable_rotor_gyroscopics = bool(
+            getattr(config, "enable_rotor_gyroscopics", True)
+        )
 
     def start(self):
         """In this case we do not need to do anything extra when the simulation starts"""
@@ -145,9 +178,36 @@ class Multirotor(Vehicle):
         damping_torque = -self._rotational_damping * self._state.angular_velocity
         self.apply_torque(damping_torque, "/body")
 
+        # Gyroscopic reaction of the spinning propellers.
+        #
+        #     h      = sum_i I_rotor * omega_i * rot_dir_i   (about the body +z axis)
+        #     M_gyro = -omega_body x h
+        #
+        # The minus sign is the reaction on the airframe: precessing the rotor disc
+        # requires a moment, and the airframe feels its equal and opposite.
+        if self._enable_rotor_gyroscopics:
+            self.apply_torque(self._rotor_gyroscopic_torque(), "/body")
+
         # Call the update methods in all backends
         for backend in self._backends:
             backend.update(dt)
+
+    def _rotor_gyroscopic_torque(self):
+        """Gyroscopic moment the spinning propellers exert on the airframe [N*m].
+
+        The arithmetic lives in
+        :mod:`pegasus.simulator.logic.dynamics.rotor_gyroscopics`, which imports nothing
+        but NumPy so the offline physics suite can test it without Isaac Sim.
+
+        Returns:
+            numpy array (3,) in the body frame.
+        """
+        return rotor_gyroscopic_torque(
+            self._thrusters.velocity,
+            self._thrusters.rot_dir,
+            self._rotor_inertia_kg_m2,
+            self._state.angular_velocity,
+        )
 
     def handle_propeller_visual(self, rotor_number, force: float, articulation):
         """
